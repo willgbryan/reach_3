@@ -1,0 +1,41 @@
+# dependencies
+asyncio
+beautifulsoup4
+colorama
+duckduckgo_search
+md2pdf
+playwright
+openai
+python-dotenv
+pyyaml
+selenium
+webdriver-manager
+uvicorn
+pydantic
+fastapi
+python-multipart
+markdown
+langchain
+tavily-python
+arxiv
+PyMuPDF
+requests
+jinja2
+aiofiles
+newspaper3k
+git+https://github.com/willgbryan/langchain-reach-edition.git#subdirectory=libs/community&egg=langchain_community
+SQLAlchemy
+langchain-openai
+mistune
+python-docx
+htmldocx
+lxml[html_clean]
+litellm
+# unstructured[all-docs]
+youtube-transcript-api
+# git+https://github.com/openai/whisper.git
+aiofiles 
+moviepy
+# hubspot-api-client
+setuptools
+simsimd == 3.7.7

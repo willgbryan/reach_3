@@ -1,0 +1,193 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0, 0%, 98%; /* A very light grey, almost white, for a bright and clean canvas */
+    --foreground: 0, 0%, 12%; /* Almost black, offering stark contrast and sophistication */
+    --card: 0, 0%, 100%; /* Pure white, for a crisp and uncluttered interface */
+    --card-foreground: 0, 0%, 12%; /* Matching the foreground for consistency */
+
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 0 0% 96.1%;
+    --secondary-foreground: 0 0% 9%;
+
+    /* Popover colors */
+    --popover: 0, 0%, 100%; /* Pure white, ensuring that popovers are bright and focused */
+    --popover-foreground: 0, 0%, 12%; /* Providing a consistent contrast in popovers */
+
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+
+    --destructive: 0, 100%, 50%; /* A classic red, reserved for actions that require caution */
+    --destructive-foreground: 0, 0%, 100%; /* White text to contrast the red */
+
+    /* Borders and inputs */
+    --border: 0, 0%, 80%; /* A light grey border, visible but unobtrusive */
+    --input: 0, 0%, 95%; /* A very light background for input fields, inviting interaction */
+    --ring: 0, 0%, 75%; /* A slightly darker grey to highlight focused or interactive elements */
+
+    --radius: 0.4rem; /* Moderately rounded corners to soften the design while maintaining a clean line */
+  }
+
+  .dark {
+    --background: 0, 0%, 15%; /* A very dark grey, almost black, for deep immersion */
+
+    --background: 0 0% 7%;
+    --foreground: 0 0% 95%;
+
+    --card: 24 9.8% 10%;
+    --card-foreground: 0 0% 95%;
+
+    --primary: 0, 0%, 20%; /* A dark surface for primary elements to elevate content */
+    --primary-foreground: 0, 0%, 85%; /* A soft grey against the primary for a gentle but clear contrast */
+
+    --popover: 0 0% 9%;
+    --popover-foreground: 0 0% 95%;
+
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 53%;
+
+    --accent: 12 6.5% 15.1%;
+    --accent-foreground: 0 0% 98%;
+
+    /* Destructive color */
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 85.7% 97.3%;
+
+    --border: 240 3.7% 15.9%;
+    --ring: 220, 70%, 50%; /* A brighter blue, drawing attention to the focused element in dark mode */
+    --input: 240 3.7% 15.9%;
+    --ring: 142.4 71.8% 29.2%;
+    --radius: 0.4rem; /* Keeping the corners consistently sleek, preserving the design language across modes */
+  }
+}
+
+.bg-gradient {
+  background: var(--gradient);
+}
+
+@layer baseGreenFinal {
+  :root {
+    --gradient: #00f5a0;
+
+    --background: 169, 65%, 96%; /* Light teal background for a fresh and airy feel */
+    --foreground: 169, 10%, 20%; /* Darker teal for high contrast text */
+
+    --muted: 169, 50%, 85%; /* Lighter muted teal for subtle elements */
+    --muted-foreground: 169, 10%, 40%; /* Darker teal for readable text on muted elements */
+
+    --popover: 169, 45%, 95%; /* Very light teal for popover backgrounds */
+    --popover-foreground: 169, 10%, 20%; /* Darker teal for text in popovers */
+
+    --card: 169, 45%, 95%; /* Very light teal for card backgrounds */
+    --card-foreground: 169, 10%, 20%; /* Darker teal for text on cards */
+
+    --border: 169, 50%, 85%; /* Light teal for borders */
+    --input: 169, 50%, 85%; /* Light teal for input fields */
+
+    --primary: 169, 100%, 70%; /* Brighter teal for primary elements */
+    --primary-foreground: 169, 10%, 15%; /* Deeper teal for text on primary elements */
+
+    --secondary: 169, 50%, 85%; /* Lighter secondary teal */
+    --secondary-foreground: 169, 10%, 20%; /* Darker teal for text on secondary elements */
+
+    --accent: 169, 50%, 85%; /* Lighter accent teal */
+    --accent-foreground: 169, 10%, 20%; /* Darker teal for text on accent elements */
+
+    --destructive: 0, 62.8%, 70%; /* Brighter red for destructive elements */
+    --destructive-foreground: 169, 10%, 15%; /* Deeper teal for text on destructive elements */
+
+    --ring: 169, 100%, 70%; /* Brighter teal for focus rings */
+  }
+  .dark {
+    --gradient: #00f5a0;
+
+    --background: 169, 65%, 3.84%;
+    --foreground: 169, 10%, 97.4%;
+
+    --muted: 169, 50%, 14.399999999999999%;
+    --muted-foreground: 169, 10%, 54.8%;
+
+    --popover: 169, 45%, 6.24%;
+    --popover-foreground: 169, 10%, 97.4%;
+
+    --card: 169, 45%, 6.24%;
+    --card-foreground: 169, 10%, 97.4%;
+
+    --border: 169, 50%, 14.399999999999999%;
+    --input: 169, 50%, 14.399999999999999%;
+
+    --primary: 169, 100%, 48%;
+    --primary-foreground: 169, 10%, 4.8%;
+
+    --secondary: 169, 50%, 14.399999999999999%;
+    --secondary-foreground: 169, 10%, 97.4%;
+
+    --accent: 169, 50%, 14.399999999999999%;
+    --accent-foreground: 169, 10%, 97.4%;
+
+    --destructive: 0, 62.8%, 30.6%;
+    --destructive-foreground: 169, 10%, 97.4%;
+
+    --ring: 169, 100%, 48%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+    -webkit-tap-highlight-color: transparent;
+
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+}
+
+.border {
+  background-clip: padding-box;
+}
+
+.button-shadow {
+  --tw-shadow: 0px 1px 0px -1px var(--tw-shadow-color), 0px 1px 1px -1px var(--tw-shadow-color),
+    0px 1px 2px -1px var(--tw-shadow-color), 0px 2px 4px -2px var(--tw-shadow-color),
+    0px 3px 6px -3px var(--tw-shadow-color);
+  --tw-shadow-colored: 0px 1px 0px -1px var(--tw-shadow-color),
+    0px 1px 1px -1px var(--tw-shadow-color), 0px 1px 2px -1px var(--tw-shadow-color),
+    0px 2px 4px -2px var(--tw-shadow-color), 0px 3px 6px -3px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000),
+    var(--tw-shadow);
+}
+
+.button-shadow-glow::after {
+  --tw-shadow: inset 0px 0px 0px 1px var(--tw-shadow-color),
+    inset 0px 1px 0px var(--tw-shadow-color);
+  --tw-shadow-colored: inset 0px 0px 0px 1px var(--tw-shadow-color),
+    inset 0px 1px 0px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000),
+    var(--tw-shadow);
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: #958f7a;
+  transition: background-color 5000s ease-in-out 0s;
+}
