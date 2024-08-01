@@ -17,7 +17,7 @@ import {
 import { MemoizedReactMarkdown } from '@/components/ui/markdown'
 
 // import { ResizablePanel } from './resizable-div'
-import { Sources, type Source } from './chat-answer-sources'
+// import { Sources, type Source } from './chat-answer-sources'
 
 // Animation properties
 const fadeIn: Variants = {
@@ -45,9 +45,9 @@ export function AnswerCard({ answer, question, isCurrentAnswer, sources }: Answe
         <div className="pb-8">
           <AnswerMessage isCurrentAnswer={isCurrentAnswer} content={answer} submittedQ={question}>
             <AnimatePresence>
-              <div className="w-full">
+              {/* <div className="w-full">
                 <Sources sources={sources ?? []} />
-              </div>
+              </div> */}
             </AnimatePresence>
           </AnswerMessage>
         </div>

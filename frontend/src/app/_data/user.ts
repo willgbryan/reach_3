@@ -30,21 +30,22 @@ export async function getUserDetails() {
   }
 }
 
-export async function getSubscription() {
-  const cookieStore = cookies()
-  const supabase = createClient(cookieStore)
-  try {
-    const { data: subscription } = await supabase
-      .from('subscriptions')
-      .select('*, prices(*, products(*))')
-      .in('status', ['trialing', 'active'])
-      .maybeSingle()
-      .throwOnError()
-    return subscription
-  } catch (error) {
-    return null
-  }
-}
+// // gotta bring this back in once payment has been implemented
+// export async function getSubscription() {
+//   const cookieStore = cookies()
+//   const supabase = createClient(cookieStore)
+//   try {
+//     const { data: subscription } = await supabase
+//       .from('subscriptions')
+//       .select('*, prices(*, products(*))')
+//       .in('status', ['trialing', 'active'])
+//       .maybeSingle()
+//       .throwOnError()
+//     return subscription
+//   } catch (error) {
+//     return null
+//   }
+// }
 
 // USER PAYMENT STATUS
 

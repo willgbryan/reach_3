@@ -9,7 +9,7 @@ COPY . .
 
 RUN --mount=type=secret,id=OPENAI_API_KEY \
     OPENAI_API_KEY=$(cat /run/secrets/OPENAI_API_KEY) \
-    npm run build
+    npm run build 
 
 EXPOSE 3000
 

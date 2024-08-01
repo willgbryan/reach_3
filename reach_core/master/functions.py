@@ -59,7 +59,7 @@ async def choose_agent(query, cfg):
         return "Default Agent", "You are an AI critical thinker research assistant. Your sole purpose is to write well written, critically acclaimed, objective and structured reports on given text."
 
 
-async def get_sub_queries(query: str, agent_role_prompt: str, cfg, parent_query: str, report_type:str):
+async def get_sub_queries(query: str, agent_role_prompt: str, cfg, parent_query: str, report_type:str, websocket):
     """
     Gets the sub queries
     Args:
@@ -94,6 +94,7 @@ async def get_sub_queries(query: str, agent_role_prompt: str, cfg, parent_query:
         llm_provider=cfg.llm_provider
     )
     sub_queries = json.loads(response)
+    await stream_output("queries", f"{sub_queries}", websocket)
     return sub_queries
 
 

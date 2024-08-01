@@ -17,6 +17,15 @@ module.exports = {
       },
     },
     extend: {
+      keyframes: {
+        "caret-blink": {
+          "0%,70%,100%": { opacity: "1" },
+          "20%,50%": { opacity: "0" },
+        },
+      },
+      animation: {
+        "caret-blink": "caret-blink 1.25s ease-out infinite",
+      },
       colors: {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
@@ -82,18 +91,18 @@ module.exports = {
 
         // CYBERPUNK NEON BLUE
 
-        brand: {
-          50: '#FFE6D0', // Lightest neon orange, for subtle highlights
-          100: '#FFCCB3', // Very light neon orange, for background accents
-          200: '#FFB399', // Light neon orange, for buttons and interactive elements
-          300: '#FF9966', // Medium neon orange, for primary UI elements
-          400: '#FF8000', // Vibrant neon orange, the core brand color
-          500: '#E67300', // Dark neon orange, for impactful elements
-          600: '#CC6600', // Deeper orange, for hover states or active elements
-          700: '#B35900', // Darker orange, for strong contrasts
-          800: '#994D00', // Even darker orange, suitable for text or accents
-          900: '#803C00', // Deepest orange, for maximum contrast and depth
-        },
+        // brand: {
+        //   50: '#FFE6D0', // Lightest neon orange, for subtle highlights
+        //   100: '#FFCCB3', // Very light neon orange, for background accents
+        //   200: '#FFB399', // Light neon orange, for buttons and interactive elements
+        //   300: '#FF9966', // Medium neon orange, for primary UI elements
+        //   400: '#FF8000', // Vibrant neon orange, the core brand color
+        //   500: '#E67300', // Dark neon orange, for impactful elements
+        //   600: '#CC6600', // Deeper orange, for hover states or active elements
+        //   700: '#B35900', // Darker orange, for strong contrasts
+        //   800: '#994D00', // Even darker orange, suitable for text or accents
+        //   900: '#803C00', // Deepest orange, for maximum contrast and depth
+        // },
 
         neutral: {
           50: '#FFFFFF', // Pure white, for background highlights and clean look
@@ -207,18 +216,32 @@ module.exports = {
         //   950: '#00573C', // Very dark teal, for deep contrast and accents
         // },
 
+        // brand: {
+        //   50: '#CCFFEB', // Lightest shade, almost white, for subtle highlights
+        //   100: '#99FFDA', // Very light neon green, for background accents
+        //   200: '#66FFC9', // Light neon green, for buttons and interactive elements
+        //   300: '#33FFB8', // Medium neon green, for primary UI elements
+        //   400: '#00FFA7', // Vibrant neon green, closer to the core brand color
+        //   500: '#00F5A0', // Your original brand green, for primary elements
+        //   600: '#00C280', // Slightly darker green, for active states or hover effects
+        //   700: '#009060', // Dark green, suitable for strong contrast and headers
+        //   800: '#005E40', // Darker green, for text on light backgrounds
+        //   900: '#002F20', // Even darker green, for maximum contrast in various themes
+        //   950: '#001810', // Very dark green, for deep contrast and accents
+        // },
+
         brand: {
-          50: '#CCFFEB', // Lightest shade, almost white, for subtle highlights
-          100: '#99FFDA', // Very light neon green, for background accents
-          200: '#66FFC9', // Light neon green, for buttons and interactive elements
-          300: '#33FFB8', // Medium neon green, for primary UI elements
-          400: '#00FFA7', // Vibrant neon green, closer to the core brand color
-          500: '#00F5A0', // Your original brand green, for primary elements
-          600: '#00C280', // Slightly darker green, for active states or hover effects
-          700: '#009060', // Dark green, suitable for strong contrast and headers
-          800: '#005E40', // Darker green, for text on light backgrounds
-          900: '#002F20', // Even darker green, for maximum contrast in various themes
-          950: '#001810', // Very dark green, for deep contrast and accents
+          50: '#fafaf9', // Lightest stone, for subtle highlights
+          100: '#f5f5f4', // Very light stone, for background accents
+          200: '#e7e5e4', // Light stone, for buttons and interactive elements
+          300: '#d6d3d1', // Medium stone, for primary UI elements
+          400: '#a8a29e', // Core brand stone color
+          500: '#78716c', // Dark stone, for impactful elements
+          600: '#57534e', // Deeper stone, for hover states or active elements
+          700: '#44403c', // Darker stone, for strong contrasts
+          800: '#292524', // Even darker stone, suitable for text or accents
+          900: '#1c1917', // Deepest stone, for maximum contrast and depth
+          950: '#0c0a09', // Darkest stone, for the deepest contrast and accents
         },
 
         offBlack: {
@@ -399,7 +422,7 @@ module.exports = {
         'accordion-up': 'accordion-up 0.2s ease-out',
       },
       fontFamily: {
-        sans: ['bricolage grotesque', ...defaultTheme.fontFamily.sans],
+        sans: ['BaruSans', 'sans-serif'],
       },
     },
   },

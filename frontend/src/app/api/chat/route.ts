@@ -1,16 +1,7 @@
 import { cookies } from 'next/headers'
 import { NextRequest } from 'next/server'
-import { SupabaseVectorStore } from '@langchain/community/vectorstores/supabase'
-import { OpenAIEmbeddings } from '@langchain/openai'
-import { OpenAIStream, StreamingTextResponse } from 'ai'
 import { nanoid } from 'nanoid'
-import OpenAI from 'openai'
-
 import { createClient } from '@/db/server'
-
-import { RAG_CONFIG } from './config'
-import { createRagPrompt } from './prompt'
-import { combineDocuments, encodeSources } from './utils'
 
 export async function POST(req: NextRequest) {
   const db = createClient(cookies())
@@ -24,73 +15,68 @@ export async function POST(req: NextRequest) {
   }
 
   const json = await req.json()
-  const { setName } = json
-  const messages = json.messages ?? []
-  const latestUserMessageContent = messages[messages.length - 1]?.content ?? ''
+  const { messages, id: chatId } = json
+  const lastMessage = messages[messages.length - 1]
+  const task = lastMessage?.content || ''
 
-  const documents = await getSimilarDocuments(db, setName, latestUserMessageContent)
+  const ws_uri = `ws://${process.env.NEXT_PUBLIC_BACKEND_URL}/ws`
+  const socket = new WebSocket(ws_uri)
 
-  const prompt = createRagPrompt({
-    context: combineDocuments(documents),
-    question: latestUserMessageContent,
-  })
+  return new Response(
+    new ReadableStream({
+      start(controller) {
+        socket.onopen = () => {
+          const requestData = {
+            task: task,
+            report_type: "research_report",
+            sources: ["WEB"]
+          }
+          socket.send(`${JSON.stringify(requestData)}`)
+        }
 
-  const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY || '',
-  })
+        socket.onmessage = async (event) => {
+          const data = JSON.parse(event.data)
+          if (data.type === 'report' || data.type === 'logs') {
+            controller.enqueue(new TextEncoder().encode(JSON.stringify(data)))
+            console.log(`data ${data}`)
 
-  const response = await openai.chat.completions.create({
-    messages: [{ role: 'user', content: prompt }],
-    temperature: RAG_CONFIG.temperature,
-    model: RAG_CONFIG.gptModel,
-    stream: true,
-  })
+            // Save chat history after each message
+            // if (data.type === 'report') {
+            //   await saveChatHistory({
+            //     chatId,
+            //     completion: data.output,
+            //     documents: [], // You may need to adjust this if your backend provides documents
+            //     messages,
+            //     userId,
+            //     db,
+            //   })
+            // }
+          }
+        }
 
-  const stream = createChatStream({
-    chatId: json.id,
-    documents,
-    response,
-    messages,
-    sources: json.sources ?? {},
-    userId,
-    db,
-  })
+        socket.onerror = (error) => {
+          console.error("WebSocket error:", error)
+          controller.error(error)
+        }
 
-  const headers = {
-    'x-message-index': messages.length.toString(),
-    'x-sources': encodeSources(documents),
-  }
-
-  return new StreamingTextResponse(stream, { headers })
+        socket.onclose = () => {
+          console.log("WebSocket connection closed")
+          controller.close()
+        }
+      },
+      cancel() {
+        socket.close()
+      },
+    }),
+    {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
+    }
+  )
 }
-
-// Helper functions
-async function getSimilarDocuments(db, setName, message) {
-  const vectorStore = new SupabaseVectorStore(new OpenAIEmbeddings(), {
-    client: db,
-    tableName: 'document_sections',
-    queryName: 'match_documents',
-    filter: setName ? (rpc) => rpc.filter('metadata->>setName', 'eq', setName) : undefined,
-  })
-  return vectorStore.similaritySearch(message, RAG_CONFIG.kMeans)
-}
-
-function createChatStream({ chatId, documents, response, messages, sources, userId, db }) {
-  return OpenAIStream(response, {
-    async onCompletion(completion) {
-      await saveChatHistory({
-        chatId,
-        completion,
-        documents,
-        messages,
-        sources,
-        userId,
-        db,
-      })
-    },
-  })
-}
-
 interface ChatHistoryParams {
   chatId: string
   completion: string

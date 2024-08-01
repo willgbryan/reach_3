@@ -142,7 +142,7 @@ class Reach:
             context: List of context
         """
         content = []
-        sub_queries = await get_sub_queries(query, self.role, self.cfg, self.parent_query, self.report_type) + [query]
+        sub_queries = await get_sub_queries(query, self.role, self.cfg, self.parent_query, self.report_type, self.websocket) + [query]
         # await stream_output("logs",
         #                     f"I will conduct my research based on the following queries: {sub_queries}...",
         #                     self.websocket)
@@ -175,7 +175,7 @@ class Reach:
             context: List of context
         """
         content = []
-        sub_queries = await get_sub_queries(query, self.role, self.cfg, self.parent_query, self.report_type) + [query]
+        sub_queries = await get_sub_queries(query, self.role, self.cfg, self.parent_query, self.report_type, self.websocket) + [query]
         # await stream_output("logs",
         #                     f"I will conduct my research based on the following queries: {sub_queries}...",
         #                     self.websocket)
@@ -208,7 +208,7 @@ class Reach:
             context: List of context
         """
         content = []
-        sub_queries = await get_sub_queries(query, self.role, self.cfg, self.parent_query, self.report_type) + [query]
+        sub_queries = await get_sub_queries(query, self.role, self.cfg, self.parent_query, self.report_type, self.websocket) + [query]
         # await stream_output("logs",
         #                     f"I will conduct my research based on the following queries: {sub_queries}...",
         #                     self.websocket)
