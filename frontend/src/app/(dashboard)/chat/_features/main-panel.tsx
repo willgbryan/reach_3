@@ -116,12 +116,10 @@ const ChatSection = ({ messages, sources, isLoading, accumulatedData, reportType
     } else {
 
       setReportContent(accumulatedData)
-      console.log(`accumulated data ${accumulatedData}`)
     }
   }, [accumulatedData, reportType])
 
   const updatedMessages = [...messages, { content: reportContent, type: 'report' }];
-  console.log(`updated messages ${updatedMessages}`)
 
   return (
     <div className="flex flex-col items-center pt-6">
