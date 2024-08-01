@@ -15,7 +15,7 @@ export function SidebarPanel({ children, user }) {
   return (
     <Sidebar open={open} setOpen={setOpen}>
       <SidebarBody className="justify-between gap-10">
-        <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden bg-background dark:bg-offBlack-950 h-full rounded-lg border dark:border-white/10 border-black/10">
+        <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden bg-background dark:bg-stone-800 h-full">
           {open ? <Logo /> : <LogoIcon />}
           <NavHeading isCollapsed={!open} />
           <NavSearchActions isCollapsed={!open} />

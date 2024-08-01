@@ -5,7 +5,7 @@ import { SidebarPanel } from './sidebar-panel'
 
 export function DesktopLayout({ historyChildren, children, user }) {
   return (
-    <div className="flex h-full items-stretch dark:bg-black bg-offBlack-950">
+    <div className="flex h-full items-stretch dark:bg-stone-800 bg-stone-100">
       <SidebarPanel user={user?.id}>
         <div className="pr-4">
           <Separator className="my-2" />
