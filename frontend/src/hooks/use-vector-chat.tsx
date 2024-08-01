@@ -44,15 +44,15 @@ export function useVectorChat(id, docSetName, initialMessages, initialSources) {
 
     readStream()
 
-    const sourcesHeader = response.headers.get('x-sources')
-    const sources = sourcesHeader ? JSON.parse(atob(sourcesHeader)) : []
-    const messageIndexHeader = response.headers.get('x-message-index')
-    if (sources.length && messageIndexHeader !== null) {
-      setSourcesForMessages((prevSources) => ({
-        ...prevSources,
-        [messageIndexHeader]: sources,
-      }))
-    }
+    // const sourcesHeader = response.headers.get('x-sources')
+    // const sources = sourcesHeader ? JSON.parse(atob(sourcesHeader)) : []
+    // const messageIndexHeader = response.headers.get('x-message-index')
+    // if (sources.length && messageIndexHeader !== null) {
+    //   setSourcesForMessages((prevSources) => ({
+    //     ...prevSources,
+    //     [messageIndexHeader]: sources,
+    //   }))
+    // }
   }
 
   function onError(e) {

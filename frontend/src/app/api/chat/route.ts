@@ -38,7 +38,6 @@ export async function POST(req: NextRequest) {
           const data = JSON.parse(event.data)
           if (data.type === 'report' || data.type === 'logs') {
             controller.enqueue(new TextEncoder().encode(JSON.stringify(data)))
-            console.log(`data ${data}`)
 
             // Save chat history after each message
             // if (data.type === 'report') {

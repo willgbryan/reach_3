@@ -51,8 +51,8 @@ class WebSocketManager:
 
     async def start_streaming(self, task, report_type, sources, websocket):
         """Start streaming the output."""
-        report = await run_agent(task, report_type, sources, websocket)
-        return report
+        await run_agent(task, report_type, sources, websocket)
+        # return report
 
 
 async def run_agent( task, report_type, sources, websocket):
@@ -68,7 +68,7 @@ async def run_agent( task, report_type, sources, websocket):
                 researcher = BasicReport(query=task, report_type=report_type,
                                          source_urls=None, sources=sources, config_path=config_path, websocket=websocket)
 
-            report = await researcher.run()
+            await researcher.run()
             
             end_time = datetime.datetime.now()
             run_time = end_time - start_time
@@ -76,13 +76,14 @@ async def run_agent( task, report_type, sources, websocket):
             # await websocket.send_json({"type": "logs", "output": f"\nTotal run time: {run_time}\n"})
             
             # Send the report in chunks to avoid potential size limitations
-            chunk_size = 1000
-            for i in range(0, len(report), chunk_size):
-                chunk = report[i:i+chunk_size]
-                await websocket.send_json({"type": "report", "output": chunk})
+            # chunk_size = 1000
+            # for i in range(0, len(report), chunk_size):
+            #     chunk = report[i:i+chunk_size]
+            #     print(f"chunk {chunk}")
+            # await websocket.send_json({"type": "report", "output": report})
             
             print(f"Agent run completed. Run time: {run_time}")
-            return report
+            # return report
         except Exception as e:
             print(f"Error in run_agent: {str(e)}")
             await websocket.send_json({"type": "error", "message": str(e)})
