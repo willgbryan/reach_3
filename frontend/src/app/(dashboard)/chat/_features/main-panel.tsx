@@ -4,6 +4,8 @@ import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Message } from 'ai'
 import showdown from 'showdown';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 
 import { SelectScrollable } from '@/components/chat/chat-document-sets'
 import { ChatList } from '@/components/chat/chat-list'
@@ -17,6 +19,19 @@ import { useVectorChat } from '@/hooks/use-vector-chat'
 import { BlobActions } from './blob-actions'
 import { BlobStates } from './blob-states'
 import { ChatState } from './chat-states/chat'
+
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { Button } from "@/components/ui/button"
 
 interface MainVectorPanelProps {
   id?: string | undefined
@@ -32,6 +47,8 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
   const { setFileData } = useFileData()
   const { setStage } = useStage()
   const [reportType, setReportType] = useState('research_report')
+  const [showBottomSection, setShowBottomSection] = useState(true);
+  const [showEditMode, setShowEditMode] = useState(false);
 
   const {
     messages,
@@ -67,29 +84,158 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
   }
 
   const sources = sourcesForMessages ?? initialSources?.sources
+  
+  const handleNewQuery = () => {
+    setMessages([]);
+    setShowBottomSection(true);
+    setShowEditMode(false);
+  };
+
+  const handleDigDeeper = () => {
+    setShowEditMode(true);
+    setShowBottomSection(false);
+  };
 
   return (
     <div className="h-full w-full">
       <TopSection docSetName={docSetName} documentSets={documentSets} />
-      <ChatSection 
-        messages={messages} 
-        sources={sources} 
-        isLoading={isLoading} 
-        accumulatedData={accumulatedData}
-        reportType={reportType}
-      />
-      <BottomSection
-        handleInputClick={handleInputClick}
-        handleReset={handleReset}
-        isLoading={isLoading}
-        messages={messages}
-        setInput={setInput}
-        reload={reload}
-        input={input}
-        stop={stop}
-        id={id}
-        setReportType={setReportType}
-      />
+      <div className="w-full px-4">
+        <ChatSection 
+          messages={messages} 
+          sources={sources} 
+          isLoading={isLoading} 
+          accumulatedData={accumulatedData}
+          reportType={reportType}
+          showEditMode={showEditMode}
+          setShowEditMode={setShowEditMode}
+          showBottomSection={showBottomSection}
+          setShowBottomSection={setShowBottomSection}
+          handleNewQuery={handleNewQuery}
+          handleDigDeeper={handleDigDeeper}
+        />
+      </div>
+      {showBottomSection && (
+        <BottomSection
+          handleInputClick={handleInputClick}
+          handleReset={handleReset}
+          isLoading={isLoading}
+          messages={messages}
+          setInput={setInput}
+          reload={reload}
+          input={input}
+          stop={stop}
+          id={id}
+          setReportType={setReportType}
+        />
+      )}
+    </div>
+  )
+}
+
+const ChatSection = ({ 
+  messages, 
+  sources, 
+  isLoading, 
+  accumulatedData, 
+  reportType, 
+  showEditMode,
+  setShowEditMode,
+  showBottomSection,
+  setShowBottomSection,
+  handleNewQuery,
+  handleDigDeeper
+}) => {
+  const [reportContent, setReportContent] = useState('');
+  const [currentText, setCurrentText] = useState('');
+  const [deletedText, setDeletedText] = useState('');
+  const converter = new showdown.Converter();
+
+  useEffect(() => {
+    if (reportType === 'table') {
+      const htmlTable = convertCSVToHTMLTable(accumulatedData);
+      setReportContent(htmlTable);
+    } else {
+      setReportContent(accumulatedData);
+    }
+    setCurrentText(accumulatedData);
+
+    if (accumulatedData) {
+      setShowBottomSection(false);
+    }
+  }, [accumulatedData, reportType, setShowBottomSection]);
+
+  const handleEditChange = (newContent) => {
+    const oldContent = currentText;
+    setCurrentText(newContent);
+
+    // calculate the deleted text
+    const deletedParts = oldContent.split(' ').filter(word => !newContent.includes(word));
+    const newDeletedText = deletedParts.join(' ');
+    setDeletedText(prevDeletedText => {
+      const combinedDeletedText = prevDeletedText + ' ' + newDeletedText;
+      return combinedDeletedText.trim();
+    });
+  };
+
+  const handleSubmitEdits = () => {
+    // call hook or function to submit the edits
+    console.log("Current Text:", currentText);
+    console.log("Deleted Text:", deletedText);
+    // Example: submitEdits(currentText, deletedText);
+  };
+
+  const updatedMessages = [...messages, { content: reportContent, type: 'report' }];
+
+  return (
+    <div className="flex flex-col items-center">
+      {updatedMessages.length > 0 ? (
+        <div className="pb-[100px] md:pb-40">
+          {showEditMode ? (
+            <div className="flex flex-row space-x-4">
+              <div className="w-1/2">
+                <ChatList messages={updatedMessages} sources={sources} />
+              </div>
+              <div className="w-1/2 flex flex-col pt-6">
+                <ReactQuill 
+                  value={currentText} 
+                  className='max-w-full p-2 shadow-sm sm:p-4'
+                  onChange={handleEditChange}
+                />
+                <Button onClick={handleSubmitEdits} className="mt-4">Submit Edits</Button>
+              </div>
+            </div>
+          ) : (
+            <ChatList messages={updatedMessages} sources={sources} />
+          )}
+          <ChatScrollAnchor trackVisibility={isLoading} />
+          {!showBottomSection && accumulatedData && (
+            <div className="flex justify-center space-x-4 mt-4">
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline">New Query</Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure you want to start a new query?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action will clear the existing report. This cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleNewQuery}>Continue</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+              <Button onClick={handleDigDeeper} variant="outline">Dig Deeper</Button>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="pt-64 md:pt-16">
+          <Heading>Where knowledge begins</Heading>
+        </div>
+      )}
     </div>
   )
 }
@@ -101,40 +247,6 @@ const TopSection = ({ docSetName, documentSets }) => {
       <div className="absolute right-8 top-8">
         <Heading>{docSetName}</Heading>
       </div>
-    </div>
-  )
-}
-
-const ChatSection = ({ messages, sources, isLoading, accumulatedData, reportType }) => {
-  const [reportContent, setReportContent] = useState('')
-  const converter = new showdown.Converter()
-
-  useEffect(() => {
-    if (reportType === 'table') {
-      const htmlTable = convertCSVToHTMLTable(accumulatedData)
-      setReportContent(htmlTable)
-    } else {
-
-      setReportContent(accumulatedData)
-    }
-  }, [accumulatedData, reportType])
-
-  const updatedMessages = [...messages, { content: reportContent, type: 'report' }];
-
-  return (
-    <div className="flex flex-col items-center pt-6">
-      {updatedMessages.length > 0 ? (
-        <div className="pb-[100px] md:pb-40">
-          {/* <ChatList messages={messages} sources={sources} />
-          <div id="reportContainer" dangerouslySetInnerHTML={{ __html: reportContent }} /> */}
-          <ChatList messages={updatedMessages} sources={sources} />
-          <ChatScrollAnchor trackVisibility={isLoading} />
-        </div>
-      ) : (
-        <div className="pt-64 md:pt-16">
-          <Heading>Where knowledge begins</Heading>
-        </div>
-      )}
     </div>
   )
 }
