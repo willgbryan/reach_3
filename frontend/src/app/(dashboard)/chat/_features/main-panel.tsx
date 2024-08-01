@@ -114,18 +114,21 @@ const ChatSection = ({ messages, sources, isLoading, accumulatedData, reportType
       const htmlTable = convertCSVToHTMLTable(accumulatedData)
       setReportContent(htmlTable)
     } else {
-      const converter = new showdown.Converter()
-      const markdownOutput = converter.makeHtml(accumulatedData)
-      setReportContent(markdownOutput)
+      // const converter = new showdown.Converter()
+      // const markdownOutput = converter.makeHtml(accumulatedData)
+      setReportContent(accumulatedData)
     }
   }, [accumulatedData, reportType])
 
+  const updatedMessages = [...messages, { content: reportContent, type: 'report' }];
+
   return (
     <div className="flex flex-col items-center pt-6">
-      {messages.length > 0 ? (
+      {updatedMessages.length > 0 ? (
         <div className="pb-[100px] md:pb-40">
-          <ChatList messages={messages} sources={sources} />
-          <div id="reportContainer" dangerouslySetInnerHTML={{ __html: reportContent }} />
+          {/* <ChatList messages={messages} sources={sources} />
+          <div id="reportContainer" dangerouslySetInnerHTML={{ __html: reportContent }} /> */}
+          <ChatList messages={updatedMessages} sources={sources} />
           <ChatScrollAnchor trackVisibility={isLoading} />
         </div>
       ) : (
@@ -161,10 +164,6 @@ const BottomSection = ({
           handleChange={setInput}
         />
       </BlobStates>
-      <select onChange={(e) => setReportType(e.target.value)}>
-        <option value="research_report">Research Report</option>
-        <option value="table">Table</option>
-      </select>
     </div>
   )
 }

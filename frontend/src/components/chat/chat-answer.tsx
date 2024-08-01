@@ -16,9 +16,6 @@ import {
 } from '@/components/ui/card'
 import { MemoizedReactMarkdown } from '@/components/ui/markdown'
 
-// import { ResizablePanel } from './resizable-div'
-// import { Sources, type Source } from './chat-answer-sources'
-
 // Animation properties
 const fadeIn: Variants = {
   hidden: { opacity: 0 },
@@ -30,7 +27,6 @@ type AnswerCardProps = {
   answer: string
   question: string
   isCurrentAnswer: boolean
-
   sources: any
 }
 
@@ -40,7 +36,7 @@ export interface ChatMessageProps {
 
 export function AnswerCard({ answer, question, isCurrentAnswer, sources }: AnswerCardProps) {
   return (
-    <div className="max-w-6xl py-10">
+    <div className="max-w-full py-10">
       <ResizablePanel content={answer}>
         <div className="pb-8">
           <AnswerMessage isCurrentAnswer={isCurrentAnswer} content={answer} submittedQ={question}>
@@ -68,13 +64,13 @@ export function AnswerMessage({ submittedQ, content, children }: AnswerMessagePr
     <>
       <Card className="max-w-sm p-2 shadow-sm sm:p-4 lg:min-w-[768px] ">
         <CardHeader className="relative pb-2 pr-6  lg:pb-0">
-          <CardTitle className=" pt-2 text-2xl font-bold text-vanta-800/90 dark:text-white/90 md:max-w-lg">
+          <CardTitle className="pt-2 text-2xl font-bold text-vanta-800/90 dark:text-white/90 md:max-w-lg">
             <AnimatedQuestion submittedQ={submittedQ} />
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col justify-end p-2 pl-6 md:px-4 md:pl-6 ">
           <MemoizedReactMarkdown
-            className="prose break-words dark:prose-invert prose-p:leading-relaxed prose-pre:p-0 "
+            className="prose break-words dark:prose-invert prose-p:leading-relaxed prose-pre:p-0"
             remarkPlugins={[remarkGfm, remarkMath]}
             components={{
               p({ children }) {
@@ -107,6 +103,28 @@ export function AnswerMessage({ submittedQ, content, children }: AnswerMessagePr
                     {...props}
                   />
                 )
+              },
+              sup({ children }) {
+                const childrenArray = React.Children.toArray(children)
+                if (childrenArray.length === 1 && React.isValidElement(childrenArray[0]) && childrenArray[0].type === 'a') {
+                  return <sup><a className="text-blue-500 hover:text-blue-700">{children}</a></sup>
+                }
+                return <sup>{children}</sup>
+              },
+              a({ node, children, ...props }) {
+                const className = node.properties?.className
+                const isFootnoteRef = Array.isArray(className) 
+                  ? className.includes('footnote-ref')
+                  : typeof className === 'string' && className.includes('footnote-ref');
+
+                if (isFootnoteRef) {
+                  return (
+                    <sup id={`ref-${props.href?.slice(1)}`}>
+                      <a href={props.href} className="text-blue-500 hover:text-blue-700">{children}</a>
+                    </sup>
+                  )
+                }
+                return <a {...props} className="text-blue-500 hover:text-blue-700">{children}</a>
               },
             }}
           >
