@@ -33,7 +33,7 @@ class Config:
         )
         self.memory_backend = os.getenv("MEMORY_BACKEND", "local")
         self.total_words = int(os.getenv("TOTAL_WORDS", 10))
-        self.report_format = os.getenv("REPORT_FORMAT", "csv")
+        self.report_format = os.getenv("REPORT_FORMAT", "apa")
         self.max_iterations = int(os.getenv("MAX_ITERATIONS", 5))
         self.agent_role = os.getenv("AGENT_ROLE", None)
         self.scraper = os.getenv("SCRAPER", "bs")

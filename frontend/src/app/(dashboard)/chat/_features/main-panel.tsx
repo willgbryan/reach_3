@@ -114,8 +114,6 @@ const ChatSection = ({ messages, sources, isLoading, accumulatedData, reportType
       const htmlTable = convertCSVToHTMLTable(accumulatedData)
       setReportContent(htmlTable)
     } else {
-      // const converter = new showdown.Converter()
-      // const markdownOutput = converter.makeHtml(accumulatedData)
       setReportContent(accumulatedData)
     }
   }, [accumulatedData, reportType])

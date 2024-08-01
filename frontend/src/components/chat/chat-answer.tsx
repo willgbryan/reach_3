@@ -133,7 +133,7 @@ export function AnswerMessage({ submittedQ, content, children }: AnswerMessagePr
         </CardContent>
 
         <CardFooter className="p-0">
-          <div className="">{children}</div>
+          {/* <div className="">{children}</div> */}
         </CardFooter>
       </Card>
     </>
