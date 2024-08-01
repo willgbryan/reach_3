@@ -1,8 +1,9 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Message } from 'ai'
+import showdown from 'showdown';
 
 import { SelectScrollable } from '@/components/chat/chat-document-sets'
 import { ChatList } from '@/components/chat/chat-list'
@@ -26,11 +27,12 @@ interface MainVectorPanelProps {
 
 const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPanelProps) => {
   const { data: documentSets } = useGetDocumentSets()
-  const { setSize } = useDynamicBlobSize() // manage the size of the dynamic blob
-  const { docSetName } = useDocSetName() // docSet will filter the vector similarity search
-  const { setFileData } = useFileData() // file upload data
-  const { setStage } = useStage() // upload or chat
-  // Hook for streaming ai responses with sources
+  const { setSize } = useDynamicBlobSize()
+  const { docSetName } = useDocSetName()
+  const { setFileData } = useFileData()
+  const { setStage } = useStage()
+  const [reportType, setReportType] = useState('research_report')
+
   const {
     messages,
     sourcesForMessages,
@@ -41,6 +43,7 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
     input,
     stop,
     reload,
+    accumulatedData,
   } = useVectorChat(id, docSetName, initialMessages, initialSources)
 
   const router = useRouter()
@@ -68,7 +71,13 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
   return (
     <div className="h-full w-full">
       <TopSection docSetName={docSetName} documentSets={documentSets} />
-      <ChatSection messages={messages} sources={sources} isLoading={isLoading} />
+      <ChatSection 
+        messages={messages} 
+        sources={sources} 
+        isLoading={isLoading} 
+        accumulatedData={accumulatedData}
+        reportType={reportType}
+      />
       <BottomSection
         handleInputClick={handleInputClick}
         handleReset={handleReset}
@@ -79,6 +88,7 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
         input={input}
         stop={stop}
         id={id}
+        setReportType={setReportType}
       />
     </div>
   )
@@ -95,12 +105,27 @@ const TopSection = ({ docSetName, documentSets }) => {
   )
 }
 
-const ChatSection = ({ messages, sources, isLoading }) => {
+const ChatSection = ({ messages, sources, isLoading, accumulatedData, reportType }) => {
+  const [reportContent, setReportContent] = useState('')
+  const converter = new showdown.Converter()
+
+  useEffect(() => {
+    if (reportType === 'table') {
+      const htmlTable = convertCSVToHTMLTable(accumulatedData)
+      setReportContent(htmlTable)
+    } else {
+      const converter = new showdown.Converter()
+      const markdownOutput = converter.makeHtml(accumulatedData)
+      setReportContent(markdownOutput)
+    }
+  }, [accumulatedData, reportType])
+
   return (
     <div className="flex flex-col items-center pt-6">
       {messages.length > 0 ? (
         <div className="pb-[100px] md:pb-40">
           <ChatList messages={messages} sources={sources} />
+          <div id="reportContainer" dangerouslySetInnerHTML={{ __html: reportContent }} />
           <ChatScrollAnchor trackVisibility={isLoading} />
         </div>
       ) : (
@@ -122,6 +147,7 @@ const BottomSection = ({
   input,
   stop,
   reload,
+  setReportType,
 }) => {
   return (
     <div className="absolute bottom-2 md:bottom-8 left-0 right-0" key={id}>
@@ -135,8 +161,66 @@ const BottomSection = ({
           handleChange={setInput}
         />
       </BlobStates>
+      <select onChange={(e) => setReportType(e.target.value)}>
+        <option value="research_report">Research Report</option>
+        <option value="table">Table</option>
+      </select>
     </div>
   )
 }
 
 export default MainVectorPanel
+
+// helper functions
+const convertCSVToHTMLTable = (csv: string): string => {
+  const rows = csv.trim().split('\n')
+  let html = '<table class="table table-bordered table-responsive">'
+
+  html += '<thead class="thead-dark"><tr>'
+  parseCSVLine(rows[0]).forEach(header => {
+    html += `<th>${header}</th>`
+  })
+  html += '</tr></thead>'
+
+  html += '<tbody>'
+  rows.slice(1).forEach(row => {
+    html += '<tr>'
+    parseCSVLine(row).forEach(cell => {
+      html += `<td>${cell}</td>`
+    })
+    html += '</tr>'
+  })
+  html += '</tbody>'
+  html += '</table>'
+
+  return html
+}
+
+const parseCSVLine = (line: string): string[] => {
+  let result: string[] = []
+  let startValueIdx = 0
+  let inQuotes = false
+
+  for (let i = 0; i < line.length; i++) {
+    if (line[i] === '"' && line[i - 1] !== '\\') {
+      inQuotes = !inQuotes
+      continue
+    }
+    
+    if (line[i] === ',' && !inQuotes) {
+      result.push(decodeCSVValue(line.substring(startValueIdx, i)))
+      startValueIdx = i + 1
+    }
+  }
+  result.push(decodeCSVValue(line.substring(startValueIdx)))
+
+  return result
+}
+
+const decodeCSVValue = (value: string): string => {
+  let trimmedValue = value.trim()
+  if (trimmedValue.startsWith('"') && trimmedValue.endsWith('"')) {
+    trimmedValue = trimmedValue.substring(1, trimmedValue.length - 1)
+  }
+  return trimmedValue.replace(/\\"/g, '"')
+}
