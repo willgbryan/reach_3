@@ -75,8 +75,9 @@ async def websocket_endpoint(websocket: WebSocket):
                 task = json_data.get("task")
                 report_type = json_data.get("report_type")
                 sources = json_data.get("sources", [])
+                edits = json_data.get("edits")  #None if not present
                 if task and report_type:
-                    await manager.start_streaming(task, report_type, sources, websocket)
+                    await manager.start_streaming(task, report_type, sources, websocket, edits)
                 else:
                     await websocket.send_json({"type": "error", "message": "Missing required parameters"})
             except json.JSONDecodeError:

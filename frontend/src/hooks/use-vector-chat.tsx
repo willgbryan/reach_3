@@ -1,9 +1,9 @@
 'use client'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useChat } from 'ai/react'
 import { toast } from 'sonner'
 
-export function useVectorChat(id, docSetName, initialMessages, initialSources) {
+export function useVectorChat(id, docSetName, initialMessages, initialSources, edits = '', editSubmissionCounter = 0) {
   const [sourcesForMessages, setSourcesForMessages] = useState(() => initialSources)
   const [accumulatedData, setAccumulatedData] = useState('')
   const wsRef = useRef(null)
@@ -16,15 +16,22 @@ export function useVectorChat(id, docSetName, initialMessages, initialSources) {
       id,
       setName: docSetName,
       sources: sourcesForMessages,
+      ...(edits && { edits }),
     },
     onResponse,
     onError,
   })
 
+  useEffect(() => {
+    if (editSubmissionCounter > 0) {
+      reload()
+      setAccumulatedData('')
+    }
+  }, [editSubmissionCounter, reload])
+
   function onResponse(response) {
     const reader = response.body.getReader()
     const decoder = new TextDecoder()
-
     async function readStream() {
       while (true) {
         const { done, value } = await reader.read()
@@ -41,18 +48,7 @@ export function useVectorChat(id, docSetName, initialMessages, initialSources) {
         }
       }
     }
-
     readStream()
-
-    // const sourcesHeader = response.headers.get('x-sources')
-    // const sources = sourcesHeader ? JSON.parse(atob(sourcesHeader)) : []
-    // const messageIndexHeader = response.headers.get('x-message-index')
-    // if (sources.length && messageIndexHeader !== null) {
-    //   setSourcesForMessages((prevSources) => ({
-    //     ...prevSources,
-    //     [messageIndexHeader]: sources,
-    //   }))
-    // }
   }
 
   function onError(e) {

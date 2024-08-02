@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
   }
 
   const json = await req.json()
-  const { messages, id: chatId } = json
+  const { messages, id: chatId, edits } = json
   const lastMessage = messages[messages.length - 1]
   const task = lastMessage?.content || ''
 
@@ -29,7 +29,8 @@ export async function POST(req: NextRequest) {
           const requestData = {
             task: task,
             report_type: "research_report",
-            sources: ["WEB"]
+            sources: ["WEB"],
+            ...(edits && { edits }),
           }
           socket.send(`${JSON.stringify(requestData)}`)
         }

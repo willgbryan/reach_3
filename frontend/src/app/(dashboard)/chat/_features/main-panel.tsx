@@ -49,6 +49,16 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
   const [reportType, setReportType] = useState('research_report')
   const [showBottomSection, setShowBottomSection] = useState(true);
   const [showEditMode, setShowEditMode] = useState(false);
+  const [edits, setEdits] = useState<string | undefined>(undefined)
+  const [editSubmissionCounter, setEditSubmissionCounter] = useState(0)
+
+  const handleSubmitEdits = (editsString: string) => {
+    setEdits(editsString)
+    console.log(`edit string ${editsString}`)
+    setShowEditMode(false)
+    setShowBottomSection(true)
+    setEditSubmissionCounter(prev => prev + 1)
+  }
 
   const {
     messages,
@@ -61,7 +71,7 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
     stop,
     reload,
     accumulatedData,
-  } = useVectorChat(id, docSetName, initialMessages, initialSources)
+  } = useVectorChat(id, docSetName, initialMessages, initialSources, edits, editSubmissionCounter)
 
   const router = useRouter()
 
@@ -112,6 +122,7 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
           setShowBottomSection={setShowBottomSection}
           handleNewQuery={handleNewQuery}
           handleDigDeeper={handleDigDeeper}
+          handleSubmitEdits={handleSubmitEdits}
         />
       </div>
       {showBottomSection && (
@@ -143,7 +154,8 @@ const ChatSection = ({
   showBottomSection,
   setShowBottomSection,
   handleNewQuery,
-  handleDigDeeper
+  handleDigDeeper,
+  handleSubmitEdits
 }) => {
   const [reportContent, setReportContent] = useState('');
   const [currentText, setCurrentText] = useState('');
@@ -177,12 +189,10 @@ const ChatSection = ({
     });
   };
 
-  const handleSubmitEdits = () => {
-    // call hook or function to submit the edits
-    console.log("Current Text:", currentText);
-    console.log("Deleted Text:", deletedText);
-    // Example: submitEdits(currentText, deletedText);
-  };
+  const onSubmitEdits = () => {
+    const editsString = `user-retained:${currentText} user-deleted:${deletedText}`
+    handleSubmitEdits(editsString)
+  }
 
   const updatedMessages = [...messages, { content: reportContent, type: 'report' }];
 
@@ -201,7 +211,7 @@ const ChatSection = ({
                   className='max-w-full p-2 shadow-sm sm:p-4'
                   onChange={handleEditChange}
                 />
-                <Button onClick={handleSubmitEdits} className="mt-4">Submit Edits</Button>
+                <Button variant="ghost" onClick={onSubmitEdits} className="mt-12">Submit Edits</Button>
               </div>
             </div>
           ) : (

@@ -49,13 +49,21 @@ class WebSocketManager:
             del self.sender_tasks[websocket]
             del self.message_queues[websocket]
 
-    async def start_streaming(self, task, report_type, sources, websocket):
+    async def start_streaming(self, task, report_type, sources, websocket, edits=None):
         """Start streaming the output."""
-        await run_agent(task, report_type, sources, websocket)
+        retained_text = []
+        deleted_text = []
+        if edits:
+            for part in edits.split():
+                if part.startswith('user-retained:'):
+                    retained_text.append(part[14:])
+                elif part.startswith('user-deleted:'):
+                    deleted_text.append(part[13:])
+        await run_agent(task, report_type, sources, websocket, retained_text, deleted_text)
         # return report
 
 
-async def run_agent( task, report_type, sources, websocket):
+async def run_agent( task, report_type, sources, websocket, retained_text, deleted_text):
         """Run the agent."""
         start_time = datetime.datetime.now()
         config_path = None
