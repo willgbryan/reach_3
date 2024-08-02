@@ -50,6 +50,7 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
   const [showBottomSection, setShowBottomSection] = useState(true);
   const [showEditMode, setShowEditMode] = useState(false);
   const [edits, setEdits] = useState<string | undefined>(undefined)
+  const [initialValue, setInitialValue] = useState('');
 
   const {
     messages,
@@ -68,6 +69,7 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
 
   const handleInputClick = async (value) => {
     if (value.length >= 1) {
+      setInitialValue(value);
       await append({
         content: value,
         role: 'user',
@@ -85,12 +87,6 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
   }
 
   const sources = sourcesForMessages ?? initialSources?.sources
-  
-  const handleNewQuery = () => {
-    setMessages([]);
-    setShowBottomSection(true);
-    setShowEditMode(false);
-  };
 
   const handleDigDeeper = () => {
     setShowEditMode(true);
@@ -111,9 +107,9 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
           setShowEditMode={setShowEditMode}
           showBottomSection={showBottomSection}
           setShowBottomSection={setShowBottomSection}
-          handleNewQuery={handleNewQuery}
           handleDigDeeper={handleDigDeeper}
           setEdits={setEdits}
+          initialValue={initialValue}
         />
       </div>
       {showBottomSection && (
@@ -144,13 +140,14 @@ const ChatSection = ({
   setShowEditMode,
   showBottomSection,
   setShowBottomSection,
-  handleNewQuery,
   handleDigDeeper,
-  setEdits
+  setEdits,
+  initialValue
 }) => {
   const [reportContent, setReportContent] = useState('');
   const [currentText, setCurrentText] = useState('');
   const [deletedText, setDeletedText] = useState('');
+  const [streamedData, setStreamedData] = useState('');
   const converter = new showdown.Converter();
 
   useEffect(() => {
@@ -180,18 +177,87 @@ const ChatSection = ({
     });
   };
 
-  const handleSubmitEdits = () => {
+  const handleNewQuery = () => {
+    setCurrentText('');
+    setShowBottomSection(true);
+    setShowEditMode(false);
+  };
+
+  const onResponse = (response) => {
+    const reader = response.body.getReader()
+    const decoder = new TextDecoder()
+    
+    async function readStream() {
+      try {
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          const chunk = decoder.decode(value)
+          const lines = chunk.split('\n')
+          for (const line of lines) {
+            if (line.trim() !== '') {
+              try {
+                const data = JSON.parse(line)
+                if (data.type === 'report') {
+                  setStreamedData(prev => prev + data.output)
+                }
+              } catch (parseError) {
+                console.error('Error parsing JSON:', parseError)
+                console.log('Problematic line:', line)
+                // Optionally, you can still update the accumulated data with the raw line
+                // setStreamedData(prev => prev + line + '\n')
+              }
+            }
+          }
+        }
+      } catch (streamError) {
+        console.error('Error reading stream:', streamError)
+      }
+    }
+    readStream()
+  }
+
+  const handleSubmitEdits = async () => {
     const editsString = `user-retained:${currentText} user-deleted:${deletedText}`
     console.log(`edits string ${editsString}`)
     setEdits(editsString)
+    setCurrentText('')
     setShowEditMode(false)
     setShowBottomSection(true)
-    // Trigger a new chat or update as needed
-    // You might want to add additional logic here, such as:
-    // - Resetting the edit mode
-    // - Triggering a new chat request
-    // - Updating the UI to reflect that edits have been submitted
+
+    setStreamedData('');
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: messages,
+          edits: editsString,
+          task: initialValue,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      onResponse(response);
+
+    } catch (error) {
+      console.error('Error:', error);
+    }
   }
+
+  useEffect(() => {
+    if (streamedData) {
+      setReportContent(streamedData);
+      setCurrentText(streamedData);
+      setShowBottomSection(false);
+    }
+  }, [streamedData]);
 
   const updatedMessages = [...messages, { content: reportContent, type: 'report' }];
 
