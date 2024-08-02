@@ -272,7 +272,7 @@ const ChatSection = ({
               <div className="w-1/2">
                 <ChatList messages={updatedMessages} sources={sources} />
               </div>
-              <div className="w-1/2 flex flex-col pt-6">
+              <div className="w-1/2 flex flex-col pt-12">
                 <ReactQuill 
                   value={currentText} 
                   className='max-w-full p-2 shadow-sm sm:p-4'

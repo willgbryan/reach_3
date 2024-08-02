@@ -1,5 +1,5 @@
 import { Heading } from '@/components/cult/gradient-heading'
-import { MobileNavSearchActions } from '@/components/nav/nav-blob-actions-mobile'
+// import { MobileNavSearchActions } from '@/components/nav/nav-blob-actions-mobile'
 import { LifetimePayment, Pricing } from '@/components/pricing'
 
 export const dynamic = 'force-dynamic'
@@ -17,7 +17,7 @@ export default async function PaidExamplePage() {
       </Pricing>
 
       <div className="absolute bottom-8  right-8">
-        <MobileNavSearchActions messages={[]} handleReset={null} />
+        {/* <MobileNavSearchActions messages={[]} handleReset={null} /> */}
       </div>
     </>
   )

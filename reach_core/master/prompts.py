@@ -179,12 +179,12 @@ def generate_table_prompt(question, context, report_format="csv", total_words=20
            f' The table should be detailed, informative, in-depth, and a minimum of {total_words} rows.' \
            'It is REQUIRED that the output only be valid .csv format. Commas that are not used to separate discrete values (like commas in sentences) should be replaced with a blank space.'
 
-def get_report_by_type(report_type):
+def get_report_by_type(report_type, retained_text="", deleted_text=""):
      report_type_mapping = {
         ReportType.DetailedJson.value:generate_detailed_json_prompt,
         ReportType.Json.value: generate_json_prompt,
         ReportType.Paragraph.value: generate_paragraph_prompt,
-        ReportType.ResearchReport.value: generate_report_prompt,
+        ReportType.ResearchReport.value: generate_report_prompt(retained_text=retained_text, deleted_text=deleted_text),
         ReportType.ResourceReport.value: generate_resource_report_prompt,
         ReportType.OutlineReport.value: generate_outline_report_prompt,
         ReportType.CustomReport.value: generate_custom_report_prompt,

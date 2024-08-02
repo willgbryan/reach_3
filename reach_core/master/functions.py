@@ -225,7 +225,7 @@ async def generate_report(
         report:
 
     """
-    generate_prompt = get_report_by_type(report_type)
+    generate_prompt = get_report_by_type(report_type, retained_text, deleted_text)
     report = ""
 
     if report_type == "subtopic_report":
