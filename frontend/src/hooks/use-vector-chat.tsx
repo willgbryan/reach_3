@@ -25,22 +25,35 @@ export function useVectorChat(id, docSetName, initialMessages, initialSources, e
   function onResponse(response) {
     const reader = response.body.getReader()
     const decoder = new TextDecoder()
+  
     async function readStream() {
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        const chunk = decoder.decode(value)
-        const lines = chunk.split('\n')
-        for (const line of lines) {
-          if (line.trim() !== '') {
-            const data = JSON.parse(line)
-            if (data.type === 'report') {
-              setAccumulatedData(prev => prev + data.output)
+      try {
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          const chunk = decoder.decode(value)
+          const lines = chunk.split('\n')
+          for (const line of lines) {
+            if (line.trim() !== '') {
+              try {
+                const data = JSON.parse(line)
+                if (data.type === 'report') {
+                  setAccumulatedData(prev => prev + data.output)
+                }
+              } catch (parseError) {
+                console.error('Error parsing JSON:', parseError)
+                console.log('Problematic line:', line)
+                // Optionally, you can still update the accumulated data with the raw line
+                // setAccumulatedData(prev => prev + line + '\n')
+              }
             }
           }
         }
+      } catch (streamError) {
+        console.error('Error reading stream:', streamError)
       }
     }
+  
     readStream()
   }
 
