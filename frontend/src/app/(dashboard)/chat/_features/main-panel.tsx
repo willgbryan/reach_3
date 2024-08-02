@@ -50,15 +50,6 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
   const [showBottomSection, setShowBottomSection] = useState(true);
   const [showEditMode, setShowEditMode] = useState(false);
   const [edits, setEdits] = useState<string | undefined>(undefined)
-  const [editSubmissionCounter, setEditSubmissionCounter] = useState(0)
-
-  const handleSubmitEdits = (editsString: string) => {
-    setEdits(editsString)
-    console.log(`edit string ${editsString}`)
-    setShowEditMode(false)
-    setShowBottomSection(true)
-    setEditSubmissionCounter(prev => prev + 1)
-  }
 
   const {
     messages,
@@ -122,7 +113,7 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
           setShowBottomSection={setShowBottomSection}
           handleNewQuery={handleNewQuery}
           handleDigDeeper={handleDigDeeper}
-          handleSubmitEdits={handleSubmitEdits}
+          setEdits={setEdits}
         />
       </div>
       {showBottomSection && (
@@ -155,7 +146,7 @@ const ChatSection = ({
   setShowBottomSection,
   handleNewQuery,
   handleDigDeeper,
-  handleSubmitEdits
+  setEdits
 }) => {
   const [reportContent, setReportContent] = useState('');
   const [currentText, setCurrentText] = useState('');
@@ -189,9 +180,17 @@ const ChatSection = ({
     });
   };
 
-  const onSubmitEdits = () => {
+  const handleSubmitEdits = () => {
     const editsString = `user-retained:${currentText} user-deleted:${deletedText}`
-    handleSubmitEdits(editsString)
+    console.log(`edits string ${editsString}`)
+    setEdits(editsString)
+    setShowEditMode(false)
+    setShowBottomSection(true)
+    // Trigger a new chat or update as needed
+    // You might want to add additional logic here, such as:
+    // - Resetting the edit mode
+    // - Triggering a new chat request
+    // - Updating the UI to reflect that edits have been submitted
   }
 
   const updatedMessages = [...messages, { content: reportContent, type: 'report' }];
@@ -211,7 +210,7 @@ const ChatSection = ({
                   className='max-w-full p-2 shadow-sm sm:p-4'
                   onChange={handleEditChange}
                 />
-                <Button variant="ghost" onClick={onSubmitEdits} className="mt-12">Submit Edits</Button>
+                <Button variant="ghost" onClick={handleSubmitEdits} className="mt-12">Submit Edits</Button>
               </div>
             </div>
           ) : (

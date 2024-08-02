@@ -42,7 +42,7 @@ def generate_paragraph_prompt(question, context, report_format="apa", total_word
 
     return f'Information: """{context}"""\n\n' \
            f'Using ONLY the above information, answer the following' \
-           f' query or task: "{question}" in a detailed single paragraph --' \
+           f' query or task: "{question}" in a detailed single paragraph that is valid JSON--' \
            " The single paragraph should focus on the answer to the query, should be well structured, informative," \
            f" concise yet comprehensive, with facts and numbers if available and a minimum of {total_words} words.\n" \
            "You should strive to write the paragraph concisely using all relevant and necessary information provided.\n" \
@@ -62,7 +62,7 @@ def generate_paragraph_prompt(question, context, report_format="apa", total_word
             f"You MUST write the paragraph in {report_format} format.\n " \
             f"'You MUST include all relevant source urls.'\
              'Every url should be hyperlinked: [url website](url)'\n"\
-            f"Please do your best, this is very important to my career. " \
+            f"Please do your best, this is very important to my career. Valid JSON is a critical component to the functionality of my job." \
             f"Assume that the current date is {datetime.now().strftime('%B %d, %Y')}"
 
 def generate_json_prompt(question, context, report_format="apa", total_words=2000):
