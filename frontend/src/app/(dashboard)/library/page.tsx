@@ -36,12 +36,12 @@ export default async function Library({ searchParams }: any) {
     <>
       <div className="w-full md:pl-36 py-12 ">
         <div className="flex justify-between">
-          <Heading size="xl">Library</Heading>
+          <Heading size="xl">Nice find... We're still working on this.</Heading>
         </div>
-        <Separator className="py-2 border-brand-300/40  border-l border-y rounded-l-lg bg-brand-400" />
+        {/* <Separator className="py-2 border-brand-300/40  border-l border-y rounded-l-lg bg-brand-400" /> */}
       </div>
 
-      <div className="w-full flex-col md:flex-row  pb-12 flex  justify-center gap-12 items-center ">
+      {/* <div className="w-full flex-col md:flex-row  pb-12 flex  justify-center gap-12 items-center ">
         <div className="hidden md:block">
           <Search />
         </div>
@@ -71,7 +71,7 @@ export default async function Library({ searchParams }: any) {
       </div>
       <div className="absolute bottom-8  right-8">
         <MobileNavSearchActions messages={[]} handleReset={null} />
-      </div>
+      </div> */}
     </>
   )
 }

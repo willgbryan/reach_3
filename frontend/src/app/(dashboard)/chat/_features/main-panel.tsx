@@ -7,6 +7,8 @@ import showdown from 'showdown';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 
+import { ModeToggle } from '@/components/theme-toggle'
+
 import { SelectScrollable } from '@/components/chat/chat-document-sets'
 import { ChatList } from '@/components/chat/chat-list'
 import { ChatScrollAnchor } from '@/components/chat/chat-scroll-anchor'
@@ -223,7 +225,7 @@ const ChatSection = ({
     setEdits(editsString)
     setCurrentText('')
     setShowEditMode(false)
-    setShowBottomSection(true)
+    setShowBottomSection(false)
 
     setStreamedData('');
 
@@ -321,6 +323,7 @@ const TopSection = ({ docSetName, documentSets }) => {
       <SelectScrollable prevDocSets={documentSets} />
       <div className="absolute right-8 top-8">
         <Heading>{docSetName}</Heading>
+        <ModeToggle />
       </div>
     </div>
   )

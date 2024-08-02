@@ -23,8 +23,8 @@ def generate_search_queries_prompt(question: str, parent_query: str, report_type
         task = question
 
     prompt = {
-        "task": f"Write {max_iterations} google search queries to search online that form an objective opinion from the following task: \"{task}\"",
-        "user_collected_info": f"The user has the existing data: {retained_text}, and does not like the following data: {deleted_text}",
+        "task": f"Write {max_iterations} google search queries to search online that form an objective opinion from the following task: \"{task}\", while taking into account the user_collected_info",
+        "user_collected_info": f"The user has the existing data: {retained_text}, and has indicated they did not find the following data useful: {deleted_text}",
         "date_needed": f"Use the current date if needed: {datetime.now().strftime('%B %d, %Y')}.",
         "files_info": f"Files can be present and questions can be asked about them. Uploaded files if any: {uploaded_files}",
         "additional_instructions": "Also include in the queries specified task details such as locations, names, etc. user_collected_info should heavily influence the direction of the search queries, enrich the existing detail and reach for new information not contained in either the existing or unliked data.",
@@ -103,10 +103,9 @@ def generate_report_prompt(question, context, report_format="apa", total_words=2
     Returns: str: The report prompt for the given question and research summary
     """
 
-    return f'Information: """{context}"""\n\n' \
+    return f'Information: """{context}""" The user already has the following information in their report: EXISTING REPORT """{retained_text}""" and does not wish to see information similar to REMOVED SECTIONS """{deleted_text}"""\n' \
            f'Using ONLY the above information, answer the following' \
            f' query or task: "{question}" in a detailed report --' \
-           f'The user already has the following information in their report: EXISTING REPORT """{retained_text}""" and does not wish to see information similar to REMOVED SECTIONS """{deleted_text}"""' \
            " The report should focus on the answer to the query, should be well structured, informative," \
            f" in depth and comprehensive, with facts and numbers if available and a minimum of {total_words} words.\n" \
            "You should strive to write the report as long as you can using all relevant and necessary information provided, preserving the existing report and adding rich details.\n" \

@@ -3,7 +3,9 @@ import { Heading } from '@/components/cult/gradient-heading'
 import { Separator } from '@/components/ui/separator'
 import { SidebarPanel } from './sidebar-panel'
 
-export function DesktopLayout({ historyChildren, children, user }) {
+// export function DesktopLayout({ historyChildren, children, user }) {
+export function DesktopLayout({ children, user }) {
+
   return (
     <div className="flex h-full items-stretch dark:bg-stone-800 bg-stone-100">
       <SidebarPanel user={user?.id}>
@@ -22,10 +24,10 @@ export function DesktopLayout({ historyChildren, children, user }) {
             </div>
           }
         >
-          <Heading variant="secondary" size={'xxs'}>
+          {/* <Heading variant="secondary" size={'xxs'}>
             History
-          </Heading>
-          <div className="">{user ? historyChildren : null}</div>
+          </Heading> */}
+          {/* <div className="">{user ? historyChildren : null}</div> */}
         </Suspense>
       </SidebarPanel>
       <div className="flex-grow rounded-lg flex flex-col items-center w-full">

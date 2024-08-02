@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { NavHeading } from '@/components/nav/nav-heading';
 import { NavSearchActions } from '@/components/nav/nav-blob-actions';
 import { NavLinks } from '@/components/nav/nav-links';
-import { NavFooter } from '@/components/nav/nav-footer';
+// import { NavFooter } from '@/components/nav/nav-footer';
 
 export function SidebarPanel({ children, user }) {
   const [open, setOpen] = useState(false);
@@ -21,7 +21,7 @@ export function SidebarPanel({ children, user }) {
           <NavSearchActions isCollapsed={!open} />
           <NavLinks isCollapsed={!open} />
           <div className={cn(!open ? 'pl-4' : 'pl-3')}>{children}</div>
-          <NavFooter isCollapsed={!open} user={user} />
+          {/* <NavFooter isCollapsed={!open} user={user} /> */}
         </div>
       </SidebarBody>
     </Sidebar>

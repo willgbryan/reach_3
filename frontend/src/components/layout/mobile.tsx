@@ -3,7 +3,7 @@ import { Suspense } from 'react'
 import Link from 'next/link'
 import { Heading } from '@/components/cult/gradient-heading'
 import { NavSearchActions } from '@/components/nav/nav-blob-actions'
-import { NavFooter } from '@/components/nav/nav-footer'
+// import { NavFooter } from '@/components/nav/nav-footer'
 import { NavHeading } from '@/components/nav/nav-heading'
 import { NavLinks } from '@/components/nav/nav-links'
 import { CultIcon } from '@/components/ui/icons'
@@ -13,7 +13,9 @@ import { Sidebar, SidebarBody } from "@/components/cult/sidebar"
 import { useToggleMobileNav } from '@/hooks/use-vector-blob'
 import { cn } from '@/lib/utils'
 
-export function MobileLayout({ historyChildren, children, user }) {
+// export function MobileLayout({ historyChildren, children, user }) {
+export function MobileLayout({ children, user }) {
+
   const { isMobileNavOpen, setIsMobileNavOpen } = useToggleMobileNav()
 
   return (
@@ -48,12 +50,12 @@ export function MobileLayout({ historyChildren, children, user }) {
                 <Heading variant="secondary" size={'xxs'}>
                   History
                 </Heading>
-                <ScrollArea className="flex-grow">
+                {/* <ScrollArea className="flex-grow">
                   {user ? historyChildren : null}
-                </ScrollArea>
+                </ScrollArea> */}
               </Suspense>
               <div className="mt-auto">
-                <NavFooter isCollapsed={false} user={user} />
+                {/* <NavFooter isCollapsed={false} user={user} /> */}
               </div>
             </div>
           </SidebarBody>
