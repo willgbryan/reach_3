@@ -105,7 +105,7 @@ def generate_report_prompt(question, context, report_format="apa", total_words=2
 
     return f'Information: """{context}"""\n\n' \
            f'Using ONLY the above information, answer the following' \
-           f' query or task: "{question}" in a detailed report --' \
+           f' query or task: "{question}" in a detailed report that is valid JSON --' \
            f'The user already has the following information in their report: EXISTING REPORT """{retained_text}""" and does not wish to see information similar to REMOVED SECTIONS """{deleted_text}"""' \
            " The report should focus on the answer to the query, should be well structured, informative," \
            f" in depth and comprehensive, with facts and numbers if available and a minimum of {total_words} words.\n" \
@@ -126,7 +126,7 @@ def generate_report_prompt(question, context, report_format="apa", total_words=2
             f"You MUST write the report in {report_format} format.\n " \
             f"'You MUST include all relevant source urls.'\
              'Every url should be hyperlinked: [url website](url)'\n"\
-            f"Please do your best, this is very important to my career. " \
+            f"Please do your best, this is very important to my career. Valid JSON is critical for success." \
             f"Assume that the current date is {datetime.now().strftime('%B %d, %Y')}"
 
 
