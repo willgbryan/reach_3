@@ -2,9 +2,9 @@
 import { Suspense } from 'react'
 import Link from 'next/link'
 import { Heading } from '@/components/cult/gradient-heading'
-import { NavSearchActions } from '@/components/nav/nav-blob-actions'
+// import { NavSearchActions } from '@/components/nav/nav-blob-actions'
 // import { NavFooter } from '@/components/nav/nav-footer'
-import { NavHeading } from '@/components/nav/nav-heading'
+// import { NavHeading } from '@/components/nav/nav-heading'
 import { NavLinks } from '@/components/nav/nav-links'
 import { CultIcon } from '@/components/ui/icons'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -29,8 +29,8 @@ export function MobileLayout({ children, user }) {
         <Sidebar open={isMobileNavOpen} setOpen={setIsMobileNavOpen}>
           <SidebarBody className="justify-between gap-10 h-full bg-white dark:bg-stone-900">
             <div className="flex flex-col h-full">
-              <NavHeading isCollapsed={false} />
-              <NavSearchActions isCollapsed={false} />
+              {/* <NavHeading isCollapsed={false} /> */}
+              {/* <NavSearchActions isCollapsed={false} /> */}
               <NavLinks isCollapsed={false} />
               <div className="pr-4">
                 <Separator className="my-2" />

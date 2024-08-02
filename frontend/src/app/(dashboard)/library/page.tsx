@@ -4,7 +4,7 @@ import z from 'zod'
 import { searchDocuments } from '@/app/_data/document_sections'
 import { getSession } from '@/app/_data/user'
 import { Heading } from '@/components/cult/gradient-heading'
-import { MobileNavSearchActions } from '@/components/nav/nav-blob-actions-mobile'
+// import { MobileNavSearchActions } from '@/components/nav/nav-blob-actions-mobile'
 import { Separator } from '@/components/ui/separator'
 
 import { ChatCount, DocumentCount, LoadingCard } from './count'
