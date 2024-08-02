@@ -59,7 +59,7 @@ async def choose_agent(query, cfg):
         return "Default Agent", "You are an AI critical thinker research assistant. Your sole purpose is to write well written, critically acclaimed, objective and structured reports on given text."
 
 
-async def get_sub_queries(query: str, agent_role_prompt: str, cfg, parent_query: str, report_type:str, websocket):
+async def get_sub_queries(query: str, agent_role_prompt: str, cfg, parent_query: str, report_type:str, websocket, retained_text, deleted_text):
     """
     Gets the sub queries
     Args:
@@ -86,7 +86,9 @@ async def get_sub_queries(query: str, agent_role_prompt: str, cfg, parent_query:
                 parent_query, 
                 report_type, 
                 uploaded_files,
-                max_iterations=max_research_iterations
+                max_iterations=max_research_iterations,
+                retained_text="",
+                deleted_text=""
                 )
             }
         ],
@@ -203,7 +205,9 @@ async def generate_report(
     websocket,
     cfg,
     main_topic: str = "",
-    existing_headers: list = []
+    existing_headers: list = [],
+    retained_text="",
+    deleted_text=""
  ):
     """
     generates the final report
@@ -228,7 +232,8 @@ async def generate_report(
         content = f"{generate_prompt(query, existing_headers, main_topic, context, cfg.report_format, cfg.total_words)}"
     else:
         content = (
-            f"{generate_prompt(query, context, cfg.report_format, cfg.total_words)}")
+            f"{generate_prompt(query, context, cfg.report_format, cfg.total_words)}"
+        )
 
     try:
         report = await create_chat_completion(

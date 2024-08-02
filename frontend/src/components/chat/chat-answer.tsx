@@ -68,7 +68,7 @@ export function AnswerMessage({ submittedQ, content, children }: AnswerMessagePr
             <AnimatedQuestion submittedQ={submittedQ} />
           </CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-col justify-end p-2 pl-6 md:px-4 md:pl-6 ">
+        <CardContent className="flex flex-col justify-end p-2 pl-6 md:px-4 md:pl-6 text-md">
           <MemoizedReactMarkdown
             className="prose break-words dark:prose-invert prose-p:leading-relaxed prose-pre:p-0"
             remarkPlugins={[remarkGfm, remarkMath]}

@@ -71,7 +71,7 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
     stop,
     reload,
     accumulatedData,
-  } = useVectorChat(id, docSetName, initialMessages, initialSources, edits, editSubmissionCounter)
+  } = useVectorChat(id, docSetName, initialMessages, initialSources, edits)
 
   const router = useRouter()
 

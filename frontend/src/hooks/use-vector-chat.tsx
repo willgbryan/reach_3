@@ -1,9 +1,9 @@
 'use client'
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import { useChat } from 'ai/react'
 import { toast } from 'sonner'
 
-export function useVectorChat(id, docSetName, initialMessages, initialSources, edits = '', editSubmissionCounter = 0) {
+export function useVectorChat(id, docSetName, initialMessages, initialSources, edits = '') {
   const [sourcesForMessages, setSourcesForMessages] = useState(() => initialSources)
   const [accumulatedData, setAccumulatedData] = useState('')
   const wsRef = useRef(null)
@@ -21,13 +21,6 @@ export function useVectorChat(id, docSetName, initialMessages, initialSources, e
     onResponse,
     onError,
   })
-
-  useEffect(() => {
-    if (editSubmissionCounter > 0) {
-      reload()
-      setAccumulatedData('')
-    }
-  }, [editSubmissionCounter, reload])
 
   function onResponse(response) {
     const reader = response.body.getReader()

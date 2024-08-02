@@ -24,7 +24,9 @@ class Reach:
          role=None,
          parent_query="",
          subtopics=[],
-         visited_urls=set()
+         visited_urls=set(),
+         retained_text="",
+         deleted_text="",
      ):
         """
         Initialize the Reach class.
@@ -46,6 +48,8 @@ class Reach:
         self.sources = sources
         self.memory = Memory(self.cfg.embedding_provider)
         self.visited_urls = visited_urls
+        self.retained_text = retained_text
+        self.deleted_text = deleted_text
 
         # Only relevant for DETAILED REPORTS
         # --------------------------------------
@@ -116,7 +120,9 @@ class Reach:
                 agent_role_prompt=self.role, 
                 report_type=self.report_type,
                 websocket=self.websocket, 
-                cfg=self.cfg
+                cfg=self.cfg,
+                retained_text=self.retained_text,
+                deleted_text=self.deleted_text
             )
 
         return report
@@ -208,7 +214,8 @@ class Reach:
             context: List of context
         """
         content = []
-        sub_queries = await get_sub_queries(query, self.role, self.cfg, self.parent_query, self.report_type, self.websocket) + [query]
+        sub_queries = await get_sub_queries(query, self.role, self.cfg, self.parent_query, self.report_type, 
+                                            self.websocket, self.retained_text, self.deleted_text) + [query]
         # await stream_output("logs",
         #                     f"I will conduct my research based on the following queries: {sub_queries}...",
         #                     self.websocket)

@@ -51,15 +51,15 @@ class WebSocketManager:
 
     async def start_streaming(self, task, report_type, sources, websocket, edits=None):
         """Start streaming the output."""
-        retained_text = []
-        deleted_text = []
+        retained_text = ""
+        deleted_text = ""
         if edits:
             for part in edits.split():
                 if part.startswith('user-retained:'):
-                    retained_text.append(part[14:])
+                    retained_text += part[14:] + " "
                 elif part.startswith('user-deleted:'):
-                    deleted_text.append(part[13:])
-        await run_agent(task, report_type, sources, websocket, retained_text, deleted_text)
+                    deleted_text += part[13:] + " "
+        await run_agent(task, report_type, sources, websocket, retained_text.strip(), deleted_text.strip())
         # return report
 
 
@@ -74,7 +74,8 @@ async def run_agent( task, report_type, sources, websocket, retained_text, delet
                                             source_urls=None, sources=sources, config_path=config_path, websocket=websocket)
             else:
                 researcher = BasicReport(query=task, report_type=report_type,
-                                         source_urls=None, sources=sources, config_path=config_path, websocket=websocket)
+                                         source_urls=None, sources=sources, config_path=config_path, websocket=websocket, 
+                                         retained_text=retained_text, deleted_text=deleted_text)
 
             await researcher.run()
             

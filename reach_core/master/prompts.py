@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 
 from reach_core.utils.enum import ReportType
 
-def generate_search_queries_prompt(question: str, parent_query: str, report_type: str, uploaded_files: List[str], max_iterations: int=3) -> str:
+def generate_search_queries_prompt(question: str, parent_query: str, report_type: str, uploaded_files: List[str], max_iterations: int=3, retained_text="", deleted_text="") -> str:
     """ Generates the search queries prompt for the given question in JSON format.
     Args: 
         question (str): The question to generate the search queries prompt for
@@ -23,10 +23,11 @@ def generate_search_queries_prompt(question: str, parent_query: str, report_type
         task = question
 
     prompt = {
-        "task": f"Write {max_iterations} google search queries to search online that find specific names of tools, products, or services to solve: \"{task}\"",
+        "task": f"Write {max_iterations} google search queries to search online that form an objective opinion from the following task: \"{task}\"",
+        "user_collected_info": f"The user has the existing data: {retained_text}, and does not like the following data: {deleted_text}",
         "date_needed": f"Use the current date if needed: {datetime.now().strftime('%B %d, %Y')}.",
         "files_info": f"Files can be present and questions can be asked about them. Uploaded files if any: {uploaded_files}",
-        "additional_instructions": "Prioritize finding the best potential solution, this could mean avoiding industry incumbents that frequently dominate the adveristing. Also include in the queries specified task details such as locations, names, etc.",
+        "additional_instructions": "Also include in the queries specified task details such as locations, names, etc. user_collected_info should heavily influence the direction of the search queries, enrich the existing detail and reach for new information not contained in either the existing or unliked data.",
         "response_format": "You must respond with a list of strings in the following format: [\"query 1\", \"query 2\", \"query 3\"]."
     }
 
@@ -95,7 +96,7 @@ def generate_detailed_json_prompt(question, context, report_format="apa", total_
            f"Assume that the current date is {datetime.now().strftime('%B %d, %Y')}"
 
 
-def generate_report_prompt(question, context, report_format="apa", total_words=2000):
+def generate_report_prompt(question, context, report_format="apa", total_words=2000, retained_text="", deleted_text=""):
     """ Generates the report prompt for the given question and research summary.
     Args: question (str): The question to generate the report prompt for
             research_summary (str): The research summary to generate the report prompt for
@@ -105,9 +106,10 @@ def generate_report_prompt(question, context, report_format="apa", total_words=2
     return f'Information: """{context}"""\n\n' \
            f'Using ONLY the above information, answer the following' \
            f' query or task: "{question}" in a detailed report --' \
+           f'The user already has the following information in their report: EXISTING REPORT """{retained_text}""" and does not wish to see information similar to REMOVED SECTIONS """{deleted_text}"""' \
            " The report should focus on the answer to the query, should be well structured, informative," \
            f" in depth and comprehensive, with facts and numbers if available and a minimum of {total_words} words.\n" \
-           "You should strive to write the report as long as you can using all relevant and necessary information provided.\n" \
+           "You should strive to write the report as long as you can using all relevant and necessary information provided, preserving the existing report and adding rich details.\n" \
            "You must write the report with markdown syntax.\n " \
            f"Use an unbiased and journalistic tone. \n" \
            "You MUST determine your own concrete and valid opinion based on the given information. Do NOT deter to general and meaningless conclusions.\n" \
