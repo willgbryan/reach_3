@@ -320,9 +320,9 @@ const ChatSection = ({
 const TopSection = ({ docSetName, documentSets }) => {
   return (
     <div className="flex justify-center items-center pt-8">
-      <SelectScrollable prevDocSets={documentSets} />
+      {/* <SelectScrollable prevDocSets={documentSets} /> */}
       <div className="absolute right-8 top-8">
-        <Heading>{docSetName}</Heading>
+        {/* <Heading>{docSetName}</Heading> */}
         <ModeToggle />
       </div>
     </div>
