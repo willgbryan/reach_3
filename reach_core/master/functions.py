@@ -208,33 +208,14 @@ async def generate_report(
     existing_headers: list = [],
     retained_text="",
     deleted_text=""
- ):
-    """
-    generates the final report
-    Args:
-        query:
-        context:
-        agent_role_prompt:
-        report_type:
-        websocket:
-        cfg:
-        main_topic:
-        existing_headers:
-
-    Returns:
-        report:
-
-    """
+):
     generate_prompt = get_report_by_type(report_type, retained_text, deleted_text)
     report = ""
-
     if report_type == "subtopic_report":
         content = f"{generate_prompt(query, existing_headers, main_topic, context, cfg.report_format, cfg.total_words)}"
     else:
-        content = (
-            f"{generate_prompt(query, context, cfg.report_format, cfg.total_words)}"
-        )
-
+        content = f"{generate_prompt(query, context, cfg.report_format, cfg.total_words)}"
+    
     try:
         report = await create_chat_completion(
             model=cfg.smart_llm_model,
@@ -250,7 +231,6 @@ async def generate_report(
         )
     except Exception as e:
         print(f"{Fore.RED}Error in generate_report: {e}{Style.RESET_ALL}")
-
     return report
 
 

@@ -16,7 +16,7 @@ export function SidebarPanel({ children, user }) {
     <Sidebar open={open} setOpen={setOpen}>
       <SidebarBody className="justify-between gap-10">
         <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden bg-brand dark:bg-stone-800 h-full">
-          <div className={cn("flex items-center py-1 relative z-20 mt-6", !open ? 'pl-6' : 'pl-4')}>
+          <div className={cn("flex items-center py-1 relative z-20 mt-6", !open ? 'pl-6' : 'pl-5')}>
             {open ? <Logo /> : <LogoIcon />}
           </div>
           {/* <NavHeading isCollapsed={!open} /> */}

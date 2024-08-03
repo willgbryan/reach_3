@@ -180,18 +180,18 @@ def generate_table_prompt(question, context, report_format="csv", total_words=20
            'It is REQUIRED that the output only be valid .csv format. Commas that are not used to separate discrete values (like commas in sentences) should be replaced with a blank space.'
 
 def get_report_by_type(report_type, retained_text="", deleted_text=""):
-     report_type_mapping = {
-        ReportType.DetailedJson.value:generate_detailed_json_prompt,
+    report_type_mapping = {
+        ReportType.DetailedJson.value: generate_detailed_json_prompt,
         ReportType.Json.value: generate_json_prompt,
         ReportType.Paragraph.value: generate_paragraph_prompt,
-        ReportType.ResearchReport.value: generate_report_prompt(retained_text=retained_text, deleted_text=deleted_text),
+        ReportType.ResearchReport.value: generate_report_prompt,
         ReportType.ResourceReport.value: generate_resource_report_prompt,
         ReportType.OutlineReport.value: generate_outline_report_prompt,
         ReportType.CustomReport.value: generate_custom_report_prompt,
         ReportType.SubtopicReport.value: generate_subtopic_report_prompt,
         ReportType.TableReport.value: generate_table_prompt
-     }
-     return report_type_mapping[report_type]
+    }
+    return lambda *args, **kwargs: report_type_mapping[report_type](*args, **kwargs, retained_text=retained_text, deleted_text=deleted_text)
 
 
 def auto_agent_instructions():
