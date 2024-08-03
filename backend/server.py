@@ -72,10 +72,12 @@ async def websocket_endpoint(websocket: WebSocket):
             data = await websocket.receive_text()
             try:
                 json_data = json.loads(data)
+                print(f"raw data {json_data}")
                 task = json_data.get("task")
                 report_type = json_data.get("report_type")
                 sources = json_data.get("sources", [])
                 edits = json_data.get("edits")  #None if not present
+                print(f"ws edits {edits}")
                 if task and report_type:
                     await manager.start_streaming(task, report_type, sources, websocket, edits)
                 else:

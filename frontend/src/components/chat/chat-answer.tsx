@@ -64,7 +64,7 @@ export function AnswerMessage({ submittedQ, content, children }: AnswerMessagePr
     <>
       <Card className="max-w-sm p-2 sm:p-4 lg:min-w-[768px] bg-brand border-none">
         <CardHeader className="relative pb-2 pr-6  lg:pb-0">
-          <CardTitle className="pt-2 text-2xl font-bold text-vanta-800/90 dark:text-white/90 md:max-w-lg">
+          <CardTitle className="pt-2 font-bold text-vanta-800/90 dark:text-white/90 md:max-w-lg mx-auto">
             <AnimatedQuestion submittedQ={submittedQ} />
           </CardTitle>
         </CardHeader>

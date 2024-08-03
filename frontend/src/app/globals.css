@@ -2,6 +2,69 @@
 @tailwind components;
 @tailwind utilities;
 
+@keyframes highlight {
+  0% {
+    box-shadow: 0 0 0 0 rgba(128, 90, 213);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(66, 153, 225, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(66, 153, 225, 0);
+  }
+}
+
+.highlight-animation {
+  animation: highlight 2s ease-out;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 0.5s ease-in-out 3;
+}
+
+.pointer-events-none {
+  pointer-events: none;
+}
+
+@font-face {
+  font-family: 'BaruSans';
+  src: url('/fonts/BaruSansWOFF/BaruSans-Light.woff') format('woff'),
+       url('/fonts/BaruSansOTF/BaruSans-Light.otf') format('opentype'),
+       url('/fonts/BaruSansTTF/BaruSans-Light.ttf') format('truetype');
+  font-weight: thin;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'BaruSans';
+  src: url('/fonts/BaruSansOTF/BaruSans-Regular.otf') format('opentype'),
+       url('/fonts/BaruSansWOFF/BaruSans-Regular.woff') format('woff'),
+       url('/fonts/BaruSansTTF/BaruSans-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'BaruSans';
+  src: url('/fonts/BaruSansOTF/BaruSans-Bold.otf') format('opentype'),
+       url('/fonts/BaruSansWOFF/BaruSans-Bold.woff') format('woff'),
+       url('/fonts/BaruSansTTF/BaruSans-Bold.ttf') format('truetype');
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+
 @layer base {
   :root {
     --background: 0, 0%, 98%; /* A very light grey, almost white, for a bright and clean canvas */
@@ -65,9 +128,9 @@
     --destructive-foreground: 0 85.7% 97.3%;
 
     --border: 240 3.7% 15.9%;
-    --ring: 220, 70%, 50%; /* A brighter blue, drawing attention to the focused element in dark mode */
+    
     --input: 240 3.7% 15.9%;
-    --ring: 142.4 71.8% 29.2%;
+    /* --ring: 142.4 71.8% 29.2%; */
     --radius: 0.4rem; /* Keeping the corners consistently sleek, preserving the design language across modes */
   }
 }
@@ -190,4 +253,93 @@ input:-webkit-autofill:active {
   -webkit-background-clip: text;
   -webkit-text-fill-color: #958f7a;
   transition: background-color 5000s ease-in-out 0s;
+}
+
+.g_id_signin {
+  all: unset;
+  display: inline-block;
+  width: full;
+  background-color: #121212;
+}
+
+.application-name-button {
+  background: none;
+  border: none;
+  color: purple-500;
+  cursor: pointer;
+  font-weight: bold;
+  text-decoration: underline;
+}
+
+.application-name-button:hover {
+  text-decoration: none;
+}
+
+.paid-feature-container {
+  position: relative;
+}
+
+.paid-feature-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #ff7300;
+  background-color: rgba(0, 0, 0, 0);
+  padding: 0.5rem 1rem;
+  border-radius: 0.25rem;
+  z-index: 10;
+}
+
+.blur {
+  filter: blur(4px);
+  pointer-events: none;
+}
+
+.corner-borders::before,
+.corner-borders::after,
+.corner-borders > :first-child::before,
+.corner-borders > :first-child::after {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border: 2px solid black;
+}
+
+.corner-borders::before {
+  top: -2px;
+  left: -2px;
+  border-right: none;
+  border-bottom: none;
+}
+
+.corner-borders::after {
+  top: -2px;
+  right: -2px;
+  border-left: none;
+  border-bottom: none;
+}
+
+.corner-borders > :first-child::before {
+  bottom: -2px;
+  left: -2px;
+  border-right: none;
+  border-top: none;
+}
+
+.corner-borders > :first-child::after {
+  bottom: -2px;
+  right: -2px;
+  border-left: none;
+  border-top: none;
+}
+
+.corner-borders::before,
+.corner-borders::after,
+.corner-borders > :first-child::before,
+.corner-borders > :first-child::after {
+  border-radius: 4px;
 }

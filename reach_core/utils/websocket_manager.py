@@ -54,12 +54,19 @@ class WebSocketManager:
         retained_text = ""
         deleted_text = ""
         if edits:
-            for part in edits.split():
-                if part.startswith('user-retained:'):
-                    retained_text += part[14:] + " "
-                elif part.startswith('user-deleted:'):
-                    deleted_text += part[13:] + " "
-        await run_agent(task, report_type, sources, websocket, retained_text.strip(), deleted_text.strip())
+            parts = edits.split("user-retained:")
+            if len(parts) > 1:
+                retained_text = parts[1].split("user-deleted:")[0].strip()
+            
+            parts = edits.split("user-deleted:")
+            if len(parts) > 1:
+                deleted_text = parts[1].strip()
+
+        print(f"Full edits string: {edits}")
+        print(f"Retained text: {retained_text}")
+        print(f"Deleted text: {deleted_text}")
+        
+        await run_agent(task, report_type, sources, websocket, retained_text, deleted_text)
         # return report
 
 
@@ -76,6 +83,7 @@ async def run_agent( task, report_type, sources, websocket, retained_text, delet
                 researcher = BasicReport(query=task, report_type=report_type,
                                          source_urls=None, sources=sources, config_path=config_path, websocket=websocket, 
                                          retained_text=retained_text, deleted_text=deleted_text)
+                
 
             await researcher.run()
             

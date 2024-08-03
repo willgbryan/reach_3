@@ -31,8 +31,8 @@ class BasicReport():
             self.sources, 
             self.config_path, 
             self.websocket,
-            self.retained_text,
-            self.deleted_text
+            retained_text=self.retained_text,
+            deleted_text=self.deleted_text
         )
 
         # Run research

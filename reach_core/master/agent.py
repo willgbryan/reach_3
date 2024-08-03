@@ -111,7 +111,9 @@ class Reach:
                 websocket=self.websocket,
                 cfg=self.cfg,
                 main_topic=self.parent_query,
-                existing_headers=existing_headers
+                existing_headers=existing_headers,
+                retained_text=self.retained_text,
+                deleted_text=self.deleted_text
             )
         else:
             report = await generate_report(
@@ -213,6 +215,9 @@ class Reach:
         Returns:
             context: List of context
         """
+
+        print(f"get_context_by_search - full retained_text: {self.retained_text}")
+
         content = []
         sub_queries = await get_sub_queries(query, self.role, self.cfg, self.parent_query, self.report_type, 
                                             self.websocket, self.retained_text, self.deleted_text) + [query]

@@ -23,11 +23,11 @@ def generate_search_queries_prompt(question: str, parent_query: str, report_type
         task = question
 
     prompt = {
-        "task": f"Write {max_iterations} google search queries to search online that form an objective opinion from the following task: \"{task}\", while taking into account the user_collected_info",
-        "user_collected_info": f"The user has the existing data: {retained_text}, and has indicated they did not find the following data useful: {deleted_text}",
+        "task": f"Write {max_iterations} google search queries to search online that form an objective opinion from the following task: \"{task}\". If available in user_collected_info, the queries should aim to dig deeper into EXISTING_DATA, and ignore REMOVED_DATA.",
+        "user_collected_info": f"The user has this EXISTING_DATA: {retained_text}, and has removed this REMOVED_DATA: {deleted_text}",
         "date_needed": f"Use the current date if needed: {datetime.now().strftime('%B %d, %Y')}.",
         "files_info": f"Files can be present and questions can be asked about them. Uploaded files if any: {uploaded_files}",
-        "additional_instructions": "Also include in the queries specified task details such as locations, names, etc. user_collected_info should heavily influence the direction of the search queries, enrich the existing detail and reach for new information not contained in either the existing or unliked data.",
+        "additional_instructions": "Also include in the queries specified task details such as locations, names, etc. user_collected_info should heavily influence the direction of the search queries, enrich the EXISTING_DATA and reach for new information not contained in either the EXISTING_DATA or REMOVED_DATA.",
         "response_format": "You must respond with a list of strings in the following format: [\"query 1\", \"query 2\", \"query 3\"]."
     }
 
@@ -103,12 +103,12 @@ def generate_report_prompt(question, context, report_format="apa", total_words=2
     Returns: str: The report prompt for the given question and research summary
     """
 
-    return f'Information: """{context}""" The user already has the following information in their report: EXISTING REPORT """{retained_text}""" and does not wish to see information similar to REMOVED SECTIONS """{deleted_text}"""\n' \
+    return f'Information: """{context}""". Information: EXISTING REPORT """{retained_text}""". Information: REMOVED SECTIONS """{deleted_text}"""\n' \
            f'Using ONLY the above information, answer the following' \
            f' query or task: "{question}" in a detailed report --' \
            " The report should focus on the answer to the query, should be well structured, informative," \
            f" in depth and comprehensive, with facts and numbers if available and a minimum of {total_words} words.\n" \
-           "You should strive to write the report as long as you can using all relevant and necessary information provided, preserving the existing report and adding rich details.\n" \
+           "You should strive to write the report as long as you can using all relevant and necessary information provided, preserving the EXISTING REPORT and adding rich details. Do not include topics in REMOVED SECTIONS.\n" \
            "You must write the report with markdown syntax.\n " \
            f"Use an unbiased and journalistic tone. \n" \
            "You MUST determine your own concrete and valid opinion based on the given information. Do NOT deter to general and meaningless conclusions.\n" \
@@ -125,7 +125,7 @@ def generate_report_prompt(question, context, report_format="apa", total_words=2
             f"You MUST write the report in {report_format} format.\n " \
             f"'You MUST include all relevant source urls.'\
              'Every url should be hyperlinked: [url website](url)'\n"\
-            f"Please do your best, this is very important to my career. " \
+            f"Please do your best, this is very important to my career. Expand on EXISTING REPORT, do NOT include topics in REMOVED SECTIONS." \
             f"Assume that the current date is {datetime.now().strftime('%B %d, %Y')}"
 
 

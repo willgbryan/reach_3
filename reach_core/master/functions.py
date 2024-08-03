@@ -215,6 +215,8 @@ async def generate_report(
         content = f"{generate_prompt(query, existing_headers, main_topic, context, cfg.report_format, cfg.total_words)}"
     else:
         content = f"{generate_prompt(query, context, cfg.report_format, cfg.total_words)}"
+
+    print(f"prompt in {content}")
     
     try:
         report = await create_chat_completion(
