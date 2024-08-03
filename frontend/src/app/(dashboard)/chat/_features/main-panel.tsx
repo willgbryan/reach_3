@@ -18,9 +18,8 @@ import { useGetDocumentSets } from '@/hooks/use-get-document-sets'
 import { useDocSetName, useFileData, useStage } from '@/hooks/use-vector-blob'
 import { useVectorChat } from '@/hooks/use-vector-chat'
 
-import { BlobActions } from './blob-actions'
-import { BlobStates } from './blob-states'
-import { ChatState } from './chat-states/chat'
+import SimpleInputForm from './simple-input';
+
 
 import {
   AlertDialog,
@@ -341,21 +340,14 @@ const BottomSection = ({
   reload,
   setReportType,
 }) => {
+  const handleSubmit = (value: string) => {
+    handleInputClick(value);
+  };
+
   return (
-    <div className="absolute bottom-2 md:bottom-8 left-0 right-0" key={id}>
-      <BlobActions messages={messages} handleReset={handleReset} />
-      <BlobStates messages={messages} isLoading={isLoading} reload={reload} stop={stop}>
-        <ChatState
-          loading={isLoading}
-          disabled={isLoading}
-          value={input}
-          handleClick={handleInputClick}
-          handleChange={setInput}
-        />
-      </BlobStates>
-    </div>
-  )
-}
+    <SimpleInputForm onSubmit={handleSubmit} isLoading={isLoading} />
+  );
+};
 
 export default MainVectorPanel
 
