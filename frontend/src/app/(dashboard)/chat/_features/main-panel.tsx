@@ -275,7 +275,7 @@ const ChatSection = ({
               <div className="w-1/2 flex flex-col pt-12">
                 <ReactQuill 
                   value={currentText} 
-                  className='max-w-full p-2 shadow-sm sm:p-4'
+                  className='max-w-full p-2 shadow-sm sm:p-4 no-border'
                   onChange={handleEditChange}
                 />
                 <Button variant="ghost" onClick={handleSubmitEdits} className="mt-12">Submit Edits</Button>

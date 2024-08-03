@@ -343,3 +343,11 @@ input:-webkit-autofill:active {
 .corner-borders > :first-child::after {
   border-radius: 4px;
 }
+
+.no-border .ql-container {
+  border: none !important;
+}
+
+.no-border .ql-toolbar {
+  border: none !important;
+}
