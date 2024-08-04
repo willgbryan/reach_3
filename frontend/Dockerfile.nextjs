@@ -20,11 +20,22 @@
 # # CMD ["npm", "start"]
 
 ##PROD
-FROM node:18-alpine
+# Build stage
+FROM node:18-alpine AS builder
 WORKDIR /usr/src/app
 COPY package*.json ./
-RUN npm install --legacy-peer-deps
+RUN npm ci --only=production
 COPY . .
 RUN npm run build
+
+# Production stage
+FROM node:18-alpine
+WORKDIR /usr/src/app
+COPY --from=builder /usr/src/app/next.config.js ./
+COPY --from=builder /usr/src/app/public ./public
+COPY --from=builder /usr/src/app/.next ./.next
+COPY --from=builder /usr/src/app/node_modules ./node_modules
+COPY --from=builder /usr/src/app/package*.json ./
+
 EXPOSE 3000
 CMD ["npm", "start"]
