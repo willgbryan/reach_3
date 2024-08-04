@@ -7,6 +7,8 @@ import { nanoid } from 'nanoid'
 import showdown from 'showdown';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
+import { ShootingStars } from "@/components/cult/shooting-stars";
+import { StarsBackground } from "@/components/cult/stars-background";
 
 import { ModeToggle } from '@/components/theme-toggle'
 

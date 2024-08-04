@@ -54,7 +54,7 @@ export function HistoryItem({ index, chat, children }: HistoryItemProps) {
           <ItemTypeIcon isActive={isActive} path={chat.path} />
         ) : null}
       </div>
-      <div className="mr-0 max-w-[80%]">
+      <div className="mr-0 max-w-[95%]">
         <Link
           href={chat.path}
           className={cn(
@@ -63,7 +63,7 @@ export function HistoryItem({ index, chat, children }: HistoryItemProps) {
             isActive &&
               ' pr-4 pl-14 font-semibold dark:bg-[#040404] border dark:border-brand-50/10 dark:text-white bg-neutral-100/50 hover:bg-neutral-100/70 hover:text-black border-black/5 text-black',
             !isActive &&
-              'dark:hover:bg-neutral-950 dark:hover:text-neutral-50 text-muted-foreground z-10 hover:bg-neutral-100/40 hover:text-neutral-950',
+              'dark:hover:bg-transparent dark:hover:text-purple-500 text-muted-foreground z-10 hover:bg-transparent hover:text-purple-500',
             isGlobalCollapsed && ' pl-2 pr-2 w-[70px]',
             isGlobalCollapsed &&
               isActive &&
