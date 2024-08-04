@@ -343,7 +343,7 @@ const TopSection = ({ docSetName, documentSets }) => {
         {/* <SelectScrollable prevDocSets={documentSets} /> */}
       </div>
       <div className="flex items-center space-x-4">
-        <Heading>{docSetName}</Heading>
+        {/* <Heading>{docSetName}</Heading> */}
         <ModeToggle />
         <UserProvider />
       </div>
