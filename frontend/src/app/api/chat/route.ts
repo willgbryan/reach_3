@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
   // Generate a new chatId if one wasn't provided
   const actualChatId = chatId || nanoid()
 
-  const ws_uri = `ws://${process.env.NEXT_PUBLIC_BACKEND_URL}/ws`
+  const ws_uri = `ws://localhost:8000/ws`
   const socket = new WebSocket(ws_uri)
 
   let accumulatedOutput = ''
