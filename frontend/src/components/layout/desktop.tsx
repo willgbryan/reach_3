@@ -2,15 +2,16 @@ import { Suspense } from 'react'
 import { Heading } from '@/components/cult/gradient-heading'
 import { Separator } from '@/components/ui/separator'
 import { SidebarPanel } from './sidebar-panel'
+import { motion } from 'framer-motion'
 
-// export function DesktopLayout({ historyChildren, children, user }) {
-export function DesktopLayout({ children, user }) {
+export function DesktopLayout({ historyChildren, children, user }) {
+// export function DesktopLayout({ children, user }) {
 
   return (
     <div className="flex h-full items-stretch dark:bg-stone-800 bg-stone-100">
       <SidebarPanel user={user?.id}>
         <div className="pr-4">
-          <Separator className="my-2" />
+          <Separator className="my-2 dark:bg-white" />
         </div>
         <Suspense
           fallback={
@@ -24,10 +25,14 @@ export function DesktopLayout({ children, user }) {
             </div>
           }
         >
-          {/* <Heading variant="secondary" size={'xxs'}>
+          {/* <motion.span
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="font-base text-xl text-black dark:text-white whitespace-pre pl-2"
+          >
             History
-          </Heading> */}
-          {/* <div className="">{user ? historyChildren : null}</div> */}
+          </motion.span> */}
+          <div className="">{user ? historyChildren : null}</div>
         </Suspense>
       </SidebarPanel>
       <div className="flex-grow rounded-lg flex flex-col items-center w-full">

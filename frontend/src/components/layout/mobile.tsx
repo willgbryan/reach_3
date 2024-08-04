@@ -13,8 +13,8 @@ import { Sidebar, SidebarBody } from "@/components/cult/sidebar"
 import { useToggleMobileNav } from '@/hooks/use-vector-blob'
 import { cn } from '@/lib/utils'
 
-// export function MobileLayout({ historyChildren, children, user }) {
-export function MobileLayout({ children, user }) {
+export function MobileLayout({ historyChildren, children, user }) {
+// export function MobileLayout({ children, user }) {
 
   const { isMobileNavOpen, setIsMobileNavOpen } = useToggleMobileNav()
 
@@ -47,12 +47,12 @@ export function MobileLayout({ children, user }) {
                   </div>
                 }
               >
-                <Heading variant="secondary" size={'xxs'}>
+                <Heading variant="default" size={'xxs'}>
                   History
                 </Heading>
-                {/* <ScrollArea className="flex-grow">
+                <ScrollArea className="flex-grow">
                   {user ? historyChildren : null}
-                </ScrollArea> */}
+                </ScrollArea>
               </Suspense>
               <div className="mt-auto">
                 {/* <NavFooter isCollapsed={false} user={user} /> */}

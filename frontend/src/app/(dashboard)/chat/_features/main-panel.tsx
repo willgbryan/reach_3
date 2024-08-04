@@ -3,6 +3,7 @@
 import React, { Suspense, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Message } from 'ai'
+import { nanoid } from 'nanoid'
 import showdown from 'showdown';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
@@ -69,14 +70,32 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
 
   const router = useRouter()
 
-  const handleInputClick = async (value) => {
+  const handleInputClick = async (value: string) => {
     if (value.length >= 1) {
       setInitialValue(value);
-      await append({
+      const newMessage: Message = {
+        id: nanoid(),
         content: value,
         role: 'user',
-      })
-      setInput('')
+        createdAt: new Date()
+      };
+      await append(newMessage);
+      
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: [...messages, newMessage],
+          id: id,
+          edits: edits,
+        }),
+      });
+  
+      // log the response?...
+      
+      setInput('');
     }
   }
 

@@ -14,6 +14,7 @@ export async function getChats(userId?: string | null) {
   if (!userId) {
     return []
   }
+
   try {
     const db = createClient(cookies())
     const { data } = await db
@@ -23,20 +24,30 @@ export async function getChats(userId?: string | null) {
       .eq('user_id', userId)
       .throwOnError()
 
-    return (data?.map((entry) => entry.payload) as Chat[]) ?? []
+    return (data?.map((entry) => entry.payload as Chat) ?? []).filter(chat => 
+      chat && 
+      typeof chat === 'object' && 
+      'id' in chat &&
+      'path' in chat &&
+      'title' in chat &&
+      'messages' in chat &&
+      Array.isArray(chat.messages)
+    )
   } catch (error) {
+    console.error('Error fetching chats:', error)
     return []
   }
 }
+
 
 export async function removeChat({ id, path }: { id: string; path: string }) {
   try {
     const db = createClient(cookies())
     await db.from('chats').delete().eq('id', id).throwOnError()
-
     revalidatePath('/')
     return revalidatePath(path)
   } catch (error) {
+    console.error('Error removing chat:', error)
     return {
       error: 'Unauthorized',
     }
