@@ -69,7 +69,7 @@ export default function VerifyTokenForm() {
 
     // reset form
     setFormData({ email: '', token: '' })
-    router.push('/')
+    router.push('/products')
   }
 
   return (

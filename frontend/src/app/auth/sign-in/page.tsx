@@ -1,47 +1,37 @@
 import { redirect } from 'next/navigation'
-
 import { getSession } from '@/app/_data/user'
 import { Heading } from '@/components/cult/gradient-heading'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { CultIcon } from '@/components/ui/icons'
-
-import { OTPForm } from './oauth-form'
+import { Card, CardContent } from '@/components/ui/card'
+import { OTPAuthFlow } from './otp-auth-flow'
+import BackgroundMedia from "@/components/cult/bg-media"
 
 export default async function SignIn() {
   const session = await getSession()
-
   if (session) {
-    return redirect('/')
+    return redirect('/products')
   }
 
   return (
-    <>
-      <section className="h-full w-full">
-        <div className=" flex flex-col justify-center items-center mt-16 md:mt-36">
-          <div className="flex gap-2">
-            <CultIcon className=" h-16 w-12 md:h-24 md:w-16 mt-1" />
-            <div>
-              <Heading size="xxl">Manifest</Heading>
-              <Heading size="sm" variant="secondary" className="-mt-2 md:-mt-4">
-                newcult.co template
-              </Heading>
-            </div>
-          </div>
-          <div className="flex items-center justify-center pt-12 md:pt-24 ">
-            <Card>
-              <CardHeader>
-                <CardTitle>Sign in</CardTitle>
-                <CardDescription>👋 Welcome to the cult</CardDescription>
-              </CardHeader>
-              <CardContent className=" space-y-2">
-                <div className="space-y-2 w-full min-w-[16rem] lg:min-w-[24rem]">
-                  <OTPForm />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-    </>
+    <div className="flex flex-col md:flex-row min-h-screen">
+      {/* Video background (hidden on small screens) */}
+      <div className="hidden md:block md:w-1/2 relative">
+        <BackgroundMedia
+          type="video"
+          variant="light"
+          src="/auth-quantum-vertical.mp4"
+          videoFit="cover"
+        />
+      </div>
+
+      {/* Sign-in form (full width and height on small screens, half width on md and up) */}
+      <div className="flex-grow w-full md:w-1/2 flex flex-col items-center justify-center bg-[#e4e4e4] p-8">
+        <Heading variant="secondary" weight="thin" size="xl" className="mb-8">Magi</Heading>
+        <Card className="w-full max-w-md bg-[#e4e4e4] border-none relative corner-borders">
+          <CardContent className="items-center justify-center space-y-4 p-6">
+            <OTPAuthFlow />
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   )
 }

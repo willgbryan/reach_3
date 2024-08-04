@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { Suspense, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Message } from 'ai'
 import showdown from 'showdown';
@@ -33,6 +33,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
+import { UserProvider } from '@/components/user-provider';
 
 interface MainVectorPanelProps {
   id?: string | undefined
@@ -318,15 +319,20 @@ const ChatSection = ({
 
 const TopSection = ({ docSetName, documentSets }) => {
   return (
-    <div className="flex justify-center items-center pt-8">
-      {/* <SelectScrollable prevDocSets={documentSets} /> */}
-      <div className="absolute right-8 top-8">
-        {/* <Heading>{docSetName}</Heading> */}
+    <div className="flex justify-between items-center pt-8 px-8">
+      <div>
+        {/* <SelectScrollable prevDocSets={documentSets} /> */}
+      </div>
+      <div className="flex items-center space-x-4">
+        <Heading>{docSetName}</Heading>
         <ModeToggle />
+        <UserProvider />
       </div>
     </div>
   )
 }
+
+
 
 const BottomSection = ({
   id,
