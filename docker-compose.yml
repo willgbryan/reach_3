@@ -29,8 +29,8 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile.nextjs
-      secrets:
-        - OPENAI_API_KEY
+      # secrets:
+      #   - OPENAI_API_KEY
     # volumes:
     #   - ./frontend/src:/usr/src/app/src
     #   - ./frontend/public:/usr/src/app/public
@@ -48,9 +48,9 @@ services:
     networks:
       - reach
 
-secrets:
-  OPENAI_API_KEY:
-    file: ./frontend/.env.local
+# secrets:
+#   OPENAI_API_KEY:
+#     file: ./frontend/.env.local
 
 networks:
   reach:
