@@ -75,8 +75,8 @@ services:
     environment:
       SEARX_URL: http://searxng:8080
       OPENAI_API_KEY: ${OPENAI_API_KEY}
-    ports:
-      - "8000:8000"
+    expose:
+      - "8000"
     networks:
       - reach
 
@@ -84,8 +84,8 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile.nextjs
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
     environment:
       - NEXT_PUBLIC_BACKEND_URL=http://${DROPLET_IP}:8000
       - OPENAI_API_KEY=${OPENAI_API_KEY}
