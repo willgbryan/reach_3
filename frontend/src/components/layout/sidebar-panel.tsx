@@ -42,7 +42,7 @@ export const Logo = () => {
         animate={{ opacity: 1 }}
         className="font-base text-3xl text-black dark:text-white whitespace-pre"
       >
-        Reach AI
+        Magi
       </motion.span>
     </Link>
   );

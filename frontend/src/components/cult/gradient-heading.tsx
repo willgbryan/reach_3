@@ -8,9 +8,9 @@ const headingVariants = cva('tracking-tight pb-3 bg-clip-text  text-transparent'
   variants: {
     variant: {
       default:
-        ' bg-gradient-to-t from-stone-800 to-neutral-800 dark:from-stone-200 dark:to-neutral-200',
+        ' bg-gradient-to-t from-stone-800 to-neutral-800 dark:from-stone-100 dark:to-neutral-200',
       light: 'bg-gradient-to-t from-neutral-200 to-neutral-300',
-      secondary: 'bg-gradient-to-t  from-primary-foreground to-muted-foreground',
+      secondary: 'bg-gradient-to-t from-black to-gray-900',
     },
     size: {
       default: 'text-2xl sm:text-3xl lg:text-4xl',
@@ -25,10 +25,10 @@ const headingVariants = cva('tracking-tight pb-3 bg-clip-text  text-transparent'
     weight: {
       default: 'font-bold',
       thin: 'font-thin',
-      base: 'font-base',
-      semi: 'font-semibold',
+      base: 'font-normal',
+      // semi: 'font-semibold',
       bold: 'font-bold',
-      black: 'font-black',
+      // black: 'font-black',
     },
   },
   defaultVariants: {

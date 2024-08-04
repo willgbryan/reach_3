@@ -8,7 +8,7 @@ import BackgroundMedia from "@/components/cult/bg-media"
 export default async function SignIn() {
   const session = await getSession()
   if (session) {
-    return redirect('/products')
+    return redirect('/chat')
   }
 
   return (

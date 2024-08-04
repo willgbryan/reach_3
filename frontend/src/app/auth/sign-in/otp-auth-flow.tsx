@@ -57,7 +57,7 @@ export function OTPAuthFlow() {
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: `${new URL(location.href).origin}/auth/callback?next=products`,
+        emailRedirectTo: `${new URL(location.href).origin}/auth/callback?next=chat`,
         shouldCreateUser: true,
         data: {
           signInMethod: 'otp'

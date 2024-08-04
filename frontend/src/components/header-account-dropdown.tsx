@@ -32,21 +32,21 @@ export function HeaderAccountDropdown({ user }: any) {
         </div>
         <Separator />
         <div className="py-1">
-          <DropdownMenuItem>
+          {/* <DropdownMenuItem>
             <Link href="/discover" className="flex w-full items-center justify-between gap-2">
               <span>Try Pro</span>
             </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem>
+          </DropdownMenuItem> */}
+          {/* <DropdownMenuItem>
             <Link href="/chat" className="flex w-full items-center justify-between gap-2">
               <span>Home</span>
             </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem>
+          </DropdownMenuItem> */}
+          {/* <DropdownMenuItem>
             <Link href="/library" className="flex w-full items-center justify-between gap-2">
               <span>Library</span>
             </Link>
-          </DropdownMenuItem>
+          </DropdownMenuItem> */}
         </div>
         <Separator />
         <div className="py-1">
