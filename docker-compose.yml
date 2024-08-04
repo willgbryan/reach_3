@@ -1,5 +1,63 @@
-version: '3.8'
+# version: '3.8'
 
+# services:
+#   searxng:
+#     image: searxng/searxng:latest
+#     volumes:
+#       - ./searxng/settings.yml:/etc/searxng/settings.yml
+#     ports:
+#       - "8080:8080"
+#     networks:
+#       - reach
+
+#   backend:
+#     build: 
+#       context: ./backend
+#       dockerfile: Dockerfile
+#     volumes:
+#       - ./backend:/usr/src/app
+#       - ./reach_core:/usr/src/app/reach_core
+#     environment:
+#       SEARX_URL: http://searxng:8080
+#       OPENAI_API_KEY: ${OPENAI_API_KEY}
+#     ports:
+#       - "8000:8000"
+#     networks:
+#       - reach
+
+#   frontend:
+#     build:
+#       context: ./frontend
+#       dockerfile: Dockerfile.nextjs
+#       secrets:
+#         - OPENAI_API_KEY
+#     volumes:
+#       - ./frontend/src:/usr/src/app/src
+#       - ./frontend/public:/usr/src/app/public
+#       - /usr/src/app/.next
+#       - /usr/src/app/node_modules
+#     ports:
+#       - "3000:3000"
+#     environment:
+#       - NEXT_PUBLIC_BACKEND_URL=backend:8000
+#       - OPENAI_API_KEY=${OPENAI_API_KEY}
+#       - SEARX_URL=http://searxng:8080
+#       - WATCHPACK_POLLING=true
+#     depends_on:
+#       - backend
+#     networks:
+#       - reach
+
+# secrets:
+#   OPENAI_API_KEY:
+#     file: ./frontend/.env.local
+
+# networks:
+#   reach:
+#     driver: bridge
+
+#PROD
+version: '3.8'
 services:
   searxng:
     image: searxng/searxng:latest
@@ -11,12 +69,9 @@ services:
       - reach
 
   backend:
-    build: 
+    build:
       context: ./backend
       dockerfile: Dockerfile
-    # volumes:
-    #   - ./backend:/usr/src/app
-    #   - ./reach_core:/usr/src/app/reach_core
     environment:
       SEARX_URL: http://searxng:8080
       OPENAI_API_KEY: ${OPENAI_API_KEY}
@@ -29,28 +84,16 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile.nextjs
-      # secrets:
-      #   - OPENAI_API_KEY
-    # volumes:
-    #   - ./frontend/src:/usr/src/app/src
-    #   - ./frontend/public:/usr/src/app/public
-    #   - /usr/src/app/.next
-    #   - /usr/src/app/node_modules
     ports:
       - "3000:3000"
     environment:
-      - NEXT_PUBLIC_BACKEND_URL=backend:8000
+      - NEXT_PUBLIC_BACKEND_URL=http://${DROPLET_IP}:8000
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - SEARX_URL=http://searxng:8080
-      - WATCHPACK_POLLING=true
     depends_on:
       - backend
     networks:
       - reach
-
-# secrets:
-#   OPENAI_API_KEY:
-#     file: ./frontend/.env.local
 
 networks:
   reach:
