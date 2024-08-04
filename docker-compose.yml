@@ -70,10 +70,8 @@ services:
 
   backend:
     build:
-      context: .
-      dockerfile: backend/Dockerfile
-    volumes:
-      - ./reach_core:/usr/src/app/reach_core
+      context: ./backend
+      dockerfile: Dockerfile
     environment:
       SEARX_URL: http://searxng:8080
       OPENAI_API_KEY: ${OPENAI_API_KEY}

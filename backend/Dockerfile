@@ -33,7 +33,6 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
-COPY ../reach_core ./reach_core
 
 EXPOSE 8000
 
