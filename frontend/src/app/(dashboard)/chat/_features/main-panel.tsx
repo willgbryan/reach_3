@@ -210,6 +210,8 @@ const ChatSection = ({
     const eventSource = new EventSource(url);
     
     eventSource.onmessage = (event) => {
+      console.log('Received message:', event.data);
+
       try {
         const data = JSON.parse(event.data);
         if (data.type === 'report') {

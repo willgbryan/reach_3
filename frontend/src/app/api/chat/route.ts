@@ -40,6 +40,7 @@ export async function POST(req: NextRequest) {
       }
 
       socket.onmessage = (event) => {
+        console.log(`log ${event}`)
         const data = JSON.parse(event.data)
         if (data.type === 'report' || data.type === 'logs') {
           controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(data)}\n\n`))
