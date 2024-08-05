@@ -22,7 +22,11 @@ export async function POST(req: NextRequest) {
   // Generate a new chatId if one wasn't provided
   const actualChatId = chatId || nanoid()
 
-  const ws_uri = `ws://https://themagi.systems/ws`
+  const isProduction = process.env.NODE_ENV === 'production';
+  const ws_protocol = isProduction ? 'wss://' : 'ws://';
+  const ws_host = isProduction ? 'themagi.systems' : 'localhost:8000';
+  const ws_uri = `${ws_protocol}${ws_host}/ws`;
+
   const socket = new WebSocket(ws_uri)
 
   let accumulatedOutput = ''

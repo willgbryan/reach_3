@@ -87,7 +87,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - NEXT_PUBLIC_BACKEND_URL=http://${DROPLET_IP}:8000
+      - NEXT_PUBLIC_BACKEND_URL=https://themagi.systems
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - SEARX_URL=http://searxng:8080
     depends_on:

@@ -9,6 +9,8 @@ import logging
 import aiofiles
 from typing import List
 from reach_core.utils.websocket_manager import WebSocketManager
+from fastapi.middleware.cors import CORSMiddleware
+
 # from reach_core.utils.unstructured_functions import *
 # from reach_core.utils.hubspot_functions import *
 # from reach_core.utils.whisper_functions import *
@@ -16,6 +18,8 @@ from reach_core.utils.mp3_from_mp4 import mp4_to_mp3
 # from utils import write_md_to_pdf
 from datetime import datetime
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class ResearchRequest(BaseModel):
     task: str
@@ -45,6 +49,14 @@ def make_serializable(data):
 
 app = FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["https://themagi.systems", "https://www.themagi.systems"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 class TaskRequest(BaseModel):
     task: str
     report_type: str
@@ -67,6 +79,8 @@ def startup_event():
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await manager.connect(websocket)
+    logger.info("WebSocket connected")
+    logger.info(f"Received WebSocket data: {data}")
     try:
         while True:
             data = await websocket.receive_text()
