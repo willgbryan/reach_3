@@ -48,7 +48,7 @@ const SimpleInputForm: React.FC<SimpleInputFormProps> = ({ onSubmit, isLoading }
           onChange={handleInputChange}
           onKeyPress={handleKeyPress}
           disabled={isLoading}
-          className="w-full p-3 rounded-md text-lg bg-transparent text-transparent focus:outline-none shadow-md"
+          className="w-full p-3 rounded-md text-sm bg-transparent border-stone-900 text-transparent focus:outline-none shadow-md"
           style={{ caretColor: 'transparent' }}
         />
         <div
