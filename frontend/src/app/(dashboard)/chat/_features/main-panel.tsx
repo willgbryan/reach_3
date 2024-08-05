@@ -337,7 +337,7 @@ const ChatSection = ({
             </div>
           ) : (
             <>
-              <ChatList messages={accumulatedData} sources={sources} />
+              <ChatList messages={updatedMessages} sources={sources} />
               {/* {accumulatedData && (
                 <div>
                   <h3>Streamed Data:</h3>
