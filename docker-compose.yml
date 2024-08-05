@@ -16,7 +16,7 @@
 #       dockerfile: Dockerfile
 #     volumes:
 #       - ./backend:/usr/src/app
-#       - ./reach_core:/usr/src/app/reach_core
+#       # - ./reach_core:/usr/src/app/reach_core
 #     environment:
 #       SEARX_URL: http://searxng:8080
 #       OPENAI_API_KEY: ${OPENAI_API_KEY}
@@ -43,6 +43,7 @@
 #       - OPENAI_API_KEY=${OPENAI_API_KEY}
 #       - SEARX_URL=http://searxng:8080
 #       - WATCHPACK_POLLING=true
+#       - NODE_ENV=dev
 #     depends_on:
 #       - backend
 #     networks:

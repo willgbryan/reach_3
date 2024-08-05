@@ -206,35 +206,39 @@ const ChatSection = ({
     setShowEditMode(false);
   };
 
-  const onResponse = (url) => {
-    const eventSource = new EventSource(url);
+  const onResponse = (response) => {
+    const reader = response.body.getReader()
+    const decoder = new TextDecoder()
     
-    eventSource.onmessage = (event) => {
-      console.log('Received message:', event.data);
-
+    async function readStream() {
       try {
-        const data = JSON.parse(event.data);
-        if (data.type === 'report') {
-          setStreamedData(prev => prev + data.output);
-        } else if (data.type === 'logs') {
-          console.log('Received log:', data.output);
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          const chunk = decoder.decode(value)
+          const lines = chunk.split('\n')
+          for (const line of lines) {
+            if (line.trim() !== '') {
+              try {
+                const data = JSON.parse(line)
+                if (data.type === 'report') {
+                  setStreamedData(prev => prev + data.output)
+                }
+              } catch (parseError) {
+                console.error('Error parsing JSON:', parseError)
+                console.log('Problematic line:', line)
+                // Optionally, you can still update the accumulated data with the raw line
+                // setStreamedData(prev => prev + line + '\n')
+              }
+            }
+          }
         }
-      } catch (parseError) {
-        console.error('Error parsing JSON:', parseError);
-        console.log('Problematic data:', event.data);
+      } catch (streamError) {
+        console.error('Error reading stream:', streamError)
       }
-    };
-  
-    eventSource.onerror = (error) => {
-      console.error('EventSource failed:', error);
-      eventSource.close();
-    };
-  
-    // You might want to add a way to close the connection when it's no longer needed
-    return () => {
-      eventSource.close();
-    };
-  };
+    }
+    readStream()
+  }
 
   const handleSubmitEdits = async () => {
     const editsString = `user-retained:${currentText} user-deleted:${deletedText}`

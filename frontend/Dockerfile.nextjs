@@ -16,8 +16,8 @@
 # #dev CMD
 # CMD ["npm", "run", "dev"]
 
-# #prod CMD
-# # CMD ["npm", "start"]
+#prod CMD
+# CMD ["npm", "start"]
 
 ##PROD
 # Build stage

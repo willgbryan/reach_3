@@ -9,6 +9,7 @@ export async function POST(req: NextRequest) {
     data: { session },
   } = await db.auth.getSession()
   const userId = session?.user.id
+
   if (!userId) {
     return new Response('Unauthorized', { status: 401 })
   }
@@ -17,69 +18,76 @@ export async function POST(req: NextRequest) {
   const { messages, id: chatId, edits } = json
   const lastMessage = messages[messages.length - 1]
   const task = lastMessage?.content || ''
+
+  // Generate a new chatId if one wasn't provided
   const actualChatId = chatId || nanoid()
 
   const isProduction = process.env.NODE_ENV === 'production';
   const ws_protocol = isProduction ? 'wss://' : 'ws://';
   const ws_host = isProduction ? 'themagi.systems' : 'localhost:8000';
-  const ws_uri = `${ws_protocol}${ws_host}/ws`;
+  // const ws_uri = `${ws_protocol}${ws_host}/ws`;
+  const ws_uri = `ws://${process.env.NEXT_PUBLIC_BACKEND_URL}/ws`
 
-  return new Response(new ReadableStream({
-    start(controller) {
-      const socket = new WebSocket(ws_uri)
-      let accumulatedOutput = ''
 
-      socket.onopen = () => {
-        const requestData = {
-          task: task,
-          report_type: "research_report",
-          sources: ["WEB"],
-          ...(edits && { edits }),
+  const socket = new WebSocket(ws_uri)
+
+  let accumulatedOutput = ''
+
+  return new Response(
+    new ReadableStream({
+      start(controller) {
+        socket.onopen = () => {
+          const requestData = {
+            task: task,
+            report_type: "research_report",
+            sources: ["WEB"],
+            ...(edits && { edits }),
+          }
+          socket.send(`${JSON.stringify(requestData)}`)
         }
-        socket.send(JSON.stringify(requestData))
-      }
 
-      socket.onmessage = (event) => {
-        console.log(`log ${event}`)
-        const data = JSON.parse(event.data)
-        if (data.type === 'report' || data.type === 'logs') {
-          controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(data)}\n\n`))
-          if (data.type === 'report') {
-            accumulatedOutput += data.output
+        socket.onmessage = async (event) => {
+          const data = JSON.parse(event.data)
+          if (data.type === 'report' || data.type === 'logs') {
+            controller.enqueue(new TextEncoder().encode(JSON.stringify(data)))
+
+            if (data.type === 'report') {
+              accumulatedOutput += data.output
+            }
           }
         }
-      }
 
-      socket.onerror = (error) => {
-        console.error("WebSocket error:", error)
-        controller.error(error)
-      }
-
-      socket.onclose = async () => {
-        console.log("WebSocket connection closed")
-        if (accumulatedOutput) {
-          await saveChatHistory({
-            chatId: actualChatId,
-            completion: accumulatedOutput,
-            messages,
-            userId,
-            db,
-          })
+        socket.onerror = (error) => {
+          console.error("WebSocket error:", error)
+          controller.error(error)
         }
-        controller.close()
-      }
-    },
-    cancel() {
-      // If the client cancels the stream, close the WebSocket
-      // socket.close()
-    },
-  }), {
-    headers: {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
-    },
-  })
+
+        socket.onclose = async () => {
+          console.log("WebSocket connection closed")
+          if (accumulatedOutput) {
+            await saveChatHistory({
+              chatId: actualChatId,
+              completion: accumulatedOutput,
+              messages,
+              userId,
+              db,
+            })
+          }
+          controller.close()
+        }
+      },
+      cancel() {
+        socket.close()
+      },
+    }),
+    {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
+    }
+  )
 }
 
 interface ChatHistoryParams {
