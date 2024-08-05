@@ -10,6 +10,10 @@ import 'react-quill/dist/quill.snow.css';
 import { ShootingStars } from "@/components/cult/shooting-stars";
 import { StarsBackground } from "@/components/cult/stars-background";
 
+// import jsPDF from 'jspdf';
+// import 'jspdf-autotable';
+// import { marked } from 'marked';
+
 import { ModeToggle } from '@/components/theme-toggle'
 
 import { SelectScrollable } from '@/components/chat/chat-document-sets'
@@ -124,11 +128,13 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
           const { done, value } = await reader.read()
           if (done) break
           const chunk = decoder.decode(value)
+          console.log('Received chunk:', chunk);
           const lines = chunk.split('\n')
           for (const line of lines) {
             if (line.trim() !== '') {
               try {
                 const data = JSON.parse(line)
+                console.log('Parsed data:', data);
                 if (data.type === 'report') {
                   setAccumulatedData(prev => prev + data.output)
                 }
@@ -316,6 +322,19 @@ const ChatSection = ({
 
   const updatedMessages = [...messages, { content: reportContent, type: 'report' }];
 
+  // const createPDF = async () => {
+  //   const doc = new jsPDF();
+    
+  //   try {
+  //     const html = await marked(currentText);
+  //     const plainText = html.replace(/<[^>]+>/g, '');
+  //     doc.text(plainText, 10, 10);
+  //     doc.save("report.pdf");
+  //   } catch (error) {
+  //     console.error("Error creating PDF:", error);
+  //   }
+  // };
+
 
   return (
     <div className="flex flex-col items-center">
@@ -367,6 +386,8 @@ const ChatSection = ({
                 </AlertDialogContent>
               </AlertDialog>
               <Button onClick={handleDigDeeper} variant="outline">Dig Deeper</Button>
+              {/* <Button onClick={createPDF} variant="outline">Create PDF</Button> */}
+
             </div>
           )}
         </div>
