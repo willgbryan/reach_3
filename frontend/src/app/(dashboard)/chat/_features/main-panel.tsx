@@ -174,6 +174,7 @@ const ChatSection = ({
   const converter = new showdown.Converter();
 
   useEffect(() => {
+    console.log('accumulatedData updated:', accumulatedData);
     if (reportType === 'table') {
       const htmlTable = convertCSVToHTMLTable(accumulatedData);
       setReportContent(htmlTable);
@@ -305,7 +306,15 @@ const ChatSection = ({
               </div>
             </div>
           ) : (
-            <ChatList messages={updatedMessages} sources={sources} />
+            <>
+              <ChatList messages={updatedMessages} sources={sources} />
+              {accumulatedData && (
+                <div>
+                  <h3>Streamed Data:</h3>
+                  <pre>{accumulatedData}</pre>
+                </div>
+              )}
+            </>
           )}
           <ChatScrollAnchor trackVisibility={isLoading} />
           {!showBottomSection && accumulatedData && (
