@@ -209,8 +209,10 @@ const ChatSection = ({
   const onResponse = (response) => {
     const reader = response.body.getReader()
     const decoder = new TextDecoder()
+    console.log('hit')
     
     async function readStream() {
+      console.log('hit2')
       try {
         while (true) {
           const { done, value } = await reader.read()
