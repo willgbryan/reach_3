@@ -10,9 +10,9 @@ import 'react-quill/dist/quill.snow.css';
 import { ShootingStars } from "@/components/cult/shooting-stars";
 import { StarsBackground } from "@/components/cult/stars-background";
 
-// import jsPDF from 'jspdf';
-// import 'jspdf-autotable';
-// import { marked } from 'marked';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+import { marked } from 'marked';
 
 import { ModeToggle } from '@/components/theme-toggle'
 
@@ -91,12 +91,15 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
             edits: edits,
           }),
         });
+        console.log('Response received:', response);
+        console.log('Response headers:', response.headers);
   
         if (!response.ok) {
           throw new Error('Network response was not ok');
         }
   
         if (response.body) {
+          console.log('Response body exists, calling onResponse');
           onResponse(response);
         } else {
           console.error('Response body is null');
@@ -119,6 +122,7 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
   }
 
   const onResponse = (response) => {
+    console.log('onResponse called with response:', response);
     const reader = response.body.getReader()
     const decoder = new TextDecoder()
     
@@ -322,19 +326,43 @@ const ChatSection = ({
 
   const updatedMessages = [...messages, { content: reportContent, type: 'report' }];
 
-  // const createPDF = async () => {
-  //   const doc = new jsPDF();
+  const createPDF = async () => {
+    const doc = new jsPDF();
     
-  //   try {
-  //     const html = await marked(currentText);
-  //     const plainText = html.replace(/<[^>]+>/g, '');
-  //     doc.text(plainText, 10, 10);
-  //     doc.save("report.pdf");
-  //   } catch (error) {
-  //     console.error("Error creating PDF:", error);
-  //   }
-  // };
+    try {
+      let yOffset = 10;
+      const lineHeight = 7;
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const margin = 10;
+      const maxLineWidth = pageWidth - 2 * margin;
 
+      for (const message of updatedMessages) {
+        doc.setFontSize(12);
+        doc.setFont('bold');
+        doc.text(message.role || 'System', margin, yOffset);
+        yOffset += lineHeight;
+
+        doc.setFontSize(10);
+        doc.setFont('normal');
+        const contentLines = doc.splitTextToSize(message.content, maxLineWidth);
+        
+        for (const line of contentLines) {
+          if (yOffset > doc.internal.pageSize.getHeight() - margin) {
+            doc.addPage();
+            yOffset = margin;
+          }
+          doc.text(line, margin, yOffset);
+          yOffset += lineHeight;
+        }
+
+        yOffset += lineHeight;
+      }
+
+      doc.save("conversation_report.pdf");
+    } catch (error) {
+      console.error("Error creating PDF:", error);
+    }
+  };
 
   return (
     <div className="flex flex-col items-center">
@@ -386,7 +414,7 @@ const ChatSection = ({
                 </AlertDialogContent>
               </AlertDialog>
               <Button onClick={handleDigDeeper} variant="outline">Dig Deeper</Button>
-              {/* <Button onClick={createPDF} variant="outline">Create PDF</Button> */}
+              <Button onClick={createPDF} variant="outline">Create PDF</Button>
 
             </div>
           )}

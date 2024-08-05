@@ -41,18 +41,20 @@ export async function POST(req: NextRequest) {
     new ReadableStream({
       start(controller) {
         socket.onopen = () => {
+          console.log('WebSocket connection opened');
           const requestData = {
             task: task,
             report_type: "research_report",
             sources: ["WEB"],
             ...(edits && { edits }),
           }
+          console.log('Sending data to WebSocket:', requestData);
           socket.send(`${JSON.stringify(requestData)}`)
         }
-
+        
         socket.onmessage = async (event) => {
           const data = JSON.parse(event.data)
-          console.log(`data ${data}`)
+          console.log(`Received WebSocket data: ${JSON.stringify(data)}`);
           if (data.type === 'report' || data.type === 'logs') {
             controller.enqueue(new TextEncoder().encode(JSON.stringify(data)))
 
