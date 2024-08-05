@@ -19,7 +19,6 @@ import { SIZE_PRESETS, useDynamicBlobSize } from '@/components/cult/dynamic-blob
 import { Heading } from '@/components/cult/gradient-heading'
 import { useGetDocumentSets } from '@/hooks/use-get-document-sets'
 import { useDocSetName, useFileData, useStage } from '@/hooks/use-vector-blob'
-import { useVectorChat } from '@/hooks/use-vector-chat'
 
 import SimpleInputForm from './simple-input';
 
@@ -56,19 +55,11 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
   const [showEditMode, setShowEditMode] = useState(false);
   const [edits, setEdits] = useState<string | undefined>(undefined)
   const [initialValue, setInitialValue] = useState('');
-
-  const {
-    messages,
-    sourcesForMessages,
-    isLoading,
-    append,
-    setInput,
-    setMessages,
-    input,
-    stop,
-    reload,
-    accumulatedData,
-  } = useVectorChat(id, docSetName, initialMessages, initialSources, edits)
+  
+  const [messages, setMessages] = useState<Message[]>(initialMessages || []);
+  const [isLoading, setIsLoading] = useState(false);
+  const [accumulatedData, setAccumulatedData] = useState('');
+  const [input, setInput] = useState('');
 
   const router = useRouter()
 
@@ -81,23 +72,37 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
         role: 'user',
         createdAt: new Date()
       };
-      await append(newMessage);
+      setMessages(prevMessages => [...prevMessages, newMessage]);
       
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          messages: [...messages, newMessage],
-          id: id,
-          edits: edits,
-        }),
-      });
+      setIsLoading(true);
+      try {
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            messages: [...messages, newMessage],
+            id: id,
+            edits: edits,
+          }),
+        });
   
-      // log the response?...
-      
-      setInput('');
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+  
+        if (response.body) {
+          onResponse(response);
+        } else {
+          console.error('Response body is null');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+      } finally {
+        setIsLoading(false);
+        setInput('');
+      }
     }
   }
 
@@ -109,7 +114,39 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
     router.push('/chat')
   }
 
-  const sources = sourcesForMessages ?? initialSources?.sources
+  const onResponse = (response) => {
+    const reader = response.body.getReader()
+    const decoder = new TextDecoder()
+    
+    async function readStream() {
+      try {
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          const chunk = decoder.decode(value)
+          const lines = chunk.split('\n')
+          for (const line of lines) {
+            if (line.trim() !== '') {
+              try {
+                const data = JSON.parse(line)
+                if (data.type === 'report') {
+                  setAccumulatedData(prev => prev + data.output)
+                }
+              } catch (parseError) {
+                console.error('Error parsing JSON:', parseError)
+                console.log('Problematic line:', line)
+              }
+            }
+          }
+        }
+      } catch (streamError) {
+        console.error('Error reading stream:', streamError)
+      }
+    }
+    readStream()
+  }
+
+  const sources = [] ?? initialSources?.sources
 
   const handleDigDeeper = () => {
     setShowEditMode(true);
@@ -133,6 +170,7 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
           handleDigDeeper={handleDigDeeper}
           setEdits={setEdits}
           initialValue={initialValue}
+          setAccumulatedData={setAccumulatedData}
         />
       </div>
       {showBottomSection && (
@@ -142,7 +180,6 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
           isLoading={isLoading}
           messages={messages}
           setInput={setInput}
-          reload={reload}
           input={input}
           stop={stop}
           id={id}
@@ -165,12 +202,12 @@ const ChatSection = ({
   setShowBottomSection,
   handleDigDeeper,
   setEdits,
-  initialValue
+  initialValue,
+  setAccumulatedData
 }) => {
   const [reportContent, setReportContent] = useState('');
   const [currentText, setCurrentText] = useState('');
   const [deletedText, setDeletedText] = useState('');
-  const [streamedData, setStreamedData] = useState('');
   const converter = new showdown.Converter();
 
   useEffect(() => {
@@ -210,10 +247,8 @@ const ChatSection = ({
   const onResponse = (response) => {
     const reader = response.body.getReader()
     const decoder = new TextDecoder()
-    console.log('hit')
     
     async function readStream() {
-      console.log('hit2')
       try {
         while (true) {
           const { done, value } = await reader.read()
@@ -225,13 +260,11 @@ const ChatSection = ({
               try {
                 const data = JSON.parse(line)
                 if (data.type === 'report') {
-                  setStreamedData(prev => prev + data.output)
+                  setAccumulatedData(prev => prev + data.output)
                 }
               } catch (parseError) {
                 console.error('Error parsing JSON:', parseError)
                 console.log('Problematic line:', line)
-                // Optionally, you can still update the accumulated data with the raw line
-                // setStreamedData(prev => prev + line + '\n')
               }
             }
           }
@@ -251,7 +284,7 @@ const ChatSection = ({
     setShowEditMode(false)
     setShowBottomSection(false)
 
-    setStreamedData('');
+    setAccumulatedData('');
 
     try {
       const response = await fetch('/api/chat', {
@@ -270,22 +303,19 @@ const ChatSection = ({
         throw new Error('Network response was not ok');
       }
 
-      onResponse(response);
+      if (response.body) {
+        onResponse(response);
+      } else {
+        console.error('Response body is null');
+      }
 
     } catch (error) {
       console.error('Error:', error);
     }
   }
 
-  useEffect(() => {
-    if (streamedData) {
-      setReportContent(streamedData);
-      setCurrentText(streamedData);
-      setShowBottomSection(false);
-    }
-  }, [streamedData]);
-
   const updatedMessages = [...messages, { content: reportContent, type: 'report' }];
+
 
   return (
     <div className="flex flex-col items-center">
@@ -308,12 +338,12 @@ const ChatSection = ({
           ) : (
             <>
               <ChatList messages={updatedMessages} sources={sources} />
-              {accumulatedData && (
+              {/* {accumulatedData && (
                 <div>
                   <h3>Streamed Data:</h3>
                   <pre>{accumulatedData}</pre>
                 </div>
-              )}
+              )} */}
             </>
           )}
           <ChatScrollAnchor trackVisibility={isLoading} />
@@ -375,7 +405,6 @@ const BottomSection = ({
   setInput,
   input,
   stop,
-  reload,
   setReportType,
 }) => {
   const handleSubmit = (value: string) => {

@@ -25,10 +25,12 @@ export async function POST(req: NextRequest) {
   const isProduction = process.env.NODE_ENV === 'production';
   const ws_protocol = isProduction ? 'wss://' : 'ws://';
   const ws_host = isProduction ? 'themagi.systems' : 'localhost:8000';
-  const ws_uri = `${ws_protocol}${ws_host}/ws`;
+
+  // //PROD
+  // const ws_uri = `${ws_protocol}${ws_host}/ws`;
 
   // //DEV
-  // const ws_uri = `ws://${process.env.NEXT_PUBLIC_BACKEND_URL}/ws`
+  const ws_uri = `ws://${process.env.NEXT_PUBLIC_BACKEND_URL}/ws`
 
 
   const socket = new WebSocket(ws_uri)
