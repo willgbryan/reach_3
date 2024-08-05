@@ -80,7 +80,7 @@ def startup_event():
 async def websocket_endpoint(websocket: WebSocket):
     await manager.connect(websocket)
     logger.info("WebSocket connected")
-    logger.info(f"Received WebSocket data: {data}")
+    # logger.info(f"Received WebSocket data: {data}")
     try:
         while True:
             data = await websocket.receive_text()
