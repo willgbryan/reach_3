@@ -57,17 +57,39 @@
 #   reach:
 #     driver: bridge
 
-#PROD
+# #PROD
 version: '3.8'
 services:
+  traefik:
+    image: traefik:v2.5
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/traefik.toml:/etc/traefik/traefik.toml
+      - ./traefik/acme.json:/acme.json
+    networks:
+      - reach
+
   searxng:
     image: searxng/searxng:latest
     volumes:
       - ./searxng/settings.yml:/etc/searxng/settings.yml
-    ports:
-      - "8080:8080"
     networks:
       - reach
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.searxng.rule=Host(`search.themagi.systems`)"
+      - "traefik.http.routers.searxng.entrypoints=websecure"
+      - "traefik.http.routers.searxng.tls.certresolver=myresolver"
+      - "traefik.http.services.searxng.loadbalancer.server.port=8080"
 
   backend:
     build:
@@ -76,17 +98,19 @@ services:
     environment:
       SEARX_URL: http://searxng:8080
       OPENAI_API_KEY: ${OPENAI_API_KEY}
-    ports:
-      - "8000:8000"
     networks:
       - reach
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=Host(`themagi.systems`) && PathPrefix(`/api`, `/ws`)"
+      - "traefik.http.routers.backend.entrypoints=websecure"
+      - "traefik.http.routers.backend.tls.certresolver=myresolver"
+      - "traefik.http.services.backend.loadbalancer.server.port=8000"
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile.nextjs
-    ports:
-      - "3000:3000"
     environment:
       - NEXT_PUBLIC_BACKEND_URL=https://themagi.systems
       - OPENAI_API_KEY=${OPENAI_API_KEY}
@@ -95,6 +119,12 @@ services:
       - backend
     networks:
       - reach
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`themagi.systems`)"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.tls.certresolver=myresolver"
+      - "traefik.http.services.frontend.loadbalancer.server.port=3000"
 
 networks:
   reach:

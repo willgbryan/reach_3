@@ -1,0 +1,5 @@
+[certificatesResolvers.myresolver.acme]
+  email = "will@themagi.tech"
+  storage = "acme.json"
+  [certificatesResolvers.myresolver.acme.httpChallenge]
+    entryPoint = "web"
