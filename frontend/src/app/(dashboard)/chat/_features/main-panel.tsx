@@ -62,12 +62,29 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
   
   const [messages, setMessages] = useState<Message[]>(initialMessages || []);
   const [isLoading, setIsLoading] = useState(false);
-  const [accumulatedData, setAccumulatedData] = useState('');
   const [input, setInput] = useState('');
+  const [accumulatedData, setAccumulatedData] = useState('');
+  const [reportContent, setReportContent] = useState('');
+
+  useEffect(() => {
+    console.log('accumulatedData updated:', accumulatedData);
+    if (reportType === 'table') {
+      const htmlTable = convertCSVToHTMLTable(accumulatedData);
+      setReportContent(htmlTable);
+    } else {
+      setReportContent(accumulatedData);
+    }
+
+    if (accumulatedData) {
+      setShowBottomSection(false);
+    }
+  }, [accumulatedData, reportType]);
 
   const router = useRouter()
+  
 
   const handleInputClick = async (value: string) => {
+
     if (value.length >= 1) {
       setInitialValue(value);
       const newMessage: Message = {
@@ -92,8 +109,9 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
           }),
         });
         console.log('Response received:', response);
+        console.log('Response type:', response.type);
         console.log('Response headers:', response.headers);
-  
+          
         if (!response.ok) {
           throw new Error('Network response was not ok');
         }
@@ -130,7 +148,10 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
       try {
         while (true) {
           const { done, value } = await reader.read()
-          if (done) break
+          if (done) {
+            console.log('Stream complete');
+            break;
+          }
           const chunk = decoder.decode(value)
           console.log('Received chunk:', chunk);
           const lines = chunk.split('\n')
@@ -171,8 +192,7 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
           messages={messages} 
           sources={sources} 
           isLoading={isLoading} 
-          accumulatedData={accumulatedData}
-          reportType={reportType}
+          reportContent={reportContent}
           showEditMode={showEditMode}
           setShowEditMode={setShowEditMode}
           showBottomSection={showBottomSection}
@@ -180,7 +200,6 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
           handleDigDeeper={handleDigDeeper}
           setEdits={setEdits}
           initialValue={initialValue}
-          setAccumulatedData={setAccumulatedData}
         />
       </div>
       {showBottomSection && (
@@ -204,36 +223,21 @@ const ChatSection = ({
   messages, 
   sources, 
   isLoading, 
-  accumulatedData, 
-  reportType, 
+  reportContent,
   showEditMode,
   setShowEditMode,
   showBottomSection,
   setShowBottomSection,
   handleDigDeeper,
   setEdits,
-  initialValue,
-  setAccumulatedData
+  initialValue
 }) => {
-  const [reportContent, setReportContent] = useState('');
   const [currentText, setCurrentText] = useState('');
   const [deletedText, setDeletedText] = useState('');
-  const converter = new showdown.Converter();
 
   useEffect(() => {
-    console.log('accumulatedData updated:', accumulatedData);
-    if (reportType === 'table') {
-      const htmlTable = convertCSVToHTMLTable(accumulatedData);
-      setReportContent(htmlTable);
-    } else {
-      setReportContent(accumulatedData);
-    }
-    setCurrentText(accumulatedData);
-
-    if (accumulatedData) {
-      setShowBottomSection(false);
-    }
-  }, [accumulatedData, reportType, setShowBottomSection]);
+    setCurrentText(reportContent);
+  }, [reportContent]);
 
   const handleEditChange = (newContent) => {
     const oldContent = currentText;
@@ -270,7 +274,7 @@ const ChatSection = ({
               try {
                 const data = JSON.parse(line)
                 if (data.type === 'report') {
-                  setAccumulatedData(prev => prev + data.output)
+                  setCurrentText(prev => prev + data.output)
                 }
               } catch (parseError) {
                 console.error('Error parsing JSON:', parseError)
@@ -293,8 +297,6 @@ const ChatSection = ({
     setCurrentText('')
     setShowEditMode(false)
     setShowBottomSection(false)
-
-    setAccumulatedData('');
 
     try {
       const response = await fetch('/api/chat', {
@@ -394,7 +396,7 @@ const ChatSection = ({
             </>
           )}
           <ChatScrollAnchor trackVisibility={isLoading} />
-          {!showBottomSection && accumulatedData && (
+          {!showBottomSection && currentText && (
             <div className="flex justify-center space-x-4 mt-4">
               <AlertDialog>
                 <AlertDialogTrigger asChild>
