@@ -1,5 +1,17 @@
+[entryPoints]
+  [entryPoints.web]
+    address = ":80"
+  [entryPoints.websecure]
+    address = ":443"
+
 [certificatesResolvers.myresolver.acme]
   email = "will@themagi.tech"
   storage = "acme.json"
   [certificatesResolvers.myresolver.acme.httpChallenge]
     entryPoint = "web"
+
+[providers.docker]
+  exposedByDefault = false
+
+[api]
+  insecure = true
