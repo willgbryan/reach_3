@@ -107,7 +107,7 @@ services:
       - reach
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.backend.rule=Host(`themagi.systems`) && PathPrefix(`/api`, `/ws`)"
+      - "traefik.http.routers.backend.rule=Host(`themagi.systems`) && PathPrefix(`/ws`)"
       - "traefik.http.routers.backend.entrypoints=websecure"
       - "traefik.http.routers.backend.tls.certresolver=myresolver"
       - "traefik.http.services.backend.loadbalancer.server.port=8000"
@@ -126,7 +126,7 @@ services:
       - reach
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.frontend.rule=Host(`themagi.systems`) && PathPrefix(`/`)"
+      - "traefik.http.routers.frontend.rule=Host(`themagi.systems`) && PathPrefix(`/`, `/api`)"
       - "traefik.http.routers.frontend.entrypoints=websecure"
       - "traefik.http.routers.frontend.tls.certresolver=myresolver"
       - "traefik.http.services.frontend.loadbalancer.server.port=3000"
