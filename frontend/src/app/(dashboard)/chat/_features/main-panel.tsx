@@ -66,11 +66,12 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
 
   const router = useRouter()
   const sources = initialSources?.sources ?? [];
+  const apiUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://themagi.systems';
 
   const handleApiCall = async (payload) => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/chat', {
+      const response = await fetch(`${apiUrl}/api/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

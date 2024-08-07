@@ -51,7 +51,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://themagi.systems", "https://www.themagi.systems"],
+    allow_origins=["https://themagi.systems", "https://www.themagi.systems", "wss://themagi.systems"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
