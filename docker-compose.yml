@@ -39,7 +39,7 @@
 #     ports:
 #       - "3000:3000"
 #     environment:
-#       - NEXT_PUBLIC_BACKEND_URL=backend:8000
+#       - NEXT_PUBLIC_BASE_URL=localhost:8000
 #       - OPENAI_API_KEY=${OPENAI_API_KEY}
 #       - SEARX_URL=http://searxng:8080
 #       - WATCHPACK_POLLING=true
@@ -117,7 +117,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile.nextjs
     environment:
-      - NEXT_PUBLIC_BACKEND_URL=https://themagi.systems
+      - NEXT_PUBLIC_BASE_URL=https://themagi.systems
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - SEARX_URL=http://searxng:8080
     depends_on:
