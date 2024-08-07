@@ -2,18 +2,20 @@
 import { BookCopy, DollarSign, Home } from 'lucide-react'
 import { Nav } from './nav'
 
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://themagi.systems';
+
 export function NavLinks({ isCollapsed }) {
   return (
     <div className="">
       <Nav
         isCollapsed={isCollapsed}
         links={[
-          { title: 'Home', icon: Home, variant: 'ghost', href: '/chat' },
+          { title: 'Home', icon: Home, variant: 'ghost', href: `${baseUrl}/chat` },
           { 
             title: 'Library', 
             icon: BookCopy, 
             variant: 'ghost', 
-            href: '/library', 
+            href: `${baseUrl}/library`, 
             disabled: true, 
             label: 'Coming soon'
           },
@@ -21,7 +23,7 @@ export function NavLinks({ isCollapsed }) {
             title: 'Pricing', 
             icon: DollarSign, 
             variant: 'ghost', 
-            href: '/pricing',
+            href: `${baseUrl}/pricing`,
             disabled: true, 
             label: 'Free for now :D'
           },
