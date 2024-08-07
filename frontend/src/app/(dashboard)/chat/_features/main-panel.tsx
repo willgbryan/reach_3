@@ -1,6 +1,6 @@
 'use client'
 
-import React, { Suspense, useEffect, useState } from 'react'
+import React, { Suspense, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Message } from 'ai'
 import { nanoid } from 'nanoid'
@@ -25,7 +25,6 @@ import { useGetDocumentSets } from '@/hooks/use-get-document-sets'
 import { useDocSetName, useFileData, useStage } from '@/hooks/use-vector-blob'
 
 import SimpleInputForm from './simple-input';
-
 
 import {
   AlertDialog,
@@ -63,57 +62,147 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
   const [edits, setEdits] = useState<string | undefined>(undefined);
   const [initialValue, setInitialValue] = useState('');
   const [editText, setEditText] = useState('');
+  const [currentChatId, setCurrentChatId] = useState<string | undefined>(id);
 
   const router = useRouter()
   const sources = initialSources?.sources ?? [];
   const apiUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://themagi.systems';
+  const [socket, setSocket] = useState<WebSocket | null>(null);
+  const socketRef = useRef<WebSocket | null>(null);
 
-  const handleApiCall = async (payload) => {
-    setIsLoading(true);
-    try {
-      const response = await fetch(`${apiUrl}/api/chat`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
 
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
+    useEffect(() => {
+      const isProduction = process.env.NODE_ENV === 'production';
+      const ws_protocol = isProduction ? 'wss://' : 'ws://';
+      const ws_host = isProduction ? 'themagi.systems' : 'localhost:8000';
+      //PROD
+      // const ws_uri = `wss://themagi.systems/ws`;
 
-      if (response.body) {
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          const chunk = decoder.decode(value);
-          const lines = chunk.split('\n');
-          for (const line of lines) {
-            if (line.trim() !== '') {
-              try {
-                const data = JSON.parse(line);
-                if (data.type === 'report') {
-                  setReportContent(prev => prev + data.output);
-                }
-              } catch (parseError) {
-                console.error('Error parsing JSON:', parseError);
-              }
-            }
-          }
+      //DEV
+      const ws_uri = `ws://localhost:8000/ws`
+    
+      const newSocket = new WebSocket(ws_uri);
+      setSocket(newSocket);
+      socketRef.current = newSocket;
+    
+      newSocket.onopen = () => {
+        console.log('WebSocket connection opened');
+        setSocket(newSocket);
+      };
+    
+      newSocket.onerror = (error) => {
+        console.error("WebSocket error:", error);
+      };
+    
+      newSocket.onclose = () => {
+        console.log("WebSocket connection closed");
+        setSocket(null);
+      };
+    
+      return () => {
+        if (newSocket) {
+          newSocket.close();
         }
-      } else {
-        console.error('Response body is null');
+      };
+    }, []);
+
+    const handleApiCall = async (payload) => {
+      setIsLoading(true);
+      let accumulatedOutput = '';
+      const actualChatId = currentChatId || nanoid();
+    
+      if (!currentChatId) {
+        setCurrentChatId(actualChatId);
       }
-    } catch (error) {
-      console.error('Error:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    
+      try {
+        if (!socketRef.current) {
+          throw new Error('WebSocket is not initialized');
+        }
+    
+        // Wait for the WebSocket to be open
+        if (socketRef.current.readyState !== WebSocket.OPEN) {
+          await new Promise<void>((resolve, reject) => {
+            const timeout = setTimeout(() => {
+              reject(new Error('WebSocket connection timed out'));
+            }, 5000);
+    
+            socketRef.current!.onopen = () => {
+              clearTimeout(timeout);
+              resolve();
+            };
+    
+            socketRef.current!.onerror = () => {
+              clearTimeout(timeout);
+              reject(new Error('WebSocket connection failed'));
+            };
+          });
+        }
+    
+        const requestData = {
+          task: payload.messages[payload.messages.length - 1].content,
+          report_type: "research_report",
+          sources: ["WEB"],
+          ...(payload.edits && { edits: payload.edits }),
+          chatId: actualChatId,
+        };
+    
+        console.log('Sending data to WebSocket:', requestData);
+        socketRef.current.send(JSON.stringify(requestData));
+    
+        // promise that resolves when the WebSocket communication is complete
+        const wsComplete = new Promise<string>((resolve, reject) => {
+          if (!socketRef.current) {
+            reject(new Error('WebSocket is not initialized'));
+            return;
+          }
+    
+          const messageHandler = (event: MessageEvent) => {
+            const data = JSON.parse(event.data);
+            console.log(`Received WebSocket data: ${JSON.stringify(data)}`);
+            if (data.type === 'report') {
+              accumulatedOutput += data.output;
+              setReportContent(prev => prev + data.output);
+            }
+            if (data.type === 'complete') {
+              socketRef.current!.removeEventListener('message', messageHandler);
+              resolve(accumulatedOutput);
+            }
+          };
+    
+          socketRef.current.addEventListener('message', messageHandler);
+    
+          socketRef.current.onerror = (error) => {
+            socketRef.current!.removeEventListener('message', messageHandler);
+            reject(error);
+          };
+        });
+    
+        await wsComplete;
+    
+        const saveChatResponse = await fetch(`/api/save-chat`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            chatId: actualChatId,
+            completion: accumulatedOutput,
+            messages: [...payload.messages, { content: accumulatedOutput, role: 'assistant' }],
+          }),
+        });
+    
+        if (!saveChatResponse.ok) {
+          throw new Error('Failed to save chat history');
+        }
+    
+      } catch (error) {
+        console.error('Error:', error);
+        // might want to set an error state here to display to the user
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
   const handleInputClick = async (value: string) => {
     if (value.length >= 1) {
