@@ -1,3 +1,2 @@
-touch traefik/acme.json
-chmod 600 traefik/acme.json
-ls -l traefik/acme.json
+sudo chmod 600 ./traefik/acme.json
+sudo chown root:root ./traefik/acme.json
