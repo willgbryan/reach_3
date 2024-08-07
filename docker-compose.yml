@@ -91,7 +91,7 @@ services:
       - reach
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.searxng.rule=Host(`search.themagi.systems`)"
+      - "traefik.http.routers.searxng.rule=Host(`themagi.systems`)"
       - "traefik.http.routers.searxng.entrypoints=websecure"
       - "traefik.http.routers.searxng.tls.certresolver=myresolver"
       - "traefik.http.services.searxng.loadbalancer.server.port=8080"
@@ -111,6 +111,8 @@ services:
       - "traefik.http.routers.backend.entrypoints=websecure"
       - "traefik.http.routers.backend.tls.certresolver=myresolver"
       - "traefik.http.services.backend.loadbalancer.server.port=8000"
+      - "traefik.http.middlewares.strip-ws-prefix.stripprefix.prefixes=/ws"
+      - "traefik.http.routers.backend.middlewares=strip-ws-prefix"
 
   frontend:
     build:
