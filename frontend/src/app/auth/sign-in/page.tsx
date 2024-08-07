@@ -5,10 +5,12 @@ import { Card, CardContent } from '@/components/ui/card'
 import { OTPAuthFlow } from './otp-auth-flow'
 import BackgroundMedia from "@/components/cult/bg-media"
 
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://themagi.systems';
+
 export default async function SignIn() {
   const session = await getSession()
   if (session) {
-    return redirect('/chat')
+    return redirect(`${baseUrl}/chat`)
   }
 
   return (
