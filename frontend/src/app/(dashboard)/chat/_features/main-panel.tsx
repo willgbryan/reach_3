@@ -99,6 +99,12 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
         setSocket(null);
       };
     
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlChatId = urlParams.get('id');
+      if (urlChatId) {
+        setCurrentChatId(urlChatId);
+      }
+
       return () => {
         if (newSocket) {
           newSocket.close();
@@ -180,6 +186,7 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
     
         await wsComplete;
     
+        // theres a bug where sending a new query to a chat from the history list will save the chat twice
         const saveChatResponse = await fetch(`/api/save-chat`, {
           method: 'POST',
           headers: {
@@ -204,24 +211,24 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
       }
     };
 
-  const handleInputClick = async (value: string) => {
-    if (value.length >= 1) {
-      setInitialValue(value);
-      const newMessage: Message = {
-        id: nanoid(),
-        content: value,
-        role: 'user',
-        createdAt: new Date()
-      };
-      setMessages(prevMessages => [...prevMessages, newMessage]);
-      
-      await handleApiCall({
-        messages: [...messages, newMessage],
-        id: id,
-        edits: edits,
-      });
-    }
-  };
+    const handleInputClick = async (value: string) => {
+      if (value.length >= 1) {
+        setInitialValue(value);
+        const newMessage: Message = {
+          id: nanoid(),
+          content: value,
+          role: 'user',
+          createdAt: new Date()
+        };
+        setMessages(prevMessages => [...prevMessages, newMessage]);
+        
+        await handleApiCall({
+          messages: [...messages, newMessage],
+          id: currentChatId,
+          edits: edits,
+        });
+      }
+    };
 
   const handleEditChange = (newContent) => {
     const oldContent = editText;
@@ -244,6 +251,7 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
   
     await handleApiCall({
       messages: messages,
+      id: currentChatId,
       edits: editsString,
       task: initialValue,
     });

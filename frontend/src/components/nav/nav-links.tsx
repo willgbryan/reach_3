@@ -10,12 +10,12 @@ export function NavLinks({ isCollapsed }) {
       <Nav
         isCollapsed={isCollapsed}
         links={[
-          { title: 'Home', icon: Home, variant: 'ghost', href: `${baseUrl}/chat` },
+          { title: 'Home', icon: Home, variant: 'ghost', href: `/chat` },
           { 
             title: 'Newsletter', 
             icon: Newspaper, 
             variant: 'ghost', 
-            href: `${baseUrl}/newsletter`, 
+            href: `/newsletter`, 
             disabled: true, 
             label: 'Coming soon'
           },
@@ -23,7 +23,7 @@ export function NavLinks({ isCollapsed }) {
             title: 'Library', 
             icon: BookCopy, 
             variant: 'ghost', 
-            href: `${baseUrl}/library`, 
+            href: `/library`, 
             disabled: true, 
             label: 'Coming soon'
           },
@@ -31,7 +31,7 @@ export function NavLinks({ isCollapsed }) {
             title: 'Pricing', 
             icon: DollarSign, 
             variant: 'ghost', 
-            href: `${baseUrl}/pricing`,
+            href: `/pricing`,
             disabled: true, 
             label: 'Free for now :D'
           },
