@@ -303,7 +303,7 @@ const ChatSection = ({
           <ChatScrollAnchor trackVisibility={isLoading} />
           {reportContent && (
             <div className="flex justify-center space-x-4 mt-4">
-              <AlertDialog>
+              {/* <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button variant="outline">New Query</Button>
                 </AlertDialogTrigger>
@@ -319,7 +319,7 @@ const ChatSection = ({
                     <AlertDialogAction onClick={handleNewQuery}>Continue</AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
-              </AlertDialog>
+              </AlertDialog> */}
               <Button onClick={handleDigDeeper} variant="outline">Dig Deeper</Button>
               <Button onClick={createPDF} variant="outline">Create PDF</Button>
             </div>
