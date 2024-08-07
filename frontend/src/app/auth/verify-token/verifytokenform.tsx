@@ -30,6 +30,7 @@ export default function VerifyTokenForm() {
     email: '',
     token: '',
   })
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://themagi.systems';
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -69,7 +70,7 @@ export default function VerifyTokenForm() {
 
     // reset form
     setFormData({ email: '', token: '' })
-    router.push('/products')
+    router.push('/chat')
   }
 
   return (
