@@ -8,6 +8,7 @@ import { getSession, getUserDetails } from '@/app/_data/user'
 import { getNewsletterChats, NewsletterChat } from '@/app/_data/chat'
 import { toast } from "sonner"
 import { Carousel, Card } from "@/components/cult/apple-cards-carousel"
+import ReactMarkdown from 'react-markdown'
 
 type User = {
   id: string;
@@ -243,27 +244,32 @@ const NewsletterPage: React.FC = () => {
     }, {} as Record<string, NewsletterChat[]>)
   }
 
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toISOString().split('T')[0];
+  }
+
   const renderNewsletterCarousels = () => {
     const groupedNewsletters = groupNewslettersByTitle(newsletters)
 
     return Object.entries(groupedNewsletters).map(([title, newslettersGroup]) => {
       const cards = newslettersGroup.map((newsletter, index) => (
         <Card
-          key={newsletter.id}
           card={{
-            category: (`${getCadenceFromCronExpression(newsletter.cron_expression)} ${newsletter.createdAt}`) || 'No cadence set',
+            category: `${getCadenceFromCronExpression(newsletter.cron_expression)} ${formatDate(newsletter.createdAt)}`,
             title: newsletter.title,
             src: "https://images.unsplash.com/photo-1599202860130-f600f4948364?q=80&w=2515&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
             content: (
-              <div className="bg-neutral-800 p-8 rounded-3xl mb-4">
-                <p className="text-neutral-300 text-base md:text-xl font-sans max-w-3xl mx-auto">
-                  <span className="font-bold text-white">
-                    {new Date(newsletter.createdAt).toLocaleDateString()}
-                  </span>{" "}
-                  {newsletter.messages[0].content.substring(0, 200)}...
-                </p>
-              </div>
-            ),
+                <div className="bg-neutral-800 p-8 rounded-3xl mb-4 overflow-auto max-h-[60vh]">
+                  <ReactMarkdown 
+                    className="text-neutral-300 text-base md:text-xl font-sans prose prose-invert max-w-3xl mx-auto prose-a:text-blue-400 hover:prose-a:text-blue-300"
+                    components={{
+                      a: ({node, ...props}) => <a {...props} target="_blank" rel="noopener noreferrer" />
+                    }}
+                  >
+                    {newsletter.messages[1].content}
+                  </ReactMarkdown>
+                </div>
+              ),
           }}
           index={index}
         />
@@ -271,6 +277,9 @@ const NewsletterPage: React.FC = () => {
 
       return (
         <div key={title} className="w-full mb-12">
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
+            {title}
+          </h2>
           <Carousel items={cards} />
         </div>
       )
@@ -284,11 +293,11 @@ const NewsletterPage: React.FC = () => {
   return (
     <div className="flex h-screen bg-black text-white">
       <div className="w-1/3 h-full overflow-y-auto p-8 bg-neutral-900">
-        <NewsletterForm onSubmit={handleFormSubmit} />
+        <NewsletterForm onSubmit={handleFormSubmit}/>
         {report && (
           <div className="mt-8">
-            <h3 className="text-xl mb-2">Generated Report</h3>
-            <div className="border border-neutral-700 p-4 h-64 overflow-auto bg-neutral-800 rounded-md">
+            <h3 className="text-xl mb-2">First Report</h3>
+            <div className="corner-borders p-4 h-64 overflow-auto bg-neutral-800 rounded-md">
               {report}
             </div>
           </div>

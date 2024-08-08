@@ -23,6 +23,18 @@ module.exports = {
           "20%,50%": { opacity: "0" },
         },
       },
+      typography: {
+        DEFAULT: {
+          css: {
+            a: {
+              color: '#60a5fa',
+              '&:hover': {
+                color: '#93c5fd',
+              },
+            },
+          },
+        },
+      },
       animation: {
         "caret-blink": "caret-blink 1.25s ease-out infinite",
       },

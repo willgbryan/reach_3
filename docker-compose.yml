@@ -32,7 +32,7 @@ services:
       secrets:
         - OPENAI_API_KEY
     volumes:
-      - ./frontend/src:/usr/src/app/src
+      - ./frontend:/usr/src/app
       - ./frontend/public:/usr/src/app/public
       - /usr/src/app/.next
       - /usr/src/app/node_modules
@@ -49,6 +49,7 @@ services:
       - backend
     networks:
       - reach
+    command: npm run dev
 
 secrets:
   OPENAI_API_KEY:

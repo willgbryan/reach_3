@@ -53,7 +53,7 @@ export function NewsletterForm({ onSubmit }: NewsletterFormProps) {
   }
 
   return (
-    <Card className="w-[350px]">
+    <Card className="w-full corner-borders bg-brand">
       <CardHeader>
         <CardTitle>Create Newsletter</CardTitle>
         <CardDescription>Set up your automated newsletter.</CardDescription>
