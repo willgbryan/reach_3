@@ -1,6 +1,9 @@
 from enum import Enum
 
 class ReportType(Enum):
+    LongNewsletterReport = 'long_newsletter_report'
+    NewsletterReport = 'newsletter_report'
+    NewsletterParagraph = 'newsletter_paragraph'
     DetailedJson = 'detailed_json'
     Json = 'json'
     Paragraph = 'paragraph'

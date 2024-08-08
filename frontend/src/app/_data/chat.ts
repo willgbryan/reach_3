@@ -52,6 +52,7 @@ export async function getNewsletterChats(userId?: string | null) {
       .order('payload->createdAt', { ascending: false })
       .eq('user_id', userId)
       .eq('is_newsletter', true)
+      .eq('is_deleted', false)
       .throwOnError()
 
     return (data?.map((entry) => entry.payload as Chat) ?? []).filter(chat =>
@@ -61,6 +62,7 @@ export async function getNewsletterChats(userId?: string | null) {
       'path' in chat &&
       'title' in chat &&
       'messages' in chat &&
+      'createdAt' in chat &&
       Array.isArray(chat.messages)
     )
   } catch (error) {

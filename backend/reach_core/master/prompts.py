@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 
 from reach_core.utils.enum import ReportType
 
-def generate_search_queries_prompt(question: str, parent_query: str, report_type: str, uploaded_files: List[str], max_iterations: int=3, retained_text="", deleted_text="") -> str:
+def generate_search_queries_prompt(question: str, parent_query: str, report_type: str, uploaded_files: List[str], max_iterations: int=3, retained_text="", deleted_text="", cadence="") -> str:
     """ Generates the search queries prompt for the given question in JSON format.
     Args: 
         question (str): The question to generate the search queries prompt for
@@ -22,10 +22,20 @@ def generate_search_queries_prompt(question: str, parent_query: str, report_type
     else:
         task = question
 
+    if cadence == 'weekly':
+        cadence = 'previous week'
+    elif cadence == 'daily':
+        cadence = 'previous day'
+    elif cadence == 'monthly':
+        cadence = 'previous month'
+    else:
+        cadence = 'no restrictions'
+
     prompt = {
         "task": f"Write {max_iterations} google search queries to search online that form an objective opinion from the following task: \"{task}\". If available in user_collected_info, the queries should aim to dig deeper into EXISTING_DATA, and ignore REMOVED_DATA.",
         "user_collected_info": f"The user has this EXISTING_DATA: {retained_text}, and has removed this REMOVED_DATA: {deleted_text}",
-        "date_needed": f"Use the current date if needed: {datetime.now().strftime('%B %d, %Y')}.",
+        "recency_requirement": f"Restrict information to the {cadence}",
+        "date_needed": f"Use the current date if needed: {datetime.now().strftime('%B %d, %Y')}. Adhere to recency_requirement",
         "files_info": f"Files can be present and questions can be asked about them. Uploaded files if any: {uploaded_files}",
         "additional_instructions": "Also include in the queries specified task details such as locations, names, etc. user_collected_info should heavily influence the direction of the search queries, enrich the EXISTING_DATA and reach for new information not contained in either the EXISTING_DATA or REMOVED_DATA.",
         "response_format": "You must respond with a list of strings in the following format: [\"query 1\", \"query 2\", \"query 3\"]."
@@ -43,6 +53,39 @@ def generate_paragraph_prompt(question, context, report_format="apa", total_word
     return f'Information: """{context}"""\n\n' \
            f'Using ONLY the above information, answer the following' \
            f' query or task: "{question}" in a detailed single paragraph that is valid JSON--' \
+           " The single paragraph should focus on the answer to the query, should be well structured, informative," \
+           f" concise yet comprehensive, with facts and numbers if available and a minimum of {total_words} words.\n" \
+           "You should strive to write the paragraph concisely using all relevant and necessary information provided.\n" \
+           "You must write the paragraph with markdown syntax.\n " \
+           f"Use an unbiased and journalistic tone. \n" \
+           "You MUST determine your own concrete and valid opinion based on the given information. Do NOT deter to general and meaningless conclusions.\n" \
+           f"You MUST write all used source urls at the end of the paragraph as references, and make sure to not add duplicated sources, but only one reference for each.\n" \
+           f"You may come across Source: that are filepaths, be sure to include the name of the file in the references as well.\n" \
+           """
+            Every url should be hyperlinked: [url website](url)"\
+        
+            eg:    
+                # Paragraph Header
+                
+                This is a sample text. ([url website](url))
+            """\
+            f"You MUST write the paragraph in {report_format} format.\n " \
+            f"'You MUST include all relevant source urls.'\
+             'Every url should be hyperlinked: [url website](url)'\n"\
+            f"Please do your best, this is very important to my career. Valid JSON is a critical component to the functionality of my application." \
+            f"Assume that the current date is {datetime.now().strftime('%B %d, %Y')}"
+
+def generate_newsletter_paragraph_prompt(question, context, report_format="apa", total_words=200, retained_text='', deleted_text='', cadence=''):
+    """ Generates the paragraph prompt for the given question and research summary.
+    Args: question (str): The question to generate the report prompt for
+            research_summary (str): The research summary to generate the paragraph prompt for
+    Returns: str: The paragraph prompt for the given question and research summary
+    """
+
+    return f'Information: """{context}"""\n\n' \
+           f'Using ONLY the above information, answer the following' \
+           f' query or task: "{question}" in a detailed single paragraph that is a topical newsletter where todays date is {datetime.now().strftime("%B %d, %Y")}.' \
+           f'This is a newsletter delivered on the following cadence: {cadence}. The newsletter content should only cover the previous day, week, or month depending on the cadence.' \
            " The single paragraph should focus on the answer to the query, should be well structured, informative," \
            f" concise yet comprehensive, with facts and numbers if available and a minimum of {total_words} words.\n" \
            "You should strive to write the paragraph concisely using all relevant and necessary information provided.\n" \
@@ -96,7 +139,7 @@ def generate_detailed_json_prompt(question, context, report_format="apa", total_
            f"Assume that the current date is {datetime.now().strftime('%B %d, %Y')}"
 
 
-def generate_report_prompt(question, context, report_format="apa", total_words=2000, retained_text="", deleted_text=""):
+def generate_report_prompt(question, context, report_format="apa", total_words=2000, retained_text="", deleted_text="", cadence=""):
     """ Generates the report prompt for the given question and research summary.
     Args: question (str): The question to generate the report prompt for
             research_summary (str): The research summary to generate the report prompt for
@@ -128,6 +171,71 @@ def generate_report_prompt(question, context, report_format="apa", total_words=2
             f"Please do your best, this is very important to my career. Expand on EXISTING REPORT, do NOT include topics in REMOVED SECTIONS." \
             f"Assume that the current date is {datetime.now().strftime('%B %d, %Y')}"
 
+def generate_newsletter_report_prompt(question, context, report_format="apa", total_words=2000, retained_text="", deleted_text="", cadence=""):
+    """ Generates the report prompt for the given question and research summary.
+    Args: question (str): The question to generate the report prompt for
+            research_summary (str): The research summary to generate the report prompt for
+    Returns: str: The report prompt for the given question and research summary
+    """
+
+    return f'Information: """{context}""". Information: EXISTING REPORT """{retained_text}""". Information: REMOVED SECTIONS """{deleted_text}"""\n' \
+           f'Using ONLY the above information, answer the following' \
+           f' query or task: "{question}" in a detailed report that is a topical newsletter where todays date is {datetime.now().strftime("%B %d, %Y")}.' \
+           f'This is a newsletter delivered on the following cadence: {cadence}. The newsletter content should only cover the previous day, week, or month depending on the cadence.' \
+           " The report should focus on the answer to the query, should be well structured, informative," \
+           f" in depth and comprehensive, with facts and numbers if available and a minimum of {total_words} words.\n" \
+           "You should strive to write the report as long as you can using all relevant and necessary information provided, preserving the EXISTING REPORT and adding rich details. Do not include topics in REMOVED SECTIONS.\n" \
+           "You must write the report with markdown syntax.\n " \
+           f"Use an unbiased and journalistic tone. \n" \
+           "You MUST determine your own concrete and valid opinion based on the given information. Do NOT deter to general and meaningless conclusions.\n" \
+           f"You MUST write all used source urls at the end of the report as references, and make sure to not add duplicated sources, but only one reference for each.\n" \
+           f"You may come across Source: that are filepaths, be sure to include the name of the file in the references as well.\n" \
+           """
+            Every url should be hyperlinked: [url website](url)"\
+        
+            eg:    
+                # Report Header
+                
+                This is a sample text. ([url website](url))
+            """\
+            f"You MUST write the report in {report_format} format.\n " \
+            f"'You MUST include all relevant source urls.'\
+             'Every url should be hyperlinked: [url website](url)'\n"\
+            f"Please do your best, this is very important to my career. Expand on EXISTING REPORT, do NOT include topics in REMOVED SECTIONS." \
+            f"Assume that the current date is {datetime.now().strftime('%B %d, %Y')}"
+
+def generate_long_newsletter_report_prompt(question, context, report_format="apa", total_words=4000, retained_text="", deleted_text="", cadence=""):
+    """ Generates the report prompt for the given question and research summary.
+    Args: question (str): The question to generate the report prompt for
+            research_summary (str): The research summary to generate the report prompt for
+    Returns: str: The report prompt for the given question and research summary
+    """
+
+    return f'Information: """{context}""". Information: EXISTING REPORT """{retained_text}""". Information: REMOVED SECTIONS """{deleted_text}"""\n' \
+           f'Using ONLY the above information, answer the following' \
+           f' query or task: "{question}" in a detailed report that is a topical newsletter where todays date is {datetime.now().strftime("%B %d, %Y")}.' \
+           f'This is a newsletter delivered on the following cadence: {cadence}. The newsletter content should only cover the previous day, week, or month depending on the cadence.' \
+           " The report should focus on the answer to the query, should be well structured, informative," \
+           f" in depth and comprehensive, with facts and numbers if available and a minimum of {total_words} words.\n" \
+           "You should strive to write the report as long as you can using all relevant and necessary information provided, preserving the EXISTING REPORT and adding rich details. Do not include topics in REMOVED SECTIONS.\n" \
+           "You must write the report with markdown syntax.\n " \
+           f"Use an unbiased and journalistic tone. \n" \
+           "You MUST determine your own concrete and valid opinion based on the given information. Do NOT deter to general and meaningless conclusions.\n" \
+           f"You MUST write all used source urls at the end of the report as references, and make sure to not add duplicated sources, but only one reference for each.\n" \
+           f"You may come across Source: that are filepaths, be sure to include the name of the file in the references as well.\n" \
+           """
+            Every url should be hyperlinked: [url website](url)"\
+        
+            eg:    
+                # Report Header
+                
+                This is a sample text. ([url website](url))
+            """\
+            f"You MUST write the report in {report_format} format.\n " \
+            f"'You MUST include all relevant source urls.'\
+             'Every url should be hyperlinked: [url website](url)'\n"\
+            f"Please do your best, this is very important to my career. Expand on EXISTING REPORT, do NOT include topics in REMOVED SECTIONS." \
+            f"Assume that the current date is {datetime.now().strftime('%B %d, %Y')}"
 
 def generate_resource_report_prompt(question, context, report_format="apa", total_words=2000):
     """Generates the resource report prompt for the given question and research summary.
@@ -179,8 +287,11 @@ def generate_table_prompt(question, context, report_format="csv", total_words=20
            f' The table should be detailed, informative, in-depth, and a minimum of {total_words} rows.' \
            'It is REQUIRED that the output only be valid .csv format. Commas that are not used to separate discrete values (like commas in sentences) should be replaced with a blank space.'
 
-def get_report_by_type(report_type, retained_text="", deleted_text=""):
+def get_report_by_type(report_type, retained_text="", deleted_text="", cadence=""):
     report_type_mapping = {
+        ReportType.LongNewsletterReport.value: generate_long_newsletter_report_prompt,
+        ReportType.NewsletterReport.value: generate_newsletter_report_prompt,
+        ReportType.NewsletterParagraph.value: generate_newsletter_paragraph_prompt,
         ReportType.DetailedJson.value: generate_detailed_json_prompt,
         ReportType.Json.value: generate_json_prompt,
         ReportType.Paragraph.value: generate_paragraph_prompt,
@@ -191,7 +302,7 @@ def get_report_by_type(report_type, retained_text="", deleted_text=""):
         ReportType.SubtopicReport.value: generate_subtopic_report_prompt,
         ReportType.TableReport.value: generate_table_prompt
     }
-    return lambda *args, **kwargs: report_type_mapping[report_type](*args, **kwargs, retained_text=retained_text, deleted_text=deleted_text)
+    return lambda *args, **kwargs: report_type_mapping[report_type](*args, **kwargs, retained_text=retained_text, deleted_text=deleted_text, cadence=cadence)
 
 
 def auto_agent_instructions():

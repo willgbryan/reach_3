@@ -20,6 +20,7 @@ class Reach:
          sources=["WEB"],
          config_path=None, 
          websocket=None,
+         cadence="",
          agent=None,
          role=None,
          parent_query="",
@@ -41,6 +42,7 @@ class Reach:
         self.role = role
         self.report_type = report_type
         self.websocket = websocket
+        self.cadence = cadence
         self.cfg = Config(config_path)
         self.retriever = get_retriever(self.cfg.retriever)
         self.context = []
@@ -124,7 +126,8 @@ class Reach:
                 websocket=self.websocket, 
                 cfg=self.cfg,
                 retained_text=self.retained_text,
-                deleted_text=self.deleted_text
+                deleted_text=self.deleted_text,
+                cadence=self.cadence
             )
 
         return report
@@ -219,12 +222,13 @@ class Reach:
         print(f"get_context_by_search - full retained_text: {self.retained_text}")
 
         content = []
+        print(f"context {self.cadence}")
         sub_queries = await get_sub_queries(query, self.role, self.cfg, self.parent_query, self.report_type, 
-                                            self.websocket, self.retained_text, self.deleted_text) + [query]
+                                            self.websocket, self.cadence, self.retained_text, self.deleted_text) + [query]
         # await stream_output("logs",
         #                     f"I will conduct my research based on the following queries: {sub_queries}...",
         #                     self.websocket)
-
+        print(f'sub queries {sub_queries}')
         content = []
         # Run Sub-Queries
         for sub_query in sub_queries:

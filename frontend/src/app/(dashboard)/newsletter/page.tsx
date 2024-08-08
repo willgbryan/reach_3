@@ -1,5 +1,3 @@
-'use client'
-
 import React, { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { nanoid } from 'nanoid'
@@ -8,6 +6,7 @@ import { getSession, getUserDetails } from '@/app/_data/user'
 import { getNewsletterChats } from '@/app/_data/chat'
 import { Chat } from '@/types/index'
 import { toast } from "sonner"
+import { Carousel, Card } from "@/components/cult/apple-cards-carousel"
 
 type User = {
   id: string;
@@ -118,14 +117,15 @@ const NewsletterPage: React.FC = () => {
 
     const chatId = nanoid()
     const reportType = {
-      'succinct': 'paragraph',
-      'standard': 'research_report',
-      'in-depth': 'detailed_report'
+      'succinct': 'newsletter_paragraph',
+      'standard': 'newsletter_report',
+      'in-depth': 'long_newsletter_report'
     }[formData.style]
 
     const requestData = {
       task: formData.topic,
       report_type: reportType,
+      sources: ['WEB'],
       style: formData.style,
       cadence: formData.cadence,
       chatId: chatId,
@@ -167,9 +167,9 @@ const NewsletterPage: React.FC = () => {
   const saveNewsletter = async (formData: FormData, content: string, chatId: string): Promise<void> => {
     try {
       const reportType = {
-        'succinct': 'paragraph',
-        'standard': 'research_report',
-        'in-depth': 'detailed_report'
+        'succinct': 'newsletter_paragraph',
+        'standard': 'newsletter_report',
+        'in-depth': 'long_newsletter_report'
       }[formData.style]
 
       const response = await fetch('/api/save-chat', {
@@ -219,13 +219,60 @@ const NewsletterPage: React.FC = () => {
     }
   }
 
+  const groupNewslettersByTitle = (newsletters: Chat[]) => {
+    return newsletters.reduce((acc, newsletter) => {
+      if (!acc[newsletter.title]) {
+        acc[newsletter.title] = []
+      }
+      acc[newsletter.title].push(newsletter)
+      return acc
+    }, {} as Record<string, Chat[]>)
+  }
+
+  const renderNewsletterCarousels = () => {
+    const groupedNewsletters = groupNewslettersByTitle(newsletters)
+
+    return Object.entries(groupedNewsletters).map(([title, newslettersGroup]) => {
+      const cards = newslettersGroup.map((newsletter, index) => (
+        <Card
+          key={newsletter.id}
+          card={{
+            category: newsletter.payload?.cadence || 'No cadence set',
+            title: title,
+            src: "",
+            content: (
+              <div className="bg-[#F5F5F7] dark:bg-neutral-800 p-8 md:p-14 rounded-3xl mb-4">
+                <p className="text-neutral-600 dark:text-neutral-400 text-base md:text-2xl font-sans max-w-3xl mx-auto">
+                  <span className="font-bold text-neutral-700 dark:text-neutral-200">
+                    {new Date(newsletter.payload?.createdAt).toLocaleDateString()}
+                  </span>{" "}
+                  {newsletter.messages[0].content.substring(0, 200)}...
+                </p>
+              </div>
+            ),
+          }}
+          index={index}
+        />
+      ))
+
+      return (
+        <div key={title} className="w-full h-full py-20">
+          <h2 className="max-w-7xl pl-4 mx-auto text-xl md:text-5xl font-bold text-neutral-800 dark:text-neutral-200 font-sans">
+            {title}
+          </h2>
+          <Carousel items={cards} />
+        </div>
+      )
+    })
+  }
+
   if (!user) {
     return <div>Loading...</div>
   }
 
   return (
-    <div className="flex h-screen">
-      <div className="w-1/2 p-4 flex flex-col">
+    <div className="flex flex-col h-screen">
+      <div className="w-full p-4">
         <NewsletterForm onSubmit={handleFormSubmit} />
         {report && (
           <div className="mt-8">
@@ -236,15 +283,8 @@ const NewsletterPage: React.FC = () => {
           </div>
         )}
       </div>
-      <div className="w-1/2 p-4">
-        <ul className="space-y-2">
-          {newsletters.map((newsletter) => (
-            <li key={newsletter.id} className="border p-2 rounded">
-              <h3 className="font-bold">{newsletter.title}</h3>
-              <p>Cadence: {newsletter.payload?.cadence || 'No cadence set'}</p>
-            </li>
-          ))}
-        </ul>
+      <div className="w-full p-4 overflow-y-auto">
+        {renderNewsletterCarousels()}
       </div>
     </div>
   )

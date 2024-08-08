@@ -59,7 +59,7 @@ async def choose_agent(query, cfg):
         return "Default Agent", "You are an AI critical thinker research assistant. Your sole purpose is to write well written, critically acclaimed, objective and structured reports on given text."
 
 
-async def get_sub_queries(query: str, agent_role_prompt: str, cfg, parent_query: str, report_type:str, websocket, retained_text, deleted_text):
+async def get_sub_queries(query: str, agent_role_prompt: str, cfg, parent_query: str, report_type:str, websocket, cadence, retained_text, deleted_text):
     """
     Gets the sub queries
     Args:
@@ -87,14 +87,17 @@ async def get_sub_queries(query: str, agent_role_prompt: str, cfg, parent_query:
                 report_type, 
                 uploaded_files,
                 max_iterations=max_research_iterations,
-                retained_text="",
-                deleted_text=""
+                retained_text=retained_text,
+                deleted_text=deleted_text,
+                cadence=cadence
                 )
             }
         ],
         temperature=0,
         llm_provider=cfg.llm_provider
     )
+
+    print(f'response: {response}')
     sub_queries = json.loads(response)
     await stream_output("queries", f"{sub_queries}", websocket)
     return sub_queries
@@ -207,9 +210,10 @@ async def generate_report(
     main_topic: str = "",
     existing_headers: list = [],
     retained_text="",
-    deleted_text=""
+    deleted_text="",
+    cadence=""
 ):
-    generate_prompt = get_report_by_type(report_type, retained_text, deleted_text)
+    generate_prompt = get_report_by_type(report_type, retained_text, deleted_text, cadence)
     report = ""
     if report_type == "subtopic_report":
         content = f"{generate_prompt(query, existing_headers, main_topic, context, cfg.report_format, cfg.total_words)}"

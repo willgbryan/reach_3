@@ -49,7 +49,7 @@ class WebSocketManager:
             del self.sender_tasks[websocket]
             del self.message_queues[websocket]
 
-    async def start_streaming(self, task, report_type, sources, websocket, edits=None):
+    async def start_streaming(self, task, report_type, sources, websocket, cadence, edits=None):
         """Start streaming the output."""
         retained_text = ""
         deleted_text = ""
@@ -66,11 +66,11 @@ class WebSocketManager:
         print(f"Retained text: {retained_text}")
         print(f"Deleted text: {deleted_text}")
         
-        await run_agent(task, report_type, sources, websocket, retained_text, deleted_text)
+        await run_agent(task, report_type, sources, websocket, cadence, retained_text, deleted_text)
         # return report
 
 
-async def run_agent( task, report_type, sources, websocket, retained_text, deleted_text):
+async def run_agent( task, report_type, sources, websocket, cadence, retained_text, deleted_text):
         """Run the agent."""
         start_time = datetime.datetime.now()
         config_path = None
@@ -82,7 +82,7 @@ async def run_agent( task, report_type, sources, websocket, retained_text, delet
             else:
                 researcher = BasicReport(query=task, report_type=report_type,
                                          source_urls=None, sources=sources, config_path=config_path, websocket=websocket, 
-                                         retained_text=retained_text, deleted_text=deleted_text)
+                                         cadence=cadence, retained_text=retained_text, deleted_text=deleted_text)
                 
 
             await researcher.run()
