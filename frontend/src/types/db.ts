@@ -8,16 +8,22 @@ export interface Database {
           id: string
           payload: Json | null
           user_id: string | null
+          is_newsletter: boolean | null
+          cron_expression: string | null
         }
         Insert: {
           id: string
           payload?: Json | null
           user_id?: string | null
+          is_newsletter?: boolean | null
+          cron_expression?: string | null
         }
         Update: {
           id?: string
           payload?: Json | null
           user_id?: string | null
+          is_newsletter?: boolean | null
+          cron_expression?: string | null
         }
         Relationships: [
           {

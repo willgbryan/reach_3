@@ -39,6 +39,35 @@ export async function getChats(userId?: string | null) {
   }
 }
 
+export async function getNewsletterChats(userId?: string | null) {
+  if (!userId) {
+    return []
+  }
+  try {
+    const db = createClient(cookies())
+    const { data } = await db
+      .from('chats')
+      .select('payload')
+      .order('payload->createdAt', { ascending: false })
+      .eq('user_id', userId)
+      .eq('is_newsletter', true)
+      .throwOnError()
+
+    return (data?.map((entry) => entry.payload as Chat) ?? []).filter(chat =>
+      chat &&
+      typeof chat === 'object' &&
+      'id' in chat &&
+      'path' in chat &&
+      'title' in chat &&
+      'messages' in chat &&
+      Array.isArray(chat.messages)
+    )
+  } catch (error) {
+    console.error('Error fetching newsletter chats:', error)
+    return []
+  }
+}
+
 
 export async function removeChat({ id, path }: { id: string; path: string }) {
   try {
