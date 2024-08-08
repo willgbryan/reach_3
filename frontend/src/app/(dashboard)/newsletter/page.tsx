@@ -9,6 +9,7 @@ import { getNewsletterChats, NewsletterChat } from '@/app/_data/chat'
 import { toast } from "sonner"
 import { Carousel, Card } from "@/components/cult/apple-cards-carousel"
 import ReactMarkdown from 'react-markdown'
+import { Separator } from '@/components/ui/separator'
 
 type User = {
   id: string;
@@ -257,11 +258,11 @@ const NewsletterPage: React.FC = () => {
           card={{
             category: `${getCadenceFromCronExpression(newsletter.cron_expression)} ${formatDate(newsletter.createdAt)}`,
             title: newsletter.title,
-            src: "https://images.unsplash.com/photo-1599202860130-f600f4948364?q=80&w=2515&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+            src: "",
             content: (
-                <div className="bg-neutral-800 p-8 rounded-3xl mb-4 overflow-auto max-h-[60vh]">
+                <div className="bg-[#e4e4e4] p-8 rounded-3xl mb-4 overflow-auto max-h-[60vh]">
                   <ReactMarkdown 
-                    className="text-neutral-300 text-base md:text-xl font-sans prose prose-invert max-w-3xl mx-auto prose-a:text-blue-400 hover:prose-a:text-blue-300"
+                    className="text-stone-900 text-base md:text-xl font-sans prose prose-invert max-w-3xl mx-auto prose-a:text-blue-400 hover:prose-a:text-blue-300"
                     components={{
                       a: ({node, ...props}) => <a {...props} target="_blank" rel="noopener noreferrer" />
                     }}
@@ -276,11 +277,10 @@ const NewsletterPage: React.FC = () => {
       ))
 
       return (
-        <div key={title} className="w-full mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-            {title}
-          </h2>
+        <div className="">
           <Carousel items={cards} />
+          <div className="mb-4"></div>
+          <Separator/>
         </div>
       )
     })
@@ -291,19 +291,22 @@ const NewsletterPage: React.FC = () => {
   }
 
   return (
-    <div className="flex h-screen bg-black text-white">
-      <div className="w-1/3 h-full overflow-y-auto p-8 bg-neutral-900">
+    <div className="flex h-screen bg-[#e4e4e4] text-white">
+      <div className="w-1/3 h-full overflow-y-auto p-8">
         <NewsletterForm onSubmit={handleFormSubmit}/>
+        <div className="mb-4"></div>
+        <Separator/>
         {report && (
-          <div className="mt-8">
-            <h3 className="text-xl mb-2">First Report</h3>
-            <div className="corner-borders p-4 h-64 overflow-auto bg-neutral-800 rounded-md">
+          <div className="mt-4">
+            <h3 className="text-xl mb-2 text-stone-900 dark:text-white">First Report</h3>
+            <div className="text-stone-900 dark:text-white h-72 overflow-auto bg-brand rounded-md">
               {report}
             </div>
           </div>
         )}
       </div>
-      <div className="w-2/3 h-full overflow-y-auto p-8 bg-black">
+      <Separator orientation="vertical" />
+      <div className="w-2/3 h-full overflow-y-auto p-8">
         {renderNewsletterCarousels()}
       </div>
     </div>
