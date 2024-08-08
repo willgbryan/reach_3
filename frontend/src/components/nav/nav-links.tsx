@@ -17,7 +17,7 @@ export function NavLinks({ isCollapsed }) {
             variant: 'ghost', 
             href: `/newsletter`, 
             disabled: false, 
-            label: 'Coming soon'
+            // label: 'Coming soon'
           },
           { 
             title: 'Library', 

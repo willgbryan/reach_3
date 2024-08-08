@@ -17,17 +17,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
 import { Loader2 } from "lucide-react"
 
 type FormData = {
@@ -44,22 +33,20 @@ export function NewsletterForm({ onSubmit }: NewsletterFormProps) {
   const [topic, setTopic] = React.useState("")
   const [style, setStyle] = React.useState<FormData['style']>('standard')
   const [cadence, setCadence] = React.useState("")
-  const [isDialogOpen, setIsDialogOpen] = React.useState(false)
   const [isCreating, setIsCreating] = React.useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsDialogOpen(true)
-  }
-
-  const handleConfirm = async () => {
+    if (!topic || !style || !cadence) {
+      // show an error message here
+      return
+    }
     setIsCreating(true)
-    setIsDialogOpen(false)
     try {
       await onSubmit({ topic, style, cadence })
     } catch (error) {
       console.error("Error creating newsletter:", error)
-      // Handle error (e.g., show an error message to the user)
+      // show an error message to the user
     } finally {
       setIsCreating(false)
     }
@@ -114,42 +101,20 @@ export function NewsletterForm({ onSubmit }: NewsletterFormProps) {
         </form>
       </CardContent>
       <CardFooter className="flex justify-center">
-        <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <AlertDialogTrigger asChild>
-            <Button 
-              onClick={handleSubmit} 
-              className="w-full"
-              disabled={isCreating}
-            >
-              {isCreating ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating first newsletter...
-                </>
-              ) : (
-                'Create'
-              )}
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Confirm Newsletter Creation</AlertDialogTitle>
-              <AlertDialogDescription>
-                Are you sure you want to create a newsletter with the following configuration?
-                <br />
-                Topic: {topic}
-                <br />
-                Style: {style}
-                <br />
-                Cadence: {cadence}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleConfirm}>Create Newsletter</AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        <Button 
+          onClick={handleSubmit} 
+          className="w-full"
+          disabled={isCreating || !topic || !style || !cadence}
+        >
+          {isCreating ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Creating newsletter...
+            </>
+          ) : (
+            'Create Newsletter'
+          )}
+        </Button>
       </CardFooter>
     </Card>
   )

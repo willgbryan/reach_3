@@ -35,6 +35,41 @@ export interface Database {
           },
         ]
       }
+      newsletters: {
+        Row: {
+          id: string
+          user_id: string
+          created_at: string
+          topic: string
+          cron_expression: string
+          report_type: string
+        }
+        Insert: {
+          id: string
+          user_id: string
+          created_at?: string
+          topic: string
+          cron_expression: string
+          report_type: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          created_at?: string
+          topic?: string
+          cron_expression?: string
+          report_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "newsletters_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       document_sections: {
         Row: {
           content: string | null

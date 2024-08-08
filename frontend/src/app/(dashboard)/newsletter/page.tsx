@@ -46,73 +46,120 @@ const NewsletterPage: React.FC = () => {
   }, [router])
 
   useEffect(() => {
+    const isProduction = process.env.NODE_ENV === 'production';
+    const ws_protocol = isProduction ? 'wss://' : 'ws://';
+    const ws_host = isProduction ? 'themagi.systems' : 'localhost:8000';
+    //PROD
+      // const ws_uri = `wss://themagi.systems/ws`;
+
+    //DEV
     const ws_uri = `ws://localhost:8000/ws`
-    const newSocket = new WebSocket(ws_uri)
-    setSocket(newSocket)
-    socketRef.current = newSocket
+
+    const newSocket = new WebSocket(ws_uri);
+    setSocket(newSocket);
+    socketRef.current = newSocket;
 
     newSocket.onopen = () => {
-      console.log('WebSocket connection opened')
-    }
+      console.log('WebSocket connection opened');
+      setSocket(newSocket);
+    };
 
-    newSocket.onerror = (error: Event) => {
-      console.error("WebSocket error:", error)
-    }
+    newSocket.onerror = (error) => {
+      console.error("WebSocket error:", error);
+    };
 
     newSocket.onclose = () => {
-      console.log("WebSocket connection closed")
-    }
+      console.log("WebSocket connection closed");
+      setSocket(null);
+    };
 
     return () => {
       if (newSocket) {
-        newSocket.close()
+        newSocket.close();
       }
-    }
-  }, [])
+    };
+  }, []);
+
+  const waitForSocketConnection = async (socket: WebSocket): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      const maxAttempts = 10;
+      const intervalTime = 1000;
+      let currentAttempt = 0;
+
+      const interval = setInterval(() => {
+        if (currentAttempt > maxAttempts - 1) {
+          clearInterval(interval);
+          reject(new Error('Maximum number of attempts exceeded'));
+        } else if (socket.readyState === WebSocket.OPEN) {
+          clearInterval(interval);
+          resolve();
+        }
+        currentAttempt++;
+      }, intervalTime);
+    });
+  };
 
   const handleFormSubmit = async (formData: FormData): Promise<void> => {
+    if (!socketRef.current) {
+      toast.error("Connection error", {
+        description: "WebSocket is not initialized. Please try again later.",
+      });
+      throw new Error('WebSocket is not initialized');
+    }
+
+    try {
+      await waitForSocketConnection(socketRef.current);
+    } catch (error) {
+      toast.error("Connection error", {
+        description: "Unable to establish a stable connection. Please try again later.",
+      });
+      throw error;
+    }
+
+    const chatId = nanoid()
+    const reportType = {
+      'succinct': 'paragraph',
+      'standard': 'research_report',
+      'in-depth': 'detailed_report'
+    }[formData.style]
+
+    const requestData = {
+      task: formData.topic,
+      report_type: reportType,
+      style: formData.style,
+      cadence: formData.cadence,
+      chatId: chatId,
+    }
+
+    console.log('Sending data to WebSocket:', requestData)
+    socketRef.current.send(JSON.stringify(requestData))
+
+    toast.success("Newsletter generation started", {
+      description: `Topic: ${formData.topic}, Style: ${formData.style}, Cadence: ${formData.cadence}`,
+    })
+
     return new Promise((resolve, reject) => {
-      if (!socketRef.current || socketRef.current.readyState !== WebSocket.OPEN) {
-        console.error('WebSocket is not open')
-        reject(new Error('WebSocket is not open'))
-        return
-      }
-
-      const chatId = nanoid()
-      const reportType = {
-        'succinct': 'paragraph',
-        'standard': 'research_report',
-        'in-depth': 'detailed_report'
-      }[formData.style]
-
-      const requestData = {
-        task: formData.topic,
-        report_type: reportType,
-        style: formData.style,
-        cadence: formData.cadence,
-        chatId: chatId,
-      }
-
-      console.log('Sending data to WebSocket:', requestData)
-      socketRef.current.send(JSON.stringify(requestData))
-
-      toast.success("Newsletter generation started", {
-        description: `Topic: ${formData.topic}, Style: ${formData.style}, Cadence: ${formData.cadence}`,
-      })
-
       let accumulatedReport = ''
 
-      socketRef.current.onmessage = (event: MessageEvent) => {
+      const messageHandler = (event: MessageEvent) => {
         const data = JSON.parse(event.data)
         if (data.type === 'report') {
           accumulatedReport += data.output
           setReport(prev => prev + data.output)
         }
         if (data.type === 'complete') {
+          socketRef.current!.removeEventListener('message', messageHandler)
           saveNewsletter(formData, accumulatedReport, chatId)
             .then(() => resolve())
             .catch(error => reject(error))
         }
+      }
+
+      socketRef.current!.addEventListener('message', messageHandler)
+
+      socketRef.current!.onerror = (error) => {
+        socketRef.current!.removeEventListener('message', messageHandler)
+        reject(error)
       }
     })
   }
@@ -159,7 +206,7 @@ const NewsletterPage: React.FC = () => {
       toast.error("Failed to save newsletter", {
         description: "An error occurred while saving your newsletter. Please try again.",
       })
-      throw error // Re-throw the error to be caught by the Promise in handleFormSubmit
+      throw error
     }
   }
 
