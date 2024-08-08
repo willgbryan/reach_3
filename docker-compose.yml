@@ -1,141 +1,141 @@
-version: '3.8'
-
-services:
-  searxng:
-    image: searxng/searxng:latest
-    volumes:
-      - ./searxng/settings.yml:/etc/searxng/settings.yml
-    ports:
-      - "8080:8080"
-    networks:
-      - reach
-
-  backend:
-    build: 
-      context: ./backend
-      dockerfile: Dockerfile
-    volumes:
-      - ./backend:/usr/src/app
-      # - ./reach_core:/usr/src/app/reach_core
-    environment:
-      SEARX_URL: http://searxng:8080
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
-    ports:
-      - "8000:8000"
-    networks:
-      - reach
-
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile.nextjs
-      secrets:
-        - OPENAI_API_KEY
-    volumes:
-      - ./frontend:/usr/src/app
-      - ./frontend/public:/usr/src/app/public
-      - /usr/src/app/.next
-      - /usr/src/app/node_modules
-    ports:
-      - "3000:3000"
-    environment:
-      - NEXT_PUBLIC_BASE_URL=localhost:3000
-      - NEXT_PUBLIC_BACKEND_URL=backend:8000
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - SEARX_URL=http://searxng:8080
-      - WATCHPACK_POLLING=true
-      - NODE_ENV=dev
-    depends_on:
-      - backend
-    networks:
-      - reach
-    command: npm run dev
-
-secrets:
-  OPENAI_API_KEY:
-    file: ./frontend/.env.local
-
-networks:
-  reach:
-    driver: bridge
-
-#PROD
 # version: '3.8'
-# services:
-#   traefik:
-#     image: traefik:v2.5
-#     command:
-#       - "--api.insecure=true"
-#       - "--providers.docker=true"
-#       - "--providers.docker.exposedbydefault=false"
-#       - "--entrypoints.web.address=:80"
-#       - "--entrypoints.websecure.address=:443"
-#       - "--certificatesresolvers.myresolver.acme.httpchallenge=true"
-#       - "--certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web"
-#       - "--certificatesresolvers.myresolver.acme.email=will@themagi.tech"
-#       - "--certificatesresolvers.myresolver.acme.storage=/acme.json"
-#       - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
-#       - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
-#       - "--log.level=DEBUG"
-#     ports:
-#       - "80:80"
-#       - "443:443"
-#     volumes:
-#       - /var/run/docker.sock:/var/run/docker.sock:ro
-#       - ./traefik/acme.json:/acme.json:rw,Z
-#     networks:
-#       - reach
 
+# services:
 #   searxng:
 #     image: searxng/searxng:latest
 #     volumes:
 #       - ./searxng/settings.yml:/etc/searxng/settings.yml
+#     ports:
+#       - "8080:8080"
 #     networks:
 #       - reach
-#     labels:
-#       - "traefik.enable=true"
-#       - "traefik.http.routers.searxng.rule=Host(`themagi.systems`)"
-#       - "traefik.http.routers.searxng.entrypoints=websecure"
-#       - "traefik.http.routers.searxng.tls.certresolver=myresolver"
-#       - "traefik.http.services.searxng.loadbalancer.server.port=8080"
 
 #   backend:
-#     build:
+#     build: 
 #       context: ./backend
 #       dockerfile: Dockerfile
+#     volumes:
+#       - ./backend:/usr/src/app
+#       # - ./reach_core:/usr/src/app/reach_core
 #     environment:
 #       SEARX_URL: http://searxng:8080
 #       OPENAI_API_KEY: ${OPENAI_API_KEY}
+#     ports:
+#       - "8000:8000"
 #     networks:
 #       - reach
-#     labels:
-#       - "traefik.enable=true"
-#       - "traefik.http.routers.backend.rule=Host(`themagi.systems`) && PathPrefix(`/ws`)"
-#       - "traefik.http.routers.backend.entrypoints=websecure"
-#       - "traefik.http.routers.backend.tls.certresolver=myresolver"
-#       - "traefik.http.services.backend.loadbalancer.server.port=8000"
-#       - "traefik.http.middlewares.strip-ws-prefix.stripprefix.prefixes=/ws"
-#       - "traefik.http.routers.backend.middlewares=strip-ws-prefix"
 
 #   frontend:
 #     build:
 #       context: ./frontend
 #       dockerfile: Dockerfile.nextjs
+#       secrets:
+#         - OPENAI_API_KEY
+#     volumes:
+#       - ./frontend:/usr/src/app
+#       - ./frontend/public:/usr/src/app/public
+#       - /usr/src/app/.next
+#       - /usr/src/app/node_modules
+#     ports:
+#       - "3000:3000"
 #     environment:
-#       - NEXT_PUBLIC_BASE_URL=https://themagi.systems
+#       - NEXT_PUBLIC_BASE_URL=localhost:3000
+#       - NEXT_PUBLIC_BACKEND_URL=backend:8000
 #       - OPENAI_API_KEY=${OPENAI_API_KEY}
 #       - SEARX_URL=http://searxng:8080
+#       - WATCHPACK_POLLING=true
+#       - NODE_ENV=dev
 #     depends_on:
 #       - backend
 #     networks:
 #       - reach
-#     labels:
-#       - "traefik.enable=true"
-#       - "traefik.http.routers.frontend.rule=Host(`themagi.systems`) && PathPrefix(`/`, `/api`)"
-#       - "traefik.http.routers.frontend.entrypoints=websecure"
-#       - "traefik.http.routers.frontend.tls.certresolver=myresolver"
-#       - "traefik.http.services.frontend.loadbalancer.server.port=3000"
+#     command: npm run dev
+
+# secrets:
+#   OPENAI_API_KEY:
+#     file: ./frontend/.env.local
 
 # networks:
 #   reach:
 #     driver: bridge
+
+#PROD
+version: '3.8'
+services:
+  traefik:
+    image: traefik:v2.5
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.myresolver.acme.httpchallenge=true"
+      - "--certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.myresolver.acme.email=will@themagi.tech"
+      - "--certificatesresolvers.myresolver.acme.storage=/acme.json"
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+      - "--log.level=DEBUG"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/acme.json:/acme.json:rw,Z
+    networks:
+      - reach
+
+  searxng:
+    image: searxng/searxng:latest
+    volumes:
+      - ./searxng/settings.yml:/etc/searxng/settings.yml
+    networks:
+      - reach
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.searxng.rule=Host(`themagi.systems`)"
+      - "traefik.http.routers.searxng.entrypoints=websecure"
+      - "traefik.http.routers.searxng.tls.certresolver=myresolver"
+      - "traefik.http.services.searxng.loadbalancer.server.port=8080"
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      SEARX_URL: http://searxng:8080
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+    networks:
+      - reach
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=Host(`themagi.systems`) && PathPrefix(`/ws`)"
+      - "traefik.http.routers.backend.entrypoints=websecure"
+      - "traefik.http.routers.backend.tls.certresolver=myresolver"
+      - "traefik.http.services.backend.loadbalancer.server.port=8000"
+      - "traefik.http.middlewares.strip-ws-prefix.stripprefix.prefixes=/ws"
+      - "traefik.http.routers.backend.middlewares=strip-ws-prefix"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.nextjs
+    environment:
+      - NEXT_PUBLIC_BASE_URL=https://themagi.systems
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - SEARX_URL=http://searxng:8080
+    depends_on:
+      - backend
+    networks:
+      - reach
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`themagi.systems`) && PathPrefix(`/`, `/api`)"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.tls.certresolver=myresolver"
+      - "traefik.http.services.frontend.loadbalancer.server.port=3000"
+
+networks:
+  reach:
+    driver: bridge

@@ -26,10 +26,10 @@ export async function POST(req: NextRequest) {
   const ws_protocol = isProduction ? 'wss://' : 'ws://';
   const ws_host = isProduction ? 'themagi.systems' : 'localhost:8000';
 
-  //PROD
+  // PROD
   const ws_uri = `wss://themagi.systems/ws`;
 
-  //DEV
+  // //DEV
   // const ws_uri = `ws://${process.env.NEXT_PUBLIC_BACKEND_URL}/ws`
 
 
