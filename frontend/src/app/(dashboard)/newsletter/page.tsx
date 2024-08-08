@@ -1,10 +1,11 @@
+"use client"
+
 import React, { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { nanoid } from 'nanoid'
 import { NewsletterForm } from '@/components/newsletter-config'
 import { getSession, getUserDetails } from '@/app/_data/user'
-import { getNewsletterChats } from '@/app/_data/chat'
-import { Chat } from '@/types/index'
+import { getNewsletterChats, NewsletterChat } from '@/app/_data/chat'
 import { toast } from "sonner"
 import { Carousel, Card } from "@/components/cult/apple-cards-carousel"
 
@@ -21,7 +22,7 @@ type FormData = {
 const NewsletterPage: React.FC = () => {
   const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
-  const [newsletters, setNewsletters] = useState<Chat[]>([])
+  const [newsletters, setNewsletters] = useState<NewsletterChat[]>([])
   const [socket, setSocket] = useState<WebSocket | null>(null)
   const socketRef = useRef<WebSocket | null>(null)
   const [report, setReport] = useState<string>('')
@@ -219,14 +220,27 @@ const NewsletterPage: React.FC = () => {
     }
   }
 
-  const groupNewslettersByTitle = (newsletters: Chat[]) => {
+  const getCadenceFromCronExpression = (cronExpression: string): string => {
+    switch (cronExpression) {
+      case '0 0 * * *':
+        return 'Daily'
+      case '0 0 * * 0':
+        return 'Weekly'
+      case '0 0 1 * *':
+        return 'Monthly'
+      default:
+        return 'Custom'
+    }
+  }
+
+  const groupNewslettersByTitle = (newsletters: NewsletterChat[]) => {
     return newsletters.reduce((acc, newsletter) => {
       if (!acc[newsletter.title]) {
         acc[newsletter.title] = []
       }
       acc[newsletter.title].push(newsletter)
       return acc
-    }, {} as Record<string, Chat[]>)
+    }, {} as Record<string, NewsletterChat[]>)
   }
 
   const renderNewsletterCarousels = () => {
@@ -237,14 +251,14 @@ const NewsletterPage: React.FC = () => {
         <Card
           key={newsletter.id}
           card={{
-            category: newsletter.payload?.cadence || 'No cadence set',
-            title: title,
-            src: "",
+            category: (`${getCadenceFromCronExpression(newsletter.cron_expression)} ${newsletter.createdAt}`) || 'No cadence set',
+            title: newsletter.title,
+            src: "https://images.unsplash.com/photo-1599202860130-f600f4948364?q=80&w=2515&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
             content: (
-              <div className="bg-[#F5F5F7] dark:bg-neutral-800 p-8 md:p-14 rounded-3xl mb-4">
-                <p className="text-neutral-600 dark:text-neutral-400 text-base md:text-2xl font-sans max-w-3xl mx-auto">
-                  <span className="font-bold text-neutral-700 dark:text-neutral-200">
-                    {new Date(newsletter.payload?.createdAt).toLocaleDateString()}
+              <div className="bg-neutral-800 p-8 rounded-3xl mb-4">
+                <p className="text-neutral-300 text-base md:text-xl font-sans max-w-3xl mx-auto">
+                  <span className="font-bold text-white">
+                    {new Date(newsletter.createdAt).toLocaleDateString()}
                   </span>{" "}
                   {newsletter.messages[0].content.substring(0, 200)}...
                 </p>
@@ -256,10 +270,7 @@ const NewsletterPage: React.FC = () => {
       ))
 
       return (
-        <div key={title} className="w-full h-full py-20">
-          <h2 className="max-w-7xl pl-4 mx-auto text-xl md:text-5xl font-bold text-neutral-800 dark:text-neutral-200 font-sans">
-            {title}
-          </h2>
+        <div key={title} className="w-full mb-12">
           <Carousel items={cards} />
         </div>
       )
@@ -271,19 +282,19 @@ const NewsletterPage: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-col h-screen">
-      <div className="w-full p-4">
+    <div className="flex h-screen bg-black text-white">
+      <div className="w-1/3 h-full overflow-y-auto p-8 bg-neutral-900">
         <NewsletterForm onSubmit={handleFormSubmit} />
         {report && (
           <div className="mt-8">
             <h3 className="text-xl mb-2">Generated Report</h3>
-            <div className="border p-4 h-64 overflow-auto">
+            <div className="border border-neutral-700 p-4 h-64 overflow-auto bg-neutral-800 rounded-md">
               {report}
             </div>
           </div>
         )}
       </div>
-      <div className="w-full p-4 overflow-y-auto">
+      <div className="w-2/3 h-full overflow-y-auto p-8 bg-black">
         {renderNewsletterCarousels()}
       </div>
     </div>

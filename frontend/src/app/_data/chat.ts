@@ -40,7 +40,27 @@ export async function getChats(userId?: string | null) {
   }
 }
 
-export async function getNewsletterChats(userId?: string | null) {
+export interface NewsletterChat {
+  id: string;
+  path: string;
+  title: string;
+  messages: any[];
+  createdAt: string;
+  cron_expression: string;
+}
+
+interface RawChatData {
+  id: string;
+  payload: {
+    path: string;
+    title: string;
+    messages: any[];
+    createdAt: string;
+  };
+  cron_expression: string;
+}
+
+export async function getNewsletterChats(userId?: string | null): Promise<NewsletterChat[]> {
   if (!userId) {
     return []
   }
@@ -48,29 +68,38 @@ export async function getNewsletterChats(userId?: string | null) {
     const db = createClient(cookies())
     const { data } = await db
       .from('chats')
-      .select('payload')
+      .select('id, payload, cron_expression')
       .order('payload->createdAt', { ascending: false })
       .eq('user_id', userId)
       .eq('is_newsletter', true)
       .eq('is_deleted', false)
       .throwOnError()
 
-    return (data?.map((entry) => entry.payload as Chat) ?? []).filter(chat =>
-      chat &&
-      typeof chat === 'object' &&
-      'id' in chat &&
-      'path' in chat &&
-      'title' in chat &&
-      'messages' in chat &&
-      'createdAt' in chat &&
-      Array.isArray(chat.messages)
-    )
+    return (data as RawChatData[] ?? [])
+      .map((entry): NewsletterChat => ({
+        id: entry.id,
+        path: entry.payload.path,
+        title: entry.payload.title,
+        messages: entry.payload.messages,
+        createdAt: entry.payload.createdAt,
+        cron_expression: entry.cron_expression,
+      }))
+      .filter((chat): chat is NewsletterChat =>
+        chat &&
+        typeof chat === 'object' &&
+        'id' in chat &&
+        'path' in chat &&
+        'title' in chat &&
+        'messages' in chat &&
+        'createdAt' in chat &&
+        'cron_expression' in chat &&
+        Array.isArray(chat.messages)
+      )
   } catch (error) {
     console.error('Error fetching newsletter chats:', error)
     return []
   }
 }
-
 
 export async function removeChat({ id, path }: { id: string; path: string }) {
   try {
