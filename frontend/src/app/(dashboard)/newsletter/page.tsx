@@ -166,6 +166,12 @@ const NewsletterPage: React.FC = () => {
 
   const saveNewsletter = async (formData: FormData, content: string, chatId: string): Promise<void> => {
     try {
+      const reportType = {
+        'succinct': 'paragraph',
+        'standard': 'research_report',
+        'in-depth': 'detailed_report'
+      }[formData.style]
+
       const response = await fetch('/api/save-chat', {
         method: 'POST',
         headers: {
@@ -180,6 +186,9 @@ const NewsletterPage: React.FC = () => {
           ],
           isNewsletter: true,
           cadence: formData.cadence,
+          topic: formData.topic,
+          style: formData.style,
+          reportType: reportType,
         }),
       })
 
@@ -190,10 +199,10 @@ const NewsletterPage: React.FC = () => {
       console.log('Newsletter saved successfully')
       toast.success("Newsletter saved successfully", {
         description: `Your ${formData.cadence} newsletter about ${formData.topic} has been saved.`,
-        action: {
-          label: "View Newsletters",
-          onClick: () => router.push('/newsletters'),
-        },
+        // action: {
+        //   label: "View Newsletters",
+        //   onClick: () => router.push('/newsletters'),
+        // },
       })
 
       // Refresh the newsletters list
