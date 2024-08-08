@@ -7,6 +7,7 @@ import { NewsletterForm } from '@/components/newsletter-config'
 import { getSession, getUserDetails } from '@/app/_data/user'
 import { getNewsletterChats } from '@/app/_data/chat'
 import { Chat } from '@/types/index'
+import { toast } from "sonner"
 
 type User = {
   id: string;
@@ -14,7 +15,7 @@ type User = {
 
 type FormData = {
   topic: string;
-  style: string;
+  style: 'succinct' | 'standard' | 'in-depth';
   cadence: string;
 };
 
@@ -69,39 +70,54 @@ const NewsletterPage: React.FC = () => {
     }
   }, [])
 
-  const handleFormSubmit = async (formData: FormData) => {
-    if (!socketRef.current || socketRef.current.readyState !== WebSocket.OPEN) {
-      console.error('WebSocket is not open')
-      return
-    }
-
-    const chatId = nanoid()
-    const requestData = {
-      task: formData.topic,
-      report_type: "newsletter",
-      style: formData.style,
-      cadence: formData.cadence,
-      chatId: chatId,
-    }
-
-    console.log('Sending data to WebSocket:', requestData)
-    socketRef.current.send(JSON.stringify(requestData))
-
-    let accumulatedReport = ''
-
-    socketRef.current.onmessage = (event: MessageEvent) => {
-      const data = JSON.parse(event.data)
-      if (data.type === 'report') {
-        accumulatedReport += data.output
-        setReport(prev => prev + data.output)
+  const handleFormSubmit = async (formData: FormData): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      if (!socketRef.current || socketRef.current.readyState !== WebSocket.OPEN) {
+        console.error('WebSocket is not open')
+        reject(new Error('WebSocket is not open'))
+        return
       }
-      if (data.type === 'complete') {
-        saveNewsletter(formData, accumulatedReport, chatId)
+
+      const chatId = nanoid()
+      const reportType = {
+        'succinct': 'paragraph',
+        'standard': 'research_report',
+        'in-depth': 'detailed_report'
+      }[formData.style]
+
+      const requestData = {
+        task: formData.topic,
+        report_type: reportType,
+        style: formData.style,
+        cadence: formData.cadence,
+        chatId: chatId,
       }
-    }
+
+      console.log('Sending data to WebSocket:', requestData)
+      socketRef.current.send(JSON.stringify(requestData))
+
+      toast.success("Newsletter generation started", {
+        description: `Topic: ${formData.topic}, Style: ${formData.style}, Cadence: ${formData.cadence}`,
+      })
+
+      let accumulatedReport = ''
+
+      socketRef.current.onmessage = (event: MessageEvent) => {
+        const data = JSON.parse(event.data)
+        if (data.type === 'report') {
+          accumulatedReport += data.output
+          setReport(prev => prev + data.output)
+        }
+        if (data.type === 'complete') {
+          saveNewsletter(formData, accumulatedReport, chatId)
+            .then(() => resolve())
+            .catch(error => reject(error))
+        }
+      }
+    })
   }
 
-  const saveNewsletter = async (formData: FormData, content: string, chatId: string) => {
+  const saveNewsletter = async (formData: FormData, content: string, chatId: string): Promise<void> => {
     try {
       const response = await fetch('/api/save-chat', {
         method: 'POST',
@@ -112,7 +128,7 @@ const NewsletterPage: React.FC = () => {
           chatId: chatId,
           completion: content,
           messages: [
-            { role: 'user', content: `Generate a ${formData.style} newsletter about ${formData.topic}` },
+            { role: 'user', content: `${formData.topic}` },
             { role: 'assistant', content: content }
           ],
           isNewsletter: true,
@@ -125,6 +141,14 @@ const NewsletterPage: React.FC = () => {
       }
 
       console.log('Newsletter saved successfully')
+      toast.success("Newsletter saved successfully", {
+        description: `Your ${formData.cadence} newsletter about ${formData.topic} has been saved.`,
+        action: {
+          label: "View Newsletters",
+          onClick: () => router.push('/newsletters'),
+        },
+      })
+
       // Refresh the newsletters list
       if (user) {
         const updatedNewsletters = await getNewsletterChats(user.id)
@@ -132,6 +156,10 @@ const NewsletterPage: React.FC = () => {
       }
     } catch (error) {
       console.error('Error saving newsletter:', error)
+      toast.error("Failed to save newsletter", {
+        description: "An error occurred while saving your newsletter. Please try again.",
+      })
+      throw error // Re-throw the error to be caught by the Promise in handleFormSubmit
     }
   }
 
@@ -141,24 +169,26 @@ const NewsletterPage: React.FC = () => {
 
   return (
     <div className="flex h-screen">
-      <div className="w-1/3 p-4">
+      <div className="w-1/2 p-4 flex flex-col">
         <NewsletterForm onSubmit={handleFormSubmit} />
-        <div className="mt-8">
-          <h2 className="text-2xl mb-4">Your Newsletters</h2>
-          <ul>
-            {newsletters.map((newsletter) => (
-              <li key={newsletter.id} className="mb-2">
-                {newsletter.title} - {newsletter.payload?.cadence || 'No cadence set'}
-              </li>
-            ))}
-          </ul>
-        </div>
+        {report && (
+          <div className="mt-8">
+            <h3 className="text-xl mb-2">Generated Report</h3>
+            <div className="border p-4 h-64 overflow-auto">
+              {report}
+            </div>
+          </div>
+        )}
       </div>
-      <div className="w-2/3 p-4">
-        <h2 className="text-2xl mb-4">Generated Report</h2>
-        <div className="border p-4 h-full overflow-auto">
-          {report}
-        </div>
+      <div className="w-1/2 p-4">
+        <ul className="space-y-2">
+          {newsletters.map((newsletter) => (
+            <li key={newsletter.id} className="border p-2 rounded">
+              <h3 className="font-bold">{newsletter.title}</h3>
+              <p>Cadence: {newsletter.payload?.cadence || 'No cadence set'}</p>
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
   )

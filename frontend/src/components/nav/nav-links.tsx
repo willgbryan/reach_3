@@ -16,7 +16,7 @@ export function NavLinks({ isCollapsed }) {
             icon: Newspaper, 
             variant: 'ghost', 
             href: `/newsletter`, 
-            disabled: true, 
+            disabled: false, 
             label: 'Coming soon'
           },
           { 
