@@ -217,17 +217,17 @@ export const Card = ({
                 className="sticky top-4 h-8 w-8 right-0 ml-auto bg-black rounded-full flex items-center justify-center"
                 onClick={handleClose}
               >
-                <IconX className="h-6 w-6 text-neutral-100 dark:text-neutral-900" />
+                <IconX className="h-6 w-6 text-neutral-100 dark:text-white" />
               </button>
               <motion.p
                 layoutId={layout ? `category-${card.title}` : undefined}
-                className="text-base font-medium text-black dark:text-white"
+                className="text-base font-medium text-black dark:text-stone-900"
               >
                 {card.category}
               </motion.p>
               <motion.p
                 layoutId={layout ? `title-${card.title}` : undefined}
-                className="text-2xl md:text-5xl font-semibold text-neutral-700 mt-4 dark:text-white"
+                className="text-2xl md:text-5xl font-semibold text-neutral-700 mt-4 dark:text-stone-900"
               >
                 {card.title}
               </motion.p>
