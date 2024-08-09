@@ -298,8 +298,8 @@ const NewsletterPage: React.FC = () => {
         <Separator/>
         {report && (
           <div className="mt-4">
-            <h3 className="text-xl mb-2 text-stone-900 dark:text-white">First Report</h3>
-            <div className="text-stone-900 dark:text-white h-72 overflow-auto bg-brand rounded-md">
+            <h3 className="text-xl mb-2 text-stone-900">First Report</h3>
+            <div className="text-stone-900 h-72 overflow-auto bg-brand rounded-md">
               {report}
             </div>
           </div>
