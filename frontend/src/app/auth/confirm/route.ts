@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
   }
 
   // return the user to an error page with instructions
-  return NextResponse.redirect(new URL(`${baseUrl}/auth/auth-code-error`, req.url))
+  return NextResponse.redirect(new URL(`/auth/auth-code-error`, req.url))
 }
 
 export async function POST(req: NextRequest) {

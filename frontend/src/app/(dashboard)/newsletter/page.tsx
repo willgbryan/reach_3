@@ -29,6 +29,20 @@ const NewsletterPage: React.FC = () => {
   const socketRef = useRef<WebSocket | null>(null)
   const [report, setReport] = useState<string>('')
 
+  function getWsUri(): string {
+    const deployment = process.env.DEPLOYMENT
+  
+    if (deployment === "PROD") {
+      return `wss://themagi.systems/ws`
+    } else if (deployment === "DEV") {
+      return `ws://localhost:8000/ws`
+    } else {
+      return process.env.NEXT_PUBLIC_BASE_URL || 'https://themagi.systems'
+    }
+  }
+  
+  const baseUri = getWsUri()
+
   useEffect(() => {
     const fetchUserAndNewsletters = async () => {
       const session = await getSession()
@@ -48,16 +62,8 @@ const NewsletterPage: React.FC = () => {
   }, [router])
 
   useEffect(() => {
-    const isProduction = process.env.NODE_ENV === 'production';
-    const ws_protocol = isProduction ? 'wss://' : 'ws://';
-    const ws_host = isProduction ? 'themagi.systems' : 'localhost:8000';
-    //PROD
-    const ws_uri = `wss://themagi.systems/ws`;
 
-    // //DEV
-    // const ws_uri = `ws://localhost:8000/ws`
-
-    const newSocket = new WebSocket(ws_uri);
+    const newSocket = new WebSocket(baseUri);
     setSocket(newSocket);
     socketRef.current = newSocket;
 
