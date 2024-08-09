@@ -3,6 +3,20 @@ import { NextRequest, NextResponse } from 'next/server'
 import { Provider } from '@supabase/supabase-js'
 import { createClient } from '@/db/server'
 
+function getBaseUrl(): string {
+  const deployment = process.env.DEPLOYMENT
+
+  if (deployment === "PROD") {
+    return 'https://themagi.systems'
+  } else if (deployment === "DEV") {
+    return ''
+  } else {
+    return process.env.NEXT_PUBLIC_BASE_URL || 'https://themagi.systems'
+  }
+}
+
+const baseUrl = getBaseUrl()
+
 export async function GET(
   req: NextRequest,
   {
@@ -14,7 +28,7 @@ export async function GET(
   const slug = params.slug
   const { searchParams } = new URL(req.url)
   const next = searchParams.get('next')
-  const redirectPath = next ? `/auth/callback?next=${next}` : `/auth/callback`
+  const redirectPath = next ? `${baseUrl}/auth/callback?next=${next}` : `${baseUrl}/auth/callback`
   
   const cookieStore = cookies()
   const supabase = createClient(cookieStore)

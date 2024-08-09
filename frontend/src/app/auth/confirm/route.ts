@@ -3,14 +3,25 @@ import { NextRequest, NextResponse } from 'next/server'
 import { EmailOtpType } from '@supabase/supabase-js'
 import { createClient } from '@/db/server'
 
+function getBaseUrl(): string {
+  const deployment = process.env.DEPLOYMENT
+
+  if (deployment === "PROD") {
+    return 'https://themagi.systems'
+  } else if (deployment === "DEV") {
+    return ''
+  } else {
+    return process.env.NEXT_PUBLIC_BASE_URL || 'https://themagi.systems'
+  }
+}
+
+const baseUrl = getBaseUrl()
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://themagi.systems';
   const token_hash = searchParams.get('token_hash')
   const type = searchParams.get('type') as EmailOtpType
-
-  // DEV
-  // const next = searchParams.get('next') ?? '/chat'
 
   // PROD
   const next = searchParams.get('next') ?? `${baseUrl}/chat`
@@ -25,7 +36,7 @@ export async function GET(req: NextRequest) {
   }
 
   // return the user to an error page with instructions
-  return NextResponse.redirect(new URL('/auth/auth-code-error', req.url))
+  return NextResponse.redirect(new URL(`${baseUrl}/auth/auth-code-error`, req.url))
 }
 
 export async function POST(req: NextRequest) {

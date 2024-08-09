@@ -3,10 +3,23 @@ import { NextResponse, type NextRequest } from 'next/server'
 
 import { createClient } from '@/db/server'
 
+function getBaseUrl(): string {
+  const deployment = process.env.DEPLOYMENT
+
+  if (deployment === "PROD") {
+    return 'https://themagi.systems'
+  } else if (deployment === "DEV") {
+    return ''
+  } else {
+    return process.env.NEXT_PUBLIC_BASE_URL || 'https://themagi.systems'
+  }
+}
+
+const baseUrl = getBaseUrl()
+
 export async function POST(req: NextRequest) {
   const cookieStore = cookies()
   const supabase = createClient(cookieStore)
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://themagi.systems';
 
   // Check if we have a session
   const {

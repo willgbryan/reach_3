@@ -20,6 +20,20 @@ function InputErrorMessage({ children }) {
   )
 }
 
+function getBaseUrl(): string {
+  const deployment = process.env.DEPLOYMENT
+
+  if (deployment === "PROD") {
+    return 'https://themagi.systems'
+  } else if (deployment === "DEV") {
+    return ''
+  } else {
+    return process.env.NEXT_PUBLIC_BASE_URL || 'https://themagi.systems'
+  }
+}
+
+const baseUrl = getBaseUrl()
+
 export default function VerifyTokenForm() {
   const { supabase } = useSupabase()
   const router = useRouter()
@@ -30,7 +44,6 @@ export default function VerifyTokenForm() {
     email: '',
     token: '',
   })
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://themagi.systems';
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
