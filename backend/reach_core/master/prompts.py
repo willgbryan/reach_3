@@ -183,7 +183,7 @@ def generate_newsletter_report_prompt(question, context, report_format="apa", to
            f' query or task: "{question}" in a detailed report that is a topical newsletter where todays date is {datetime.now().strftime("%B %d, %Y")}.' \
            f'This is a newsletter delivered on the following cadence: {cadence}. The newsletter content should only cover the previous day, week, or month depending on the cadence.' \
            " The report should focus on the answer to the query, should be well structured, informative," \
-           f" in depth and comprehensive, with facts and numbers if available and a minimum of {total_words} words.\n" \
+           f" in depth and comprehensive, with facts and numbers if available and a MINIMUM of {total_words} words.\n" \
            "You should strive to write the report as long as you can using all relevant and necessary information provided, preserving the EXISTING REPORT and adding rich details. Do not include topics in REMOVED SECTIONS.\n" \
            "You must write the report with markdown syntax.\n " \
            f"Use an unbiased and journalistic tone. \n" \
@@ -216,7 +216,7 @@ def generate_long_newsletter_report_prompt(question, context, report_format="apa
            f' query or task: "{question}" in a detailed report that is a topical newsletter where todays date is {datetime.now().strftime("%B %d, %Y")}.' \
            f'This is a newsletter delivered on the following cadence: {cadence}. The newsletter content should only cover the previous day, week, or month depending on the cadence.' \
            " The report should focus on the answer to the query, should be well structured, informative," \
-           f" in depth and comprehensive, with facts and numbers if available and a minimum of {total_words} words.\n" \
+           f" in depth and comprehensive, with facts and numbers if available and a MINIMUM of {total_words} words.\n" \
            "You should strive to write the report as long as you can using all relevant and necessary information provided, preserving the EXISTING REPORT and adding rich details. Do not include topics in REMOVED SECTIONS.\n" \
            "You must write the report with markdown syntax.\n " \
            f"Use an unbiased and journalistic tone. \n" \
