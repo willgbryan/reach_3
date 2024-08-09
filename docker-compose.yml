@@ -113,8 +113,8 @@ services:
       - "traefik.http.routers.backend.entrypoints=websecure"
       - "traefik.http.routers.backend.tls.certresolver=myresolver"
       - "traefik.http.services.backend.loadbalancer.server.port=8000"
-      - "traefik.http.middlewares.strip-ws-prefix.stripprefix.prefixes=/ws"
-      - "traefik.http.routers.backend.middlewares=strip-ws-prefix"
+      - "traefik.http.middlewares.websocket.headers.customrequestheaders.X-Forwarded-Proto=ws"
+      - "traefik.http.routers.backend.middlewares=websocket"
 
   frontend:
     build:
