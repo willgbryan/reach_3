@@ -10,8 +10,8 @@ const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://themagi.systems';
 export default async function SignIn() {
   const session = await getSession()
   if (session) {
-    redirect('/chat')
-    // return redirect(`${baseUrl}/chat`)
+    // redirect('/chat')
+    return redirect(`${baseUrl}/chat`)
   }
 
   return (

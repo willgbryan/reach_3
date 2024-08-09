@@ -123,7 +123,8 @@ services:
       dockerfile: Dockerfile.nextjs
     environment:
       - NEXT_PUBLIC_BASE_URL=https://themagi.systems
-      - NEXT_PUBLIC_BACKEND_URL=https://themagi.systems
+      - NEXT_PUBLIC_BACKEND_URL=https://themagi.system
+      - DEPLOYMENT="PROD"
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - SEARX_URL=http://searxng:8080
     depends_on:
