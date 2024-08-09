@@ -81,7 +81,7 @@ services:
       - "443:443"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./traefik/acme.json:/acme.json:rw,Z
+      - ./traefik/acme.json:/acme.json
     networks:
       - reach
 
@@ -93,7 +93,7 @@ services:
       - reach
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.searxng.rule=Host(`themagi.systems`)"
+      - "traefik.http.routers.searxng.rule=Host(`searx.themagi.systems`)"
       - "traefik.http.routers.searxng.entrypoints=websecure"
       - "traefik.http.routers.searxng.tls.certresolver=myresolver"
       - "traefik.http.services.searxng.loadbalancer.server.port=8080"
@@ -113,7 +113,8 @@ services:
       - "traefik.http.routers.backend.entrypoints=websecure"
       - "traefik.http.routers.backend.tls.certresolver=myresolver"
       - "traefik.http.services.backend.loadbalancer.server.port=8000"
-      - "traefik.http.middlewares.websocket.headers.customrequestheaders.X-Forwarded-Proto=ws"
+      - "traefik.http.middlewares.websocket.headers.customrequestheaders.Connection=Upgrade"
+      - "traefik.http.middlewares.websocket.headers.customrequestheaders.Upgrade=websocket"
       - "traefik.http.routers.backend.middlewares=websocket"
 
   frontend:
@@ -122,6 +123,7 @@ services:
       dockerfile: Dockerfile.nextjs
     environment:
       - NEXT_PUBLIC_BASE_URL=https://themagi.systems
+      - NEXT_PUBLIC_BACKEND_URL=https://themagi.systems
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - SEARX_URL=http://searxng:8080
     depends_on:
@@ -130,7 +132,7 @@ services:
       - reach
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.frontend.rule=Host(`themagi.systems`) && PathPrefix(`/`, `/api`)"
+      - "traefik.http.routers.frontend.rule=Host(`themagi.systems`)"
       - "traefik.http.routers.frontend.entrypoints=websecure"
       - "traefik.http.routers.frontend.tls.certresolver=myresolver"
       - "traefik.http.services.frontend.loadbalancer.server.port=3000"
