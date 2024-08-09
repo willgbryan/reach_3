@@ -45,6 +45,7 @@
 #       - SEARX_URL=http://searxng:8080
 #       - WATCHPACK_POLLING=true
 #       - NODE_ENV=dev
+#       - DEPLOYMENT="DEV"
 #     depends_on:
 #       - backend
 #     networks:
