@@ -21,7 +21,7 @@ export function GoogleSignIn() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${baseUrl}/auth/callback`,
+        redirectTo: `/auth/callback`,
       },
     })
     if (error) console.error('Error signing in with Google:', error)

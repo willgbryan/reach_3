@@ -21,7 +21,7 @@ export function LinkedInSignIn() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'linkedin_oidc',
       options: {
-        redirectTo: `${baseUrl}/auth/callback`,
+        redirectTo: `/auth/callback`,
       },
     })
     if (error) console.error('Error signing in with LinkedIn:', error)
