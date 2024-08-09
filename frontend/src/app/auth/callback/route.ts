@@ -15,6 +15,19 @@ const getUrl = () => {
   return url
 }
 
+function getBaseUrl(): string {
+  const deployment = process.env.DEPLOYMENT
+  if (deployment === "PROD") {
+    return 'https://themagi.systems'
+  } else if (deployment === "DEV") {
+    return ''
+  } else {
+    return process.env.NEXT_PUBLIC_SITE_URL || 
+           process.env.NEXT_PUBLIC_VERCEL_URL || 
+           'http://localhost:3000'
+  }
+}
+
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url)
 
@@ -30,7 +43,8 @@ export async function GET(request: Request) {
     const supabase = createClient(cookieStore)
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
-      return NextResponse.redirect(new URL(`/${next}`, request.url))
+      const baseUrl = getBaseUrl()
+      return NextResponse.redirect(new URL(`${baseUrl}/${next}`, request.url))
 
       // return NextResponse.redirect(
       //   redirect ? origin : new URL(`/${next.slice(1)}`, request.url)

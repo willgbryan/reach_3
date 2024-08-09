@@ -2,14 +2,26 @@
 import { Button } from '@/components/ui/button'
 import { useSupabase } from '@/app/supabase-provider'
 
+function getBaseUrl(): string {
+  const deployment = process.env.NEXT_PUBLIC_DEPLOYMENT
+  if (deployment === "PROD") {
+    return 'https://themagi.systems'
+  } else if (deployment === "DEV") {
+    return ''
+  } else {
+    return process.env.NEXT_PUBLIC_BASE_URL || 'https://themagi.systems'
+  }
+}
+
 export function GoogleSignIn() {
   const { supabase } = useSupabase()
 
   const signInWithGoogle = async () => {
+    const baseUrl = getBaseUrl()
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${baseUrl}/auth/callback`,
       },
     })
     if (error) console.error('Error signing in with Google:', error)
