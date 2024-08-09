@@ -131,7 +131,7 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
           await new Promise<void>((resolve, reject) => {
             const timeout = setTimeout(() => {
               reject(new Error('WebSocket connection timed out'));
-            }, 5000);
+            }, 20000);
     
             socketRef.current!.onopen = () => {
               clearTimeout(timeout);
