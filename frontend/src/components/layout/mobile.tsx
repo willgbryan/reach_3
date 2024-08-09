@@ -20,11 +20,6 @@ export function MobileLayout({ historyChildren, children, user }) {
 
   return (
     <div className="flex flex-col h-screen dark:bg-stone-800 bg-stone-100">
-      <div className="flex-shrink-0 h-16 flex items-center px-4">
-        <Link href="/" className="flex items-center space-x-3">
-          <CultIcon className="h-9 w-9" />
-        </Link>
-      </div>
       <div className="flex-grow flex overflow-hidden">
         <Sidebar open={isMobileNavOpen} setOpen={setIsMobileNavOpen}>
           <SidebarBody className="justify-between gap-10 h-full bg-white dark:bg-stone-900">
