@@ -122,7 +122,7 @@ const NewsletterPage: React.FC = () => {
     const reportType = {
       'succinct': 'newsletter_paragraph',
       'standard': 'newsletter_report',
-      'in-depth': 'long_newsletter_report'
+      'in-depth': 'detailed_report'
     }[formData.style]
 
     const requestData = {
@@ -172,7 +172,7 @@ const NewsletterPage: React.FC = () => {
       const reportType = {
         'succinct': 'newsletter_paragraph',
         'standard': 'newsletter_report',
-        'in-depth': 'long_newsletter_report'
+        'in-depth': 'detailed_report'
       }[formData.style]
 
       const response = await fetch('/api/save-chat', {

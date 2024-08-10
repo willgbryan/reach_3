@@ -377,6 +377,7 @@ def generate_subtopic_report_prompt(
     context,
     report_format="apa",
     total_words=1000,
+    cadence=""
 ) -> str:
 
     return f"""
@@ -385,7 +386,8 @@ def generate_subtopic_report_prompt(
     
     "Main Topic and Subtopic":
     Using the latest information available, construct a detailed report on the subtopic: {current_subtopic} under the main topic: {main_topic}.
-    ONLY USE INFORMATION PROVIDED IN THE CONTEXT TO GENERATE YOUR RESPONSE
+    ONLY USE INFORMATION PROVIDED IN THE CONTEXT TO GENERATE YOUR RESPONSE.
+    This is a {cadence} report, it is critical that the information is timely as of the current date provided below.
     
     "Content Focus":
     - The report should focus on answering the question, be well-structured, informative, in-depth, and only contain information from sources.
@@ -417,9 +419,10 @@ def generate_subtopic_report_prompt(
     """
 
 
-def generate_report_introduction(question: str, research_summary: str = "") -> str:
+def generate_report_introduction(question: str, research_summary: str = "", cadence: str = "") -> str:
     return f"""{research_summary}\n 
         Using ONLY the above latest information, Prepare a detailed report introduction on the topic -- {question}.
+        - This is a {cadence} report, it is critical that the information is timely as of the current date provided below.
         - The introduction should be succinct, well-structured, informative with markdown syntax.
         - As this introduction will be part of a larger report, do NOT include any other sections, which are generally present in a report.
         - The introduction should be preceded by an H1 heading with a suitable topic for the entire report.

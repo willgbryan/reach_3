@@ -115,7 +115,8 @@ class Reach:
                 main_topic=self.parent_query,
                 existing_headers=existing_headers,
                 retained_text=self.retained_text,
-                deleted_text=self.deleted_text
+                deleted_text=self.deleted_text,
+                cadence=self.cadence
             )
         else:
             report = await generate_report(
@@ -298,7 +299,7 @@ class Reach:
 
     async def write_introduction(self):
         # Construct Report Introduction from main topic research
-        introduction = await get_report_introduction(self.query, self.context, self.role, self.cfg, self.websocket)
+        introduction = await get_report_introduction(self.query, self.context, self.role, self.cfg, self.websocket, self.cadence)
 
         return introduction
 

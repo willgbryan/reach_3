@@ -8,7 +8,7 @@ from reach_core.master.functions import (add_source_urls, extract_headers,
 
 
 class DetailedReport():
-    def __init__(self, query: str, report_type: str, source_urls, sources, config_path: str, websocket: WebSocket, subtopics=[]):
+    def __init__(self, query: str, report_type: str, source_urls, sources, config_path: str, websocket: WebSocket, subtopics=[], cadence=""):
         self.query = query
         self.report_type = report_type
         self.source_urls = source_urls
@@ -16,9 +16,10 @@ class DetailedReport():
         self.config_path = config_path
         self.websocket = websocket
         self.subtopics = subtopics
+        self.cadence = cadence
 
         # A parent task assistant
-        self.main_task_assistant = Reach(self.query, self.report_type, self.source_urls, self.sources, self.config_path, self.websocket)
+        self.main_task_assistant = Reach(self.query, self.report_type, self.source_urls, self.sources, self.config_path, self.websocket, self.cadence)
 
         self.existing_headers = []
         # This is a global variable to store the entire context accumulated at any point through searching and scraping
@@ -107,7 +108,8 @@ class DetailedReport():
             subtopics=self.subtopics,
             visited_urls=self.global_urls,
             agent=self.main_task_assistant.agent,
-            role=self.main_task_assistant.role
+            role=self.main_task_assistant.role,
+            cadence=self.cadence
         )
 
         # The subtopics should start research from the context gathered till now
