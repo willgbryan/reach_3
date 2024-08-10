@@ -10,6 +10,7 @@ import { toast } from "sonner"
 import { Carousel, Card } from "@/components/cult/apple-cards-carousel"
 import ReactMarkdown from 'react-markdown'
 import { Separator } from '@/components/ui/separator'
+import { Skeleton } from '@/components/ui/skeleton'
 
 type User = {
   id: string;
@@ -21,6 +22,28 @@ type FormData = {
   cadence: string;
 };
 
+const SkeletonCard = () => {
+    return (
+      <div className="flex flex-col space-y-3">
+        <Skeleton className="h-[125px] w-[250px] rounded-xl" />
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-[250px]" />
+          <Skeleton className="h-4 w-[200px]" />
+        </div>
+      </div>
+    )
+  }
+  
+  const SkeletonCarousel = () => {
+    return (
+      <div className="flex space-x-4 overflow-x-auto p-4">
+        {[...Array(3)].map((_, index) => (
+          <SkeletonCard key={index} />
+        ))}
+      </div>
+    )
+  }
+
 const NewsletterPage: React.FC = () => {
   const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
@@ -29,8 +52,11 @@ const NewsletterPage: React.FC = () => {
   const socketRef = useRef<WebSocket | null>(null)
   const [report, setReport] = useState<string>('')
 
+  const [isLoading, setIsLoading] = useState(true)
+
   useEffect(() => {
     const fetchUserAndNewsletters = async () => {
+      setIsLoading(true)
       const session = await getSession()
       if (!session) {
         router.push('/auth/sign-in')
@@ -42,6 +68,7 @@ const NewsletterPage: React.FC = () => {
 
       const fetchedNewsletters = await getNewsletterChats(session.user.id)
       setNewsletters(fetchedNewsletters)
+      setIsLoading(false)
     }
 
     fetchUserAndNewsletters()
@@ -250,34 +277,45 @@ const NewsletterPage: React.FC = () => {
   }
 
   const renderNewsletterCarousels = () => {
+    if (isLoading) {
+      return [...Array(3)].map((_, index) => (
+        <div key={index} className="mb-8">
+          <SkeletonCarousel />
+          <div className="mb-4"></div>
+          <Separator />
+        </div>
+      ))
+    }
+
     const groupedNewsletters = groupNewslettersByTitle(newsletters)
 
     return Object.entries(groupedNewsletters).map(([title, newslettersGroup]) => {
       const cards = newslettersGroup.map((newsletter, index) => (
         <Card
+          key={index}
           card={{
             category: `${getCadenceFromCronExpression(newsletter.cron_expression)} ${formatDate(newsletter.createdAt)}`,
             title: newsletter.title,
             src: "",
             content: (
-                <div className="bg-[#e4e4e4] p-8 rounded-3xl mb-4 overflow-auto max-h-[60vh]">
-                  <ReactMarkdown 
-                    className="text-stone-900 text-base md:text-xl font-sans prose prose-invert max-w-3xl mx-auto prose-a:text-blue-400 hover:prose-a:text-blue-300"
-                    components={{
-                      a: ({node, ...props}) => <a {...props} target="_blank" rel="noopener noreferrer" />
-                    }}
-                  >
-                    {newsletter.messages[1].content}
-                  </ReactMarkdown>
-                </div>
-              ),
+              <div className="bg-[#e4e4e4] p-8 rounded-3xl mb-4 overflow-auto max-h-[60vh]">
+                <ReactMarkdown 
+                  className="text-stone-900 text-base md:text-xl font-sans prose prose-invert max-w-3xl mx-auto prose-a:text-blue-400 hover:prose-a:text-blue-300"
+                  components={{
+                    a: ({node, ...props}) => <a {...props} target="_blank" rel="noopener noreferrer" />
+                  }}
+                >
+                  {newsletter.messages[1].content}
+                </ReactMarkdown>
+              </div>
+            ),
           }}
           index={index}
         />
       ))
 
       return (
-        <div className="">
+        <div key={title} className="">
           <Carousel items={cards} />
           <div className="mb-4"></div>
           <Separator/>
@@ -285,11 +323,7 @@ const NewsletterPage: React.FC = () => {
       )
     })
   }
-
-  if (!user) {
-    return <div>Loading...</div>
-  }
-
+  
   return (
     <div className="flex h-screen bg-[#e4e4e4] text-white">
       <div className="w-1/3 h-full overflow-y-auto p-8">
