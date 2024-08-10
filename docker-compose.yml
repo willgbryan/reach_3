@@ -28,7 +28,7 @@
 #   frontend:
 #     build:
 #       context: ./frontend
-#       dockerfile: Dockerfile.nextjs
+#       dockerfile: Dockerfile
 #       secrets:
 #         - OPENAI_API_KEY
 #     volumes:
@@ -60,7 +60,7 @@
 #   reach:
 #     driver: bridge
 
-#PROD
+# #PROD
 version: '3.8'
 services:
   traefik:
@@ -121,7 +121,7 @@ services:
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile.nextjs
+      dockerfile: Dockerfile
     environment:
       - NEXT_PUBLIC_BASE_URL=https://themagi.systems
       - NEXT_PUBLIC_BACKEND_URL=https://themagi.system
