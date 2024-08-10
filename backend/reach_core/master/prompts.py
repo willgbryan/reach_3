@@ -203,6 +203,7 @@ def generate_newsletter_report_prompt(question, context, report_format="apa", to
             f"'You MUST include all relevant source urls.'\
              'Every url should be hyperlinked: [url website](url)'\n"\
             f"Please do your best, this is very important to my career. Expand on EXISTING REPORT, do NOT include topics in REMOVED SECTIONS." \
+            f"The time restriction of information based on the newsletter cadence: {cadence} is absolutely critical. The provided information must be only within the requested time window of the previous day, week, or month depending on the cadence."\
             f"Assume that the current date is {datetime.now().strftime('%B %d, %Y')}"
 
 def generate_long_newsletter_report_prompt(question, context, report_format="apa", total_words=4000, retained_text="", deleted_text="", cadence=""):
