@@ -377,6 +377,8 @@ def generate_subtopic_report_prompt(
     context,
     report_format="apa",
     total_words=1000,
+    retained_text="",
+    deleted_text="",
     cadence=""
 ) -> str:
 

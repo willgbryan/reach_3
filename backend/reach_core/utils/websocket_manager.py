@@ -101,6 +101,7 @@ async def run_agent( task, report_type, sources, websocket, cadence, retained_te
             # await websocket.send_json({"type": "report", "output": report})
             
             print(f"Agent run completed. Run time: {run_time}")
+            
             # return report
         except Exception as e:
             print(f"Error in run_agent: {str(e)}")
