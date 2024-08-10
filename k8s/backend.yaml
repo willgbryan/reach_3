@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: your-backend-image:tag  # Replace with actual image
+          image: backend:latest
           ports:
             - containerPort: 8000
           env:
@@ -45,10 +45,7 @@ kind: Ingress
 metadata:
   name: backend
   annotations:
-    kubernetes.io/ingress.class: traefik
-    traefik.ingress.kubernetes.io/router.tls: "true"
-    traefik.ingress.kubernetes.io/router.tls.certresolver: myresolver
-    traefik.ingress.kubernetes.io/router.middlewares: default-websocket@kubernetescrd
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
 spec:
   rules:
     - host: themagi.systems
@@ -61,14 +58,3 @@ spec:
                 name: backend
                 port: 
                   number: 8000
-
----
-apiVersion: traefik.containo.us/v1alpha1
-kind: Middleware
-metadata:
-  name: websocket
-spec:
-  headers:
-    customRequestHeaders:
-      Connection: Upgrade
-      Upgrade: websocket

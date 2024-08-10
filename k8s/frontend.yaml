@@ -15,14 +15,14 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: your-frontend-image:tag  # Replace with actual image
+          image: frontend:latest
           ports:
             - containerPort: 3000
           env:
             - name: NEXT_PUBLIC_BASE_URL
-              value: "https://themagi.systems"
+              value: "http://themagi.systems"
             - name: NEXT_PUBLIC_BACKEND_URL
-              value: "https://themagi.systems"
+              value: "http://themagi.systems"
             - name: DEPLOYMENT
               value: "PROD"
             - name: OPENAI_API_KEY
@@ -50,10 +50,6 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: frontend
-  annotations:
-    kubernetes.io/ingress.class: traefik
-    traefik.ingress.kubernetes.io/router.tls: "true"
-    traefik.ingress.kubernetes.io/router.tls.certresolver: myresolver
 spec:
   rules:
     - host: themagi.systems
