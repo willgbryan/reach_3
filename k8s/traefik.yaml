@@ -1,0 +1,80 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: traefik-config
+data:
+  traefik.yaml: |
+    api:
+      insecure: true
+    providers:
+      kubernetesCRD: {}
+    entryPoints:
+      web:
+        address: ":80"
+        http:
+          redirections:
+            entryPoint:
+              to: websecure
+              scheme: https
+      websecure:
+        address: ":443"
+    certificatesResolvers:
+      myresolver:
+        acme:
+          email: will@themagi.tech
+          storage: /acme.json
+          httpChallenge:
+            entryPoint: web
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: traefik
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: traefik
+  template:
+    metadata:
+      labels:
+        app: traefik
+    spec:
+      containers:
+        - name: traefik
+          image: traefik:v2.5
+          ports:
+            - name: web
+              containerPort: 80
+            - name: websecure
+              containerPort: 443
+          volumeMounts:
+            - name: config
+              mountPath: /etc/traefik
+            - name: acme
+              mountPath: /acme.json
+      volumes:
+        - name: config
+          configMap:
+            name: traefik-config
+        - name: acme
+          emptyDir: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: traefik
+spec:
+  type: LoadBalancer
+  ports:
+    - name: web
+      port: 80
+      targetPort: web
+    - name: websecure
+      port: 443
+      targetPort: websecure
+  selector:
+    app: traefik
