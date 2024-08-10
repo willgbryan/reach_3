@@ -391,8 +391,8 @@ def generate_subtopic_report_prompt(
     "Main Topic and Subtopic":
     Using the latest information available, construct a detailed report on the subtopic: {current_subtopic} under the main topic: {main_topic}.
     ONLY USE INFORMATION PROVIDED IN THE CONTEXT TO GENERATE YOUR RESPONSE.
-    This is a {cadence} report, it is critical that the information is timely as of the current date provided below.
-    
+    This is a report on the following cadence: {cadence}, it is critical that the information is timely as of the current date provided below and only covers information from the past day, week, or month depending on the cadence.
+
     "Content Focus":
     - The report should focus on answering the question, be well-structured, informative, in-depth, and only contain information from sources.
     - Use markdown syntax and follow the {report_format.upper()} format.
