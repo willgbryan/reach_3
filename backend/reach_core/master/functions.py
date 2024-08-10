@@ -258,13 +258,13 @@ async def stream_output(type, output, websocket=None, logging=True):
         pass
 
 
-async def get_report_introduction(query, context, role, config, websocket=None):
+async def get_report_introduction(query, context, role, config, websocket=None, cadence=""):
     try:
         introduction = await create_chat_completion(
             model=config.smart_llm_model,
             messages=[
                 {"role": "system", "content": f"{role}"},
-                {"role": "user", "content": generate_report_introduction(query, context)}],
+                {"role": "user", "content": generate_report_introduction(query, context, cadence)}],
             temperature=0,
             llm_provider=config.llm_provider,
             stream=True,

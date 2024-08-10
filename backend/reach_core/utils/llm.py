@@ -119,8 +119,6 @@ async def construct_subtopics(task: str, data: str, config, subtopics: list = []
                 "format_instructions": parser.get_format_instructions()},
         )
 
-        print(f"\n🤖 Calling {config.smart_llm_model}...\n")
-
         model = ChatOpenAI(model=config.smart_llm_model)
 
         chain = prompt | model | parser

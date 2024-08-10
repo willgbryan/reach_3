@@ -34,8 +34,8 @@ def generate_search_queries_prompt(question: str, parent_query: str, report_type
     prompt = {
         "task": f"Write {max_iterations} google search queries to search online that form an objective opinion from the following task: \"{task}\". If available in user_collected_info, the queries should aim to dig deeper into EXISTING_DATA, and ignore REMOVED_DATA.",
         "user_collected_info": f"The user has this EXISTING_DATA: {retained_text}, and has removed this REMOVED_DATA: {deleted_text}",
-        "recency_requirement": f"Restrict information to the {cadence}",
-        "date_needed": f"Use the current date if needed: {datetime.now().strftime('%B %d, %Y')}. Adhere to recency_requirement",
+        "recency_requirement": f"Restrict information to the {cadence}.",
+        "date_needed": f"Use the current date if needed: {datetime.now().strftime('%B %d, %Y')}. Adhere to recency_requirement. The provided information must be only within the requested time window of the previous day, week, or month depending on the cadence.",
         "files_info": f"Files can be present and questions can be asked about them. Uploaded files if any: {uploaded_files}",
         "additional_instructions": "Also include in the queries specified task details such as locations, names, etc. user_collected_info should heavily influence the direction of the search queries, enrich the EXISTING_DATA and reach for new information not contained in either the EXISTING_DATA or REMOVED_DATA.",
         "response_format": "You must respond with a list of strings in the following format: [\"query 1\", \"query 2\", \"query 3\"]."
@@ -85,7 +85,7 @@ def generate_newsletter_paragraph_prompt(question, context, report_format="apa",
     return f'Information: """{context}"""\n\n' \
            f'Using ONLY the above information, answer the following' \
            f' query or task: "{question}" in a detailed single paragraph that is a topical newsletter where todays date is {datetime.now().strftime("%B %d, %Y")}.' \
-           f'This is a newsletter delivered on the following cadence: {cadence}. The newsletter content should only cover the previous day, week, or month depending on the cadence.' \
+           f'This is a newsletter delivered on the following cadence: {cadence}. The newsletter content SHOULD ONLY COVER the previous day, week, or month depending on the cadence.' \
            " The single paragraph should focus on the answer to the query, should be well structured, informative," \
            f" concise yet comprehensive, with facts and numbers if available and a minimum of {total_words} words.\n" \
            "You should strive to write the paragraph concisely using all relevant and necessary information provided.\n" \
@@ -106,6 +106,7 @@ def generate_newsletter_paragraph_prompt(question, context, report_format="apa",
             f"'You MUST include all relevant source urls.'\
              'Every url should be hyperlinked: [url website](url)'\n"\
             f"Please do your best, this is very important to my career. Valid JSON is a critical component to the functionality of my application." \
+            f"The time restriction of information based on the newsletter cadence: {cadence} is absolutely critical. The provided information must be only within the requested time window of the previous day, week, or month depending on the cadence."\
             f"Assume that the current date is {datetime.now().strftime('%B %d, %Y')}"
 
 def generate_json_prompt(question, context, report_format="apa", total_words=2000):
@@ -202,6 +203,7 @@ def generate_newsletter_report_prompt(question, context, report_format="apa", to
             f"'You MUST include all relevant source urls.'\
              'Every url should be hyperlinked: [url website](url)'\n"\
             f"Please do your best, this is very important to my career. Expand on EXISTING REPORT, do NOT include topics in REMOVED SECTIONS." \
+            f"The time restriction of information based on the newsletter cadence: {cadence} is absolutely critical. The provided information must be only within the requested time window of the previous day, week, or month depending on the cadence."\
             f"Assume that the current date is {datetime.now().strftime('%B %d, %Y')}"
 
 def generate_long_newsletter_report_prompt(question, context, report_format="apa", total_words=4000, retained_text="", deleted_text="", cadence=""):
@@ -377,6 +379,9 @@ def generate_subtopic_report_prompt(
     context,
     report_format="apa",
     total_words=1000,
+    retained_text="",
+    deleted_text="",
+    cadence=""
 ) -> str:
 
     return f"""
@@ -385,8 +390,9 @@ def generate_subtopic_report_prompt(
     
     "Main Topic and Subtopic":
     Using the latest information available, construct a detailed report on the subtopic: {current_subtopic} under the main topic: {main_topic}.
-    ONLY USE INFORMATION PROVIDED IN THE CONTEXT TO GENERATE YOUR RESPONSE
-    
+    ONLY USE INFORMATION PROVIDED IN THE CONTEXT TO GENERATE YOUR RESPONSE.
+    This is a report on the following cadence: {cadence}, it is critical that the information is timely as of the current date provided below and only covers information from the past day, week, or month depending on the cadence.
+
     "Content Focus":
     - The report should focus on answering the question, be well-structured, informative, in-depth, and only contain information from sources.
     - Use markdown syntax and follow the {report_format.upper()} format.
@@ -417,9 +423,10 @@ def generate_subtopic_report_prompt(
     """
 
 
-def generate_report_introduction(question: str, research_summary: str = "") -> str:
+def generate_report_introduction(question: str, research_summary: str = "", cadence: str = "") -> str:
     return f"""{research_summary}\n 
         Using ONLY the above latest information, Prepare a detailed report introduction on the topic -- {question}.
+        - This is a {cadence} report, it is critical that the information is timely as of the current date provided below.
         - The introduction should be succinct, well-structured, informative with markdown syntax.
         - As this introduction will be part of a larger report, do NOT include any other sections, which are generally present in a report.
         - The introduction should be preceded by an H1 heading with a suitable topic for the entire report.

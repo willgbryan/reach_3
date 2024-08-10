@@ -37,7 +37,7 @@ class Config:
         self.max_iterations = int(os.getenv("MAX_ITERATIONS", 5))
         self.agent_role = os.getenv("AGENT_ROLE", None)
         self.scraper = os.getenv("SCRAPER", "bs")
-        self.max_subtopics = os.getenv("MAX_SUBTOPICS", 5)
+        self.max_subtopics = os.getenv("MAX_SUBTOPICS", 3)
 
         self.load_config_file()
 

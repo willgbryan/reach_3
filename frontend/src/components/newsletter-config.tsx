@@ -78,9 +78,9 @@ export function NewsletterForm({ onSubmit }: NewsletterFormProps) {
                   <SelectValue placeholder="Select style" />
                 </SelectTrigger>
                 <SelectContent position="popper">
-                  <SelectItem value="succinct">Succinct</SelectItem>
-                  <SelectItem value="standard">Standard</SelectItem>
-                  <SelectItem value="in-depth">In-Depth</SelectItem>
+                  <SelectItem value="succinct">Summary</SelectItem>
+                  <SelectItem value="standard">Single-page Report</SelectItem>
+                  <SelectItem value="in-depth">Multi-page Report - Experimental</SelectItem>
                 </SelectContent>
               </Select>
             </div>
