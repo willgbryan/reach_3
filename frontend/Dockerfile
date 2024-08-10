@@ -1,0 +1,40 @@
+FROM node:18-alpine
+
+WORKDIR /usr/src/app
+
+COPY package*.json ./
+RUN npm install --legacy-peer-deps
+
+COPY . .
+
+RUN --mount=type=secret,id=OPENAI_API_KEY \
+    OPENAI_API_KEY=$(cat /run/secrets/OPENAI_API_KEY) \
+    npm run build 
+
+EXPOSE 3000
+
+# #dev CMD
+# CMD ["npm", "run", "dev"]
+
+# prod CMD
+CMD ["npm", "start"]
+
+# #PROD
+# # Build stage
+# FROM node:18-alpine AS builder
+# WORKDIR /usr/src/app
+# COPY package*.json ./
+# RUN npm install --legacy-peer-deps
+# COPY . .
+# RUN npm run build
+
+# FROM node:18-alpine
+# WORKDIR /usr/src/app
+# COPY --from=builder /usr/src/app/next.config.js ./
+# COPY --from=builder /usr/src/app/public ./public
+# COPY --from=builder /usr/src/app/.next ./.next
+# COPY --from=builder /usr/src/app/node_modules ./node_modules
+# COPY --from=builder /usr/src/app/package*.json ./
+
+# EXPOSE 3000
+# CMD ["npm", "start"]
