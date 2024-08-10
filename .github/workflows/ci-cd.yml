@@ -7,9 +7,9 @@ on:
     branches: [ main ]
 
 env:
-  DOCKER_REGISTRY: reach13/reach_3
-  BACKEND_IMAGE_NAME: backend
-  FRONTEND_IMAGE_NAME: frontend
+  DOCKER_REGISTRY: docker.io
+  BACKEND_IMAGE_NAME: reach13/reach_3/backend
+  FRONTEND_IMAGE_NAME: reach13/reach_3/frontend
 
 jobs:
   build-and-push:

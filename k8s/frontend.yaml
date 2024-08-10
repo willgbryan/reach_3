@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: frontend:latest
+          image: reach13/reach_3/frontend:latest
           ports:
             - containerPort: 3000
           env:
