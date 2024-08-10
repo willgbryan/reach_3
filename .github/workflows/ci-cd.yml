@@ -81,8 +81,8 @@ jobs:
         sed -i 's|reach13/reach_3/frontend:latest|${{ env.DOCKER_REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }}|' k8s/frontend.yaml
 
     - name: Update secrets file
-        run: |
-          sed -i 's|${OPENAI_API_KEY}|${{ secrets.OPENAI_API_KEY }}|' k8s/secrets.yaml
+      run: |
+        sed -i 's|${OPENAI_API_KEY}|${{ secrets.OPENAI_API_KEY }}|' k8s/secrets.yaml
 
     - name: Deploy to DigitalOcean Kubernetes
       run: |
