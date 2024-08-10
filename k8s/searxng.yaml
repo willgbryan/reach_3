@@ -1,0 +1,86 @@
+# UPDATE
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: searxng-config
+data:
+  settings.yml: |
+    use_default_settings: true
+    general:
+      debug: false
+      instance_name: "SearXNG"
+    search:
+      safe_search: 0
+      autocomplete: 'google'
+    server:
+      secret_key: "your_secret_key_here"  # Change this to a random string
+      bind_address: "0.0.0.0"
+    ui:
+      default_locale: "en"
+      default_theme: "simple"
+    redis:
+      url: "redis://redis:6379/0"
+    # Add any other SearXNG settings you need here
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: searxng
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: searxng
+  template:
+    metadata:
+      labels:
+        app: searxng
+    spec:
+      containers:
+        - name: searxng
+          image: searxng/searxng:latest
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: settings
+              mountPath: /etc/searxng/settings.yml
+              subPath: settings.yml
+      volumes:
+        - name: settings
+          configMap:
+            name: searxng-config
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: searxng
+spec:
+  ports:
+    - port: 8080
+      targetPort: 8080
+  selector:
+    app: searxng
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: searxng
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.tls.certresolver: myresolver
+spec:
+  rules:
+    - host: searx.themagi.systems
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: searxng
+                port: 
+                  number: 8080
