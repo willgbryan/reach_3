@@ -19,7 +19,7 @@ EXPOSE 3000
 # prod CMD
 CMD ["npm", "start"]
 
-# #PROD
+# # #PROD
 # # Build stage
 # FROM node:18-alpine AS builder
 # WORKDIR /usr/src/app
