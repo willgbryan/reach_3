@@ -14,6 +14,13 @@ spec:
     spec:
       containers:
         - name: frontend
+          resources:
+              requests:
+                cpu: 100m
+                memory: 128Mi
+              limits:
+                cpu: 500m
+                memory: 512Mi
           image: reach13/reach_3/frontend:latest
           ports:
             - containerPort: 3000

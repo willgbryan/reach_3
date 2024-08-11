@@ -43,6 +43,13 @@ spec:
     spec:
       containers:
         - name: traefik
+          resources:
+              requests:
+                cpu: 100m
+                memory: 128Mi
+              limits:
+                cpu: 500m
+                memory: 512Mi
           image: traefik:v2.5
           ports:
             - name: web
