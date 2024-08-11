@@ -8,8 +8,8 @@ on:
 
 env:
   DOCKER_REGISTRY: docker.io
-  BACKEND_IMAGE_NAME: reach13/reach_3/backend
-  FRONTEND_IMAGE_NAME: reach13/reach_3/frontend
+  BACKEND_IMAGE_NAME: reach13/reach_backend
+  FRONTEND_IMAGE_NAME: reach13/reach_frontend
 
 jobs:
   build-and-push:
@@ -77,8 +77,8 @@ jobs:
 
     - name: Update deployment files
       run: |
-        sed -i 's|reach13/reach_3/backend:latest|${{ env.DOCKER_REGISTRY }}/${{ env.BACKEND_IMAGE_NAME }}:${{ github.sha }}|' k8s/backend.yaml
-        sed -i 's|reach13/reach_3/frontend:latest|${{ env.DOCKER_REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }}|' k8s/frontend.yaml
+        sed -i 's|reach13/reach_backend:latest|${{ env.DOCKER_REGISTRY }}/${{ env.BACKEND_IMAGE_NAME }}:${{ github.sha }}|' k8s/backend.yaml
+        sed -i 's|reach13/reach_frontend:latest|${{ env.DOCKER_REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }}|' k8s/frontend.yaml
 
     - name: Update secrets file
       run: |
