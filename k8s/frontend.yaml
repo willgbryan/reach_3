@@ -1,4 +1,3 @@
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -44,8 +43,8 @@ spec:
   selector:
     app: frontend
 ---
-apiVersion: networking.k8s.io/v1
-kind: Ingress
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
 metadata:
   name: frontend
   annotations:
@@ -54,14 +53,13 @@ metadata:
     traefik.ingress.kubernetes.io/router.tls: "true"
     traefik.ingress.kubernetes.io/router.tls.certresolver: "myresolver"
 spec:
-  rules:
-    - host: themagi.systems
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: frontend
-                port:
-                  number: 3000
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`themagi.systems`)
+      kind: Rule
+      services:
+        - name: frontend
+          port: 3000
+  tls:
+    certResolver: myresolver

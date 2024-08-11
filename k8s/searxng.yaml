@@ -2479,7 +2479,6 @@ data:
 
     default_doi_resolver: 'oadoi.org'
 
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -2503,9 +2502,6 @@ spec:
             - name: config
               mountPath: /etc/searxng/settings.yml
               subPath: settings.yml
-            - name: config
-              mountPath: /etc/searxng/uwsgi.ini
-              subPath: uwsgi.ini
       volumes:
         - name: config
           configMap:
@@ -2522,24 +2518,18 @@ spec:
   selector:
     app: searxng
 ---
-apiVersion: networking.k8s.io/v1
-kind: Ingress
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
 metadata:
   name: searxng
-  annotations:
-    kubernetes.io/ingress.class: "traefik"
-    traefik.ingress.kubernetes.io/router.entrypoints: "websecure"
-    traefik.ingress.kubernetes.io/router.tls: "true"
-    traefik.ingress.kubernetes.io/router.tls.certresolver: "myresolver"
 spec:
-  rules:
-    - host: searx.themagi.systems
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: searxng
-                port:
-                  number: 8080
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`searx.themagi.systems`)
+      kind: Rule
+      services:
+        - name: searxng
+          port: 8080
+  tls:
+    certResolver: myresolver

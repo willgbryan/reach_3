@@ -63,33 +63,30 @@ jobs:
   deploy-test:
     runs-on: ubuntu-latest
     needs: [build-and-push, validate-k8s]
-    if: github.ref == 'refs/heads/main' # Only run on main branch
+    if: github.ref == 'refs/heads/main'
     steps:
-    - uses: actions/checkout@v2
-
-    - name: Install doctl
-      uses: digitalocean/action-doctl@v2
-      with:
-        token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
-
-    - name: Save DigitalOcean kubeconfig
-      run: doctl kubernetes cluster kubeconfig save reach-3-cluster
-
-    - name: Update deployment files
-      run: |
-        sed -i 's|reach13/backend:latest|${{ env.DOCKER_REGISTRY }}/${{ env.BACKEND_IMAGE_NAME }}:${{ github.sha }}|' k8s/backend.yaml
-        sed -i 's|reach13/frontend:latest|${{ env.DOCKER_REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }}|' k8s/frontend.yaml
-
-    - name: Update secrets file
-      run: |
-        sed -i 's|${OPENAI_API_KEY}|${{ secrets.OPENAI_API_KEY }}|' k8s/secrets.yaml
-
-    - name: Deploy to DigitalOcean Kubernetes
-      run: |
-        kubectl apply -f k8s/secrets.yaml
-        kubectl apply -f k8s/
-
-    - name: Verify deployment
-      run: |
-        kubectl get pods
-        kubectl get services
+      - uses: actions/checkout@v2
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+      - name: Save DigitalOcean kubeconfig
+        run: doctl kubernetes cluster kubeconfig save reach-3-cluster
+      - name: Install Traefik CRDs
+        run: |
+          kubectl apply -f https://raw.githubusercontent.com/traefik/traefik/v2.10/docs/content/reference/dynamic-configuration/kubernetes-crd-definition-v1.yml
+      - name: Update deployment files
+        run: |
+          sed -i 's|reach13/backend:latest|${{ env.DOCKER_REGISTRY }}/${{ env.BACKEND_IMAGE_NAME }}:${{ github.sha }}|' k8s/backend.yaml
+          sed -i 's|reach13/frontend:latest|${{ env.DOCKER_REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }}|' k8s/frontend.yaml
+      - name: Update secrets file
+        run: |
+          sed -i 's|${OPENAI_API_KEY}|${{ secrets.OPENAI_API_KEY }}|' k8s/secrets.yaml
+      - name: Deploy to DigitalOcean Kubernetes
+        run: |
+          kubectl apply -f k8s/secrets.yaml
+          kubectl apply -f k8s/
+      - name: Verify deployment
+        run: |
+          kubectl get pods
+          kubectl get services
