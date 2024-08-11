@@ -7,38 +7,26 @@ import { nanoid } from 'nanoid'
 import showdown from 'showdown';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
-import { ShootingStars } from "@/components/cult/shooting-stars";
-import { StarsBackground } from "@/components/cult/stars-background";
+const BlackHole = dynamic(() => import('@/components/black-hole/black-hole'), {
+  ssr: false
+});
 
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { marked } from 'marked';
 
 import { ModeToggle } from '@/components/theme-toggle'
 
-import { SelectScrollable } from '@/components/chat/chat-document-sets'
 import { ChatList } from '@/components/chat/chat-list'
 import { ChatScrollAnchor } from '@/components/chat/chat-scroll-anchor'
-import { SIZE_PRESETS, useDynamicBlobSize } from '@/components/cult/dynamic-blob'
 import { Heading } from '@/components/cult/gradient-heading'
 import { useGetDocumentSets } from '@/hooks/use-get-document-sets'
 import { useDocSetName, useFileData, useStage } from '@/hooks/use-vector-blob'
 
 import SimpleInputForm from './simple-input';
 
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import { UserProvider } from '@/components/user-provider';
+import dynamic from 'next/dynamic'
 
 interface MainVectorPanelProps {
   id?: string | undefined
@@ -378,7 +366,7 @@ const ChatSection = ({
 
   return (
     <div className="flex flex-col items-center">
-      {updatedMessages.length > 0 ? (
+      {updatedMessages.length > 1 ? (
         <div className="pb-[100px] md:pb-40">
           {showEditMode ? (
             <div className="flex flex-row space-x-4">
@@ -423,8 +411,8 @@ const ChatSection = ({
           )}
         </div>
       ) : (
-        <div className="pt-64 md:pt-16">
-          <Heading>Where knowledge begins</Heading>
+        <div style={{ width: '100vw', height: '100vh' }}>
+          <BlackHole />
         </div>
       )}
     </div>

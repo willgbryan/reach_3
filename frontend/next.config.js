@@ -24,8 +24,13 @@ webpack: (config, { dev }) => {
   if (dev) {
     config.watchOptions = {
       poll: 1000,
-      aggregateTimeout: 300,
-    }
+      aggregateTimeout: 300
+    };
+    config.module.rules.push({
+      test: /\.(glsl|vs|fs|vert|frag)$/,
+      exclude: /node_modules/,
+      use: ['raw-loader'],
+    });
   }
   return config
 },
