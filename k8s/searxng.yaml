@@ -2479,7 +2479,6 @@ data:
 
     default_doi_resolver: 'oadoi.org'
 
-
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -2522,16 +2521,16 @@ spec:
       targetPort: 8080
   selector:
     app: searxng
-
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: searxng
   annotations:
-    kubernetes.io/ingress.class: traefik
+    kubernetes.io/ingress.class: "traefik"
+    traefik.ingress.kubernetes.io/router.entrypoints: "websecure"
     traefik.ingress.kubernetes.io/router.tls: "true"
-    traefik.ingress.kubernetes.io/router.tls.certresolver: myresolver
+    traefik.ingress.kubernetes.io/router.tls.certresolver: "myresolver"
 spec:
   rules:
     - host: searx.themagi.systems
@@ -2542,5 +2541,5 @@ spec:
             backend:
               service:
                 name: searxng
-                port: 
+                port:
                   number: 8080

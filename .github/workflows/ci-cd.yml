@@ -58,7 +58,7 @@ jobs:
 
     - name: Validate Kubernetes YAML files
       run: |
-        kubeval k8s/*.yaml
+        kubeval --kubernetes-version 1.30.2 --strict --ignore-missing-schemas k8s/*.yaml
 
   deploy-test:
     runs-on: ubuntu-latest

@@ -43,7 +43,11 @@ kind: Ingress
 metadata:
   name: backend
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    kubernetes.io/ingress.class: "traefik"
+    traefik.ingress.kubernetes.io/router.entrypoints: "websecure"
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.tls.certresolver: "myresolver"
+    traefik.ingress.kubernetes.io/router.middlewares: "default-websocket@kubernetescrd"
 spec:
   rules:
     - host: themagi.systems
@@ -56,3 +60,13 @@ spec:
                 name: backend
                 port:
                   number: 8000
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: websocket
+spec:
+  headers:
+    customRequestHeaders:
+      Connection: Upgrade
+      Upgrade: websocket
