@@ -5,8 +5,8 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass';
 import { CameraDragControls } from "./camera/CameraDragControls";
 import { Observer } from "./camera/Observer";
-import vertexShader from './vertexShader.glsl';
-import fragmentShader from './fragmentShader.glsl';
+import vertexShader from '!!raw-loader!./vertexShader.glsl';
+import fragmentShader from '!!raw-loader!./fragmentShader.glsl';
 import { createConfigGUI } from './gui/datGUI';
 import { createStatsGUI } from './gui/statsGUI';
 

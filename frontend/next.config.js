@@ -10,30 +10,24 @@ const nextConfig = {
   experimental: {
     ppr: true,
   },
-
-//   webpack: (config) => {
-//     config.resolve.alias = {
-//       ...config.resolve.alias,
-//       'sharp$': false,
-//       'onnxruntime-node$': false,
-//     }
-//     return config
-//   },
-// }
-webpack: (config, { dev }) => {
-  if (dev) {
-    config.watchOptions = {
-      poll: 1000,
-      aggregateTimeout: 300
-    };
+  webpack: (config, { dev }) => {
+    // Add GLSL file support
     config.module.rules.push({
       test: /\.(glsl|vs|fs|vert|frag)$/,
       exclude: /node_modules/,
       use: ['raw-loader'],
     });
-  }
-  return config
-},
-}
 
-module.exports = nextConfig
+    // Add development-specific options
+    if (dev) {
+      config.watchOptions = {
+        poll: 1000,
+        aggregateTimeout: 300
+      };
+    }
+
+    return config;
+  },
+};
+
+module.exports = nextConfig;
