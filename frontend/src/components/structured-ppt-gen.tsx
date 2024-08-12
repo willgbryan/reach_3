@@ -3,7 +3,7 @@ export async function generatePowerPoint(userPrompt: string) {
     try {
       console.log('Sending request to generate PowerPoint...');
   
-      const response = await fetch('/api/generate-powerpoint', {
+      const response = await fetch('/api/generate-presentation', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
