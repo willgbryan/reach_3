@@ -84,7 +84,7 @@ export default function VerifyTokenForm() {
     // reset form
     setFormData({ email: '', token: '' })
     // router.push('/chat')
-    router.push(`/chat`)
+    router.push(`${baseUrl}/chat`)
 
   }
 

@@ -29,7 +29,7 @@ export async function GET(
   const slug = params.slug
   const { searchParams } = new URL(req.url)
   const next = searchParams.get('next')
-  const redirectPath = next ? `/auth/callback?next=${next}` : `/auth/callback`
+  const redirectPath = next ? `$/auth/callback?next=${next}` : `/auth/callback`
   
   const cookieStore = cookies()
   const supabase = createClient(cookieStore)
