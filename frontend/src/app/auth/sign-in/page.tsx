@@ -18,10 +18,10 @@ function getBaseUrl(): string {
 }
 
 const baseUrl = getBaseUrl()
-
 export default async function SignIn() {
   const session = await getSession()
   if (session) {
+    // redirect('/chat')
     return redirect(`${baseUrl}/chat`)
   }
 

@@ -123,8 +123,8 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     environment:
-      - NEXT_PUBLIC_BASE_URL=https://themagi.systems
-      - NEXT_PUBLIC_BACKEND_URL=https://themagi.system
+      - NEXT_PUBLIC_BASE_URL=https://themagi.systems/
+      - NEXT_PUBLIC_BACKEND_URL=https://themagi.systems/
       - DEPLOYMENT="PROD"
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - SEARX_URL=http://searxng:8080

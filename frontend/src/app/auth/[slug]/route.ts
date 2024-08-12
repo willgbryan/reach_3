@@ -15,6 +15,7 @@ function getBaseUrl(): string {
   }
 }
 
+// Use the new function to set the base URL
 const baseUrl = getBaseUrl()
 
 export async function GET(
@@ -28,7 +29,7 @@ export async function GET(
   const slug = params.slug
   const { searchParams } = new URL(req.url)
   const next = searchParams.get('next')
-  const redirectPath = next ? `${baseUrl}/auth/callback?next=${next}` : `${baseUrl}/auth/callback`
+  const redirectPath = next ? `/auth/callback?next=${next}` : `/auth/callback`
   
   const cookieStore = cookies()
   const supabase = createClient(cookieStore)

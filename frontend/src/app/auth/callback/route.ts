@@ -44,7 +44,8 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
       const baseUrl = getBaseUrl()
-      return NextResponse.redirect(new URL(`${baseUrl}/${next}`, request.url))
+
+      return NextResponse.redirect(new URL(`/${next}`, request.url))
 
       // return NextResponse.redirect(
       //   redirect ? origin : new URL(`/${next.slice(1)}`, request.url)
