@@ -135,7 +135,7 @@ async def generate_powerpoint(request: PowerPointRequest):
             model="gpt-4o-2024-08-06",
             messages=[
                 {"role": "system", "content": "You are a helpful assistant that creates PowerPoint presentations. Generate a presentation structure based on the user's request by calling the create_presentation function."},
-                {"role": "user", "content": f"Create a presentation summarizing the following content: {request.prompt}"}
+                {"role": "user", "content": f"Create a presentation summarizing the following content. Be sure to include the links in a References slide: {request.prompt}"}
             ],
             functions=[{
                 "name": "create_presentation",
