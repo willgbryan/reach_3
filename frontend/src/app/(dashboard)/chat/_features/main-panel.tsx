@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import { UserProvider } from '@/components/user-provider';
+import { getWebSocket, closeWebSocket } from '@/utils/websocket'
 
 interface MainVectorPanelProps {
   id?: string | undefined
@@ -64,123 +65,103 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
   const router = useRouter()
   const sources = initialSources?.sources ?? [];
   const apiUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://themagi.systems';
-  const [socket, setSocket] = useState<WebSocket | null>(null);
   const socketRef = useRef<WebSocket | null>(null);
 
-    useEffect(() => {
-      const isProduction = process.env.NODE_ENV === 'production';
-      const ws_protocol = isProduction ? 'wss://' : 'ws://';
-      const ws_host = isProduction ? 'themagi.systems' : 'localhost:8000';
-      //PROD
-      // const ws_uri = `wss://themagi.systems/ws`;
+  useEffect(() => {
+    socketRef.current = getWebSocket();
 
-      //DEV
-      const ws_uri = `ws://localhost:8000/ws`
-    
-      const newSocket = new WebSocket(ws_uri);
-      setSocket(newSocket);
-      socketRef.current = newSocket;
-    
-      newSocket.onopen = () => {
-        console.log('WebSocket connection opened');
-        setSocket(newSocket);
-      };
-    
-      newSocket.onerror = (error) => {
-        console.error("WebSocket error:", error);
-      };
-    
-      newSocket.onclose = () => {
-        console.log("WebSocket connection closed");
-        setSocket(null);
-      };
-    
-      const urlParams = new URLSearchParams(window.location.search);
-      const urlChatId = urlParams.get('id');
-      if (urlChatId) {
-        setCurrentChatId(urlChatId);
+    socketRef.current.onopen = () => {
+      console.log('WebSocket connection opened');
+    };
+
+    socketRef.current.onerror = (error) => {
+      console.error("WebSocket error:", error);
+    };
+
+    socketRef.current.onclose = () => {
+      console.log("WebSocket connection closed");
+      socketRef.current = null;
+    };
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlChatId = urlParams.get('id');
+    if (urlChatId) {
+      setCurrentChatId(urlChatId);
+    }
+
+    return () => {
+      closeWebSocket();
+    };
+  }, []);
+
+  const handleApiCall = async (payload) => {
+    setIsLoading(true);
+    let accumulatedOutput = '';
+    const actualChatId = currentChatId || nanoid();
+
+    if (!currentChatId) {
+      setCurrentChatId(actualChatId);
+    }
+
+    try {
+      if (!socketRef.current || socketRef.current.readyState !== WebSocket.OPEN) {
+        socketRef.current = getWebSocket();
       }
 
-      return () => {
-        if (newSocket) {
-          newSocket.close();
-        }
-      };
-    }, []);
+      // Wait for the WebSocket to be open
+      if (socketRef.current.readyState !== WebSocket.OPEN) {
+        await new Promise<void>((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            reject(new Error('WebSocket connection timed out'));
+          }, 20000);
 
-    const handleApiCall = async (payload) => {
-      setIsLoading(true);
-      let accumulatedOutput = '';
-      const actualChatId = currentChatId || nanoid();
-    
-      if (!currentChatId) {
-        setCurrentChatId(actualChatId);
-      }
-    
-      try {
-        if (!socketRef.current) {
-          throw new Error('WebSocket is not initialized');
-        }
-    
-        // Wait for the WebSocket to be open
-        if (socketRef.current.readyState !== WebSocket.OPEN) {
-          await new Promise<void>((resolve, reject) => {
-            const timeout = setTimeout(() => {
-              reject(new Error('WebSocket connection timed out'));
-            }, 20000);
-    
-            socketRef.current!.onopen = () => {
-              clearTimeout(timeout);
-              resolve();
-            };
-    
-            socketRef.current!.onerror = () => {
-              clearTimeout(timeout);
-              reject(new Error('WebSocket connection failed'));
-            };
-          });
-        }
-    
-        const requestData = {
-          task: payload.messages[payload.messages.length - 1].content,
-          report_type: "research_report",
-          sources: ["WEB"],
-          ...(payload.edits && { edits: payload.edits }),
-          chatId: actualChatId,
-        };
-    
-        console.log('Sending data to WebSocket:', requestData);
-        socketRef.current.send(JSON.stringify(requestData));
-    
-        // promise that resolves when the WebSocket communication is complete
-        const wsComplete = new Promise<string>((resolve, reject) => {
-          if (!socketRef.current) {
-            reject(new Error('WebSocket is not initialized'));
-            return;
-          }
-    
-          const messageHandler = (event: MessageEvent) => {
-            const data = JSON.parse(event.data);
-            console.log(`Received WebSocket data: ${JSON.stringify(data)}`);
-            if (data.type === 'report') {
-              accumulatedOutput += data.output;
-              setReportContent(prev => prev + data.output);
-            }
-            if (data.type === 'complete') {
-              socketRef.current!.removeEventListener('message', messageHandler);
-              resolve(accumulatedOutput);
-            }
+          socketRef.current!.onopen = () => {
+            clearTimeout(timeout);
+            resolve();
           };
-    
-          socketRef.current.addEventListener('message', messageHandler);
-    
-          socketRef.current.onerror = (error) => {
-            socketRef.current!.removeEventListener('message', messageHandler);
-            reject(error);
+
+          socketRef.current!.onerror = () => {
+            clearTimeout(timeout);
+            reject(new Error('WebSocket connection failed'));
           };
         });
-    
-        await wsComplete;
+      }
+
+      const requestData = {
+        task: payload.messages[payload.messages.length - 1].content,
+        report_type: "research_report",
+        sources: ["WEB"],
+        ...(payload.edits && { edits: payload.edits }),
+        chatId: actualChatId,
+      };
+
+      console.log('Sending data to WebSocket:', requestData);
+      socketRef.current.send(JSON.stringify(requestData));
+
+      // promise that resolves when the WebSocket communication is complete
+      const wsComplete = new Promise<string>((resolve, reject) => {
+        const messageHandler = (event: MessageEvent) => {
+          const data = JSON.parse(event.data);
+          console.log(`Received WebSocket data: ${JSON.stringify(data)}`);
+          if (data.type === 'report') {
+            accumulatedOutput += data.output;
+            setReportContent(prev => prev + data.output);
+          }
+          if (data.type === 'complete') {
+            socketRef.current!.removeEventListener('message', messageHandler);
+            resolve(accumulatedOutput);
+          }
+        };
+
+        socketRef.current!.addEventListener('message', messageHandler);
+
+        socketRef.current!.onerror = (error) => {
+          socketRef.current!.removeEventListener('message', messageHandler);
+          reject(error);
+        };
+      });
+
+      await wsComplete;
     
         // theres a bug where sending a new query to a chat from the history list will save the chat twice
         const saveChatResponse = await fetch(`/api/save-chat`, {
@@ -376,10 +357,11 @@ const ChatSection = ({
   const handleCreateStructuredPowerPoint = async () => {
     try {
       const prompt = updatedMessages.map(msg => msg.content).join('\n\n');
-      console.log(`sending prompt: \n\n ${prompt}`)
+      console.log('Generating PowerPoint with prompt:', prompt);
       await generatePowerPoint(prompt);
     } catch (error) {
       console.error("Error creating PowerPoint:", error);
+      // toast the error
     }
   };
 

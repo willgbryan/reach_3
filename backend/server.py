@@ -1,4 +1,5 @@
 from http.client import HTTPException
+import traceback
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect, File, UploadFile, Form
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -10,6 +11,9 @@ import aiofiles
 from typing import List
 from reach_core.utils.websocket_manager import WebSocketManager
 from fastapi.middleware.cors import CORSMiddleware
+from pptx import Presentation
+from pptx.util import Inches, Pt
+from openai import OpenAI
 
 # from reach_core.utils.unstructured_functions import *
 # from reach_core.utils.hubspot_functions import *
@@ -106,6 +110,91 @@ async def websocket_endpoint(websocket: WebSocket):
                 await websocket.send_json({"type": "error", "message": "Internal server error"})
     except WebSocketDisconnect:
         await manager.disconnect(websocket)
+
+class SlideContent(BaseModel):
+    title: str
+    content: List[str]
+
+class PresentationStructure(BaseModel):
+    title: str
+    slides: List[SlideContent]
+
+class PowerPointRequest(BaseModel):
+    prompt: str
+
+client = OpenAI()
+
+@app.post("/generate-powerpoint")
+async def generate_powerpoint(request: PowerPointRequest):
+    try:
+        print(f"Received request with prompt: {request.prompt}")
+
+        completion = client.chat.completions.create(
+            model="gpt-4-0824",
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant that creates PowerPoint presentations. Generate a presentation structure based on the user's request."},
+                {"role": "user", "content": f"Create a presentation summarizing the following content: {request.prompt}"}
+            ],
+            functions=[{
+                "name": "create_presentation",
+                "description": "Create a PowerPoint presentation structure",
+                "parameters": PresentationStructure.schema()
+            }],
+            function_call={"name": "create_presentation"}
+        )
+
+        print("OpenAI API response received")
+
+        function_call = completion.choices[0].message.function_call
+        if not function_call or function_call.name != "create_presentation":
+            raise ValueError("Unexpected response from OpenAI API")
+
+        presentation_data = json.loads(function_call.arguments)
+        print(f"Presentation data: {presentation_data}")
+
+        # Create PowerPoint using python-pptx
+        prs = Presentation()
+        
+        # Title slide
+        title_slide_layout = prs.slide_layouts[0]
+        slide = prs.slides.add_slide(title_slide_layout)
+        title = slide.shapes.title
+        title.text = presentation_data["title"]
+
+        # Content slides
+        for i, slide_data in enumerate(presentation_data["slides"]):
+            content_slide_layout = prs.slide_layouts[1]
+            slide = prs.slides.add_slide(content_slide_layout)
+            
+            title = slide.shapes.title
+            title.text = slide_data["title"]
+
+            content = slide.placeholders[1]
+            tf = content.text_frame
+            for item in slide_data["content"]:
+                p = tf.add_paragraph()
+                p.text = item
+                p.level = 0
+
+            # Add slide number
+            txBox = slide.shapes.add_textbox(Inches(9), Inches(6.5), Inches(1), Inches(0.5))
+            tf = txBox.text_frame
+            tf.text = f"Slide {i + 1}"
+
+        # Ensure the outputs directory exists
+        os.makedirs("/usr/src/app/outputs", exist_ok=True)
+
+        # Save the presentation
+        output_path = "/usr/src/app/outputs/generated_presentation.pptx"
+        prs.save(output_path)
+
+        print(f"Presentation saved to {output_path}")
+
+        return {"message": "PowerPoint generated successfully", "file_path": output_path}
+    except Exception as e:
+        print(f"Error in generate_powerpoint: {str(e)}")
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500)
 
 # @app.post("/setEnvironmentVariables")
 # async def set_environment_variables(credentials: SalesforceCredentials):

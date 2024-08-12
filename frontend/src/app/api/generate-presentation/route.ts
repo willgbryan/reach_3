@@ -1,59 +1,69 @@
+// app/api/generate-powerpoint/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import OpenAI from 'openai';
-import { z } from 'zod';
-import { zodFunction } from 'openai/helpers/zod';
-
-const SlideContent = z.object({
-  title: z.string(),
-  content: z.array(z.string()),
-});
-
-const PresentationStructure = z.object({
-  title: z.string(),
-  slides: z.array(SlideContent),
-});
-
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+import { createReadStream } from 'fs';
+import { stat } from 'fs/promises';
+import path from 'path';
 
 export async function POST(req: NextRequest) {
+  console.log('PowerPoint generation API route called');
   try {
     const { prompt } = await req.json();
+    console.log('Received prompt:', prompt);
 
     if (!prompt) {
-      return new NextResponse(JSON.stringify({ error: 'Prompt is required' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      console.log('No prompt provided');
+      return NextResponse.json({ error: 'Prompt is required' }, { status: 400 });
     }
 
-    const completion = await client.beta.chat.completions.parse({
-      model: 'gpt-4-0824',
-      messages: [
-        {
-          role: 'system',
-          content: 'You are a helpful assistant that creates PowerPoint presentations by calling the createPresentation function.'
-        },
-        { role: 'user', content: `Help me format the following content into a well formatted PowerPoint presentation: ${prompt}` }
-      ],
-      tools: [zodFunction({ name: 'createPresentation', parameters: PresentationStructure })],
+    const pythonServerUrl = process.env.PYTHON_SERVER_URL || 'http://backend:8000';
+    console.log('Sending request to Python server:', pythonServerUrl);
+    const response = await fetch(`${pythonServerUrl}/generate-powerpoint`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ prompt }),
     });
 
-    const toolCall = completion.choices[0].message.tool_calls?.[0];
-    if (!toolCall || toolCall.function.name !== 'createPresentation') {
-      throw new Error('Unexpected response from OpenAI API');
+    if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error response from Python server:', response.status, errorText);
+        throw new Error(`Python server responded with ${response.status}: ${errorText}`);
+      }
+
+    const data = await response.json();
+    console.log('Received data from Python server:', data);
+    
+    // Get the file path from the Python server response
+    const filePath = path.join(process.cwd(), data.file_path);
+    console.log('File path:', filePath);
+
+    // Check if file exists
+    try {
+      await stat(filePath);
+      console.log('File exists');
+    } catch (error) {
+      console.error('File not found:', error);
+      return NextResponse.json({ error: 'File not found' }, { status: 404 });
     }
 
-    const presentationData = toolCall.function.parsed_arguments;
+    // Create a readable stream
+    const fileStream = createReadStream(filePath);
 
-    return new NextResponse(JSON.stringify(presentationData), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
+    console.log('Returning file stream');
+    // Return the file as a stream
+    return new NextResponse(fileStream as any, {
+      headers: {
+        'Content-Disposition': `attachment; filename="generated_presentation.pptx"`,
+        'Content-Type': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      },
     });
+
   } catch (error) {
-    console.error('Error generating presentation:', error);
-    return new NextResponse(JSON.stringify({ error: 'Failed to generate presentation' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    console.error('Error in generate-powerpoint:', error);
+    return NextResponse.json(
+      { error: 'Internal Server Error', message: error.message },
+      { status: 500 }
+    );
   }
 }
