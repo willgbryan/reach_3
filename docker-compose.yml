@@ -102,7 +102,7 @@ services:
   backend:
     build:
       context: ./backend
-      dockerfile: Dockerfile.nextjs
+      dockerfile: Dockerfile
     environment:
       SEARX_URL: http://searxng:8080
       OPENAI_API_KEY: ${OPENAI_API_KEY}
@@ -121,7 +121,7 @@ services:
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.nextjs
     environment:
       - NEXT_PUBLIC_BASE_URL=https://themagi.systems/
       - NEXT_PUBLIC_BACKEND_URL=https://themagi.systems/
