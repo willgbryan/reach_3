@@ -1,8 +1,13 @@
+import { toast } from "sonner";
+
 export async function generatePowerPoint(userPrompt: string) {
     console.log('generatePowerPoint function called with prompt:', userPrompt);
     try {
       console.log('Sending request to generate PowerPoint...');
   
+      toast.success("Creating presentation", {
+        description: "Your presentation will automatically download in a moment.",
+      });
       const response = await fetch('/api/generate-presentation', {
         method: 'POST',
         headers: {
@@ -16,8 +21,12 @@ export async function generatePowerPoint(userPrompt: string) {
       if (!response.ok) {
         const errorData = await response.json();
         console.error('Error response from server:', errorData);
+        toast.error("Error creating presentation", {
+            description: "We're experiencing trouble on our end. Please try again in a moment.",
+          });
         throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
       }
+      
   
       const blob = await response.blob();
   
@@ -37,8 +46,9 @@ export async function generatePowerPoint(userPrompt: string) {
   
     } catch (error) {
       console.error('Error generating PowerPoint:', error);
-      // toast it
-      alert(`Failed to generate PowerPoint: ${error.message}`);
+      toast.error("Error creating presentation", {
+        description: "We're experiencing trouble on our end. Please try again in a moment.",
+      });
       throw error;
     }
   }

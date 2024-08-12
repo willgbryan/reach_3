@@ -60,45 +60,52 @@ interface ChatHistoryParams {
 }
 
 async function saveChatHistory({
-  chatId,
-  completion,
-  messages,
-  userId,
-  db,
-  isNewsletter = false,
-  cadence,
-}: ChatHistoryParams): Promise<void> {
-  const newMessage = {
-    content: completion,
-    role: 'assistant',
-    messageIndex: messages.length.toString(),
-  }
-  const chatPayload = {
-    title: messages[0].content.substring(0, 100),
+    chatId,
+    completion,
+    messages,
     userId,
-    id: chatId,
-    createdAt: new Date().toISOString(),
-    path: `/chat/${chatId}`,
-    messages: [...messages, newMessage],
-    isNewsletter,
-    cadence: isNewsletter && cadence ? getCronExpression(cadence) : null,
-  }
-
-  const { error } = await db
-    .from('chats')
-    .upsert({
+    db,
+    isNewsletter = false,
+    cadence,
+  }: ChatHistoryParams): Promise<void> {
+    const lastMessage = messages[messages.length - 1];
+    let updatedMessages = messages;
+  
+    if (lastMessage.role !== 'assistant' || lastMessage.content !== completion) {
+      const newMessage = {
+        content: completion,
+        role: 'assistant',
+        messageIndex: messages.length.toString(),
+      };
+      updatedMessages = [...messages, newMessage];
+    }
+  
+    const chatPayload = {
+      title: messages[0].content.substring(0, 100),
+      userId,
       id: chatId,
-      user_id: userId,
-      payload: chatPayload,
-      is_newsletter: isNewsletter,
-      cron_expression: isNewsletter && cadence ? getCronExpression(cadence) : null,
-    })
-
-  if (error) {
-    console.error('Error saving chat history:', error)
-    throw error
+      createdAt: new Date().toISOString(),
+      path: `/chat/${chatId}`,
+      messages: updatedMessages,
+      isNewsletter,
+      cadence: isNewsletter && cadence ? getCronExpression(cadence) : null,
+    };
+  
+    const { error } = await db
+      .from('chats')
+      .upsert({
+        id: chatId,
+        user_id: userId,
+        payload: chatPayload,
+        is_newsletter: isNewsletter,
+        cron_expression: isNewsletter && cadence ? getCronExpression(cadence) : null,
+      });
+  
+    if (error) {
+      console.error('Error saving chat history:', error);
+      throw error;
+    }
   }
-}
 
 interface NewsletterEntryParams {
   chatId: string
