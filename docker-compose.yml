@@ -94,15 +94,15 @@ services:
       - reach
     labels:
       - "traefik.enable=true"
-      # - "traefik.http.routers.searxng.rule=Host(`searx.themagi.systems`)"
-      # - "traefik.http.routers.searxng.entrypoints=websecure"
-      # - "traefik.http.routers.searxng.tls.certresolver=myresolver"
+      - "traefik.http.routers.searxng.rule=Host(`searx.themagi.systems`)"
+      - "traefik.http.routers.searxng.entrypoints=websecure"
+      - "traefik.http.routers.searxng.tls.certresolver=myresolver"
       - "traefik.http.services.searxng.loadbalancer.server.port=8080"
 
   backend:
     build:
       context: ./backend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.nextjs
     environment:
       SEARX_URL: http://searxng:8080
       OPENAI_API_KEY: ${OPENAI_API_KEY}
