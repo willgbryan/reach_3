@@ -4,18 +4,14 @@ import React, { Suspense, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Message } from 'ai'
 import { nanoid } from 'nanoid'
-import showdown from 'showdown';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
-import { ShootingStars } from "@/components/cult/shooting-stars";
-import { StarsBackground } from "@/components/cult/stars-background";
 
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { marked } from 'marked';
 
 import { ModeToggle } from '@/components/theme-toggle'
-
 import { SelectScrollable } from '@/components/chat/chat-document-sets'
 import { ChatList } from '@/components/chat/chat-list'
 import { ChatScrollAnchor } from '@/components/chat/chat-scroll-anchor'
@@ -23,6 +19,7 @@ import { SIZE_PRESETS, useDynamicBlobSize } from '@/components/cult/dynamic-blob
 import { Heading } from '@/components/cult/gradient-heading'
 import { useGetDocumentSets } from '@/hooks/use-get-document-sets'
 import { useDocSetName, useFileData, useStage } from '@/hooks/use-vector-blob'
+import { generatePowerPoint } from '@/components/structured-ppt-gen'
 
 import SimpleInputForm from './simple-input';
 
@@ -75,10 +72,10 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
       const ws_protocol = isProduction ? 'wss://' : 'ws://';
       const ws_host = isProduction ? 'themagi.systems' : 'localhost:8000';
       //PROD
-      const ws_uri = `wss://themagi.systems/ws`;
+      // const ws_uri = `wss://themagi.systems/ws`;
 
       //DEV
-      // const ws_uri = `ws://localhost:8000/ws`
+      const ws_uri = `ws://localhost:8000/ws`
     
       const newSocket = new WebSocket(ws_uri);
       setSocket(newSocket);
@@ -376,6 +373,16 @@ const ChatSection = ({
     }
   };
 
+  const handleCreateStructuredPowerPoint = async () => {
+    try {
+      const prompt = updatedMessages.map(msg => msg.content).join('\n\n');
+      console.log(`sending prompt: \n\n ${prompt}`)
+      await generatePowerPoint(prompt);
+    } catch (error) {
+      console.error("Error creating PowerPoint:", error);
+    }
+  };
+
   return (
     <div className="flex flex-col items-center">
       {updatedMessages.length > 0 ? (
@@ -419,6 +426,7 @@ const ChatSection = ({
               </AlertDialog> */}
               <Button onClick={handleDigDeeper} variant="outline">Dig Deeper</Button>
               <Button onClick={createPDF} variant="outline">Create PDF</Button>
+              <Button onClick={handleCreateStructuredPowerPoint} variant="outline">Create PowerPoint</Button>
             </div>
           )}
         </div>

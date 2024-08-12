@@ -79,10 +79,10 @@ const NewsletterPage: React.FC = () => {
     const ws_protocol = isProduction ? 'wss://' : 'ws://';
     const ws_host = isProduction ? 'themagi.systems' : 'localhost:8000';
     //PROD
-    const ws_uri = `wss://themagi.systems/ws`;
+    // const ws_uri = `wss://themagi.systems/ws`;
 
     // //DEV
-    // const ws_uri = `ws://localhost:8000/ws`
+    const ws_uri = `ws://localhost:8000/ws`
 
     const newSocket = new WebSocket(ws_uri);
     setSocket(newSocket);
