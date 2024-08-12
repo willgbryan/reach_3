@@ -1,11 +1,13 @@
 from http.client import HTTPException
 import traceback
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect, File, UploadFile, Form
+from fastapi.responses import Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 import json
 import os
+import io
 import logging
 import aiofiles
 from typing import List
@@ -130,9 +132,9 @@ async def generate_powerpoint(request: PowerPointRequest):
         print(f"Received request with prompt: {request.prompt}")
 
         completion = client.chat.completions.create(
-            model="gpt-4-0824",
+            model="gpt-4o-2024-08-06",
             messages=[
-                {"role": "system", "content": "You are a helpful assistant that creates PowerPoint presentations. Generate a presentation structure based on the user's request."},
+                {"role": "system", "content": "You are a helpful assistant that creates PowerPoint presentations. Generate a presentation structure based on the user's request by calling the create_presentation function."},
                 {"role": "user", "content": f"Create a presentation summarizing the following content: {request.prompt}"}
             ],
             functions=[{
@@ -152,7 +154,6 @@ async def generate_powerpoint(request: PowerPointRequest):
         presentation_data = json.loads(function_call.arguments)
         print(f"Presentation data: {presentation_data}")
 
-        # Create PowerPoint using python-pptx
         prs = Presentation()
         
         # Title slide
@@ -181,20 +182,22 @@ async def generate_powerpoint(request: PowerPointRequest):
             tf = txBox.text_frame
             tf.text = f"Slide {i + 1}"
 
-        # Ensure the outputs directory exists
-        os.makedirs("/usr/src/app/outputs", exist_ok=True)
+        ppt_bytes = io.BytesIO()
+        prs.save(ppt_bytes)
+        ppt_bytes.seek(0)
 
-        # Save the presentation
-        output_path = "/usr/src/app/outputs/generated_presentation.pptx"
-        prs.save(output_path)
+        print("Presentation generated successfully")
 
-        print(f"Presentation saved to {output_path}")
+        return Response(
+            content=ppt_bytes.getvalue(),
+            media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            headers={"Content-Disposition": "attachment; filename=generated_presentation.pptx"}
+        )
 
-        return {"message": "PowerPoint generated successfully", "file_path": output_path}
     except Exception as e:
         print(f"Error in generate_powerpoint: {str(e)}")
         print(traceback.format_exc())
-        raise HTTPException(status_code=500)
+        raise HTTPException(status_code=500, detail=str(e))
 
 # @app.post("/setEnvironmentVariables")
 # async def set_environment_variables(credentials: SalesforceCredentials):

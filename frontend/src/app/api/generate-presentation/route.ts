@@ -1,8 +1,4 @@
-// app/api/generate-powerpoint/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { createReadStream } from 'fs';
-import { stat } from 'fs/promises';
-import path from 'path';
 
 export async function POST(req: NextRequest) {
   console.log('PowerPoint generation API route called');
@@ -17,6 +13,7 @@ export async function POST(req: NextRequest) {
 
     const pythonServerUrl = process.env.PYTHON_SERVER_URL || 'http://backend:8000';
     console.log('Sending request to Python server:', pythonServerUrl);
+
     const response = await fetch(`${pythonServerUrl}/generate-powerpoint`, {
       method: 'POST',
       headers: {
@@ -26,33 +23,14 @@ export async function POST(req: NextRequest) {
     });
 
     if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Error response from Python server:', response.status, errorText);
-        throw new Error(`Python server responded with ${response.status}: ${errorText}`);
-      }
-
-    const data = await response.json();
-    console.log('Received data from Python server:', data);
-    
-    // Get the file path from the Python server response
-    const filePath = path.join(process.cwd(), data.file_path);
-    console.log('File path:', filePath);
-
-    // Check if file exists
-    try {
-      await stat(filePath);
-      console.log('File exists');
-    } catch (error) {
-      console.error('File not found:', error);
-      return NextResponse.json({ error: 'File not found' }, { status: 404 });
+      const errorText = await response.text();
+      console.error('Error response from Python server:', response.status, errorText);
+      throw new Error(`Python server responded with ${response.status}: ${errorText}`);
     }
 
-    // Create a readable stream
-    const fileStream = createReadStream(filePath);
+    const fileContent = await response.arrayBuffer();
 
-    console.log('Returning file stream');
-    // Return the file as a stream
-    return new NextResponse(fileStream as any, {
+    return new NextResponse(fileContent, {
       headers: {
         'Content-Disposition': `attachment; filename="generated_presentation.pptx"`,
         'Content-Type': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
