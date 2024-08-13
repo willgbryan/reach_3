@@ -37,6 +37,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { UserProvider } from '@/components/user-provider';
 import { getWebSocket, closeWebSocket } from '@/utils/websocket'
+import { toast } from 'sonner'
 
 interface MainVectorPanelProps {
   id?: string | undefined
@@ -163,7 +164,6 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
 
       await wsComplete;
     
-        // theres a bug where sending a new query to a chat from the history list will save the chat twice
         const saveChatResponse = await fetch(`/api/save-chat`, {
           method: 'POST',
           headers: {
@@ -182,7 +182,9 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
     
       } catch (error) {
         console.error('Error:', error);
-        // might want to set an error state here to display to the user
+        toast.error("Error saving response", {
+          description: "The previous response will not saved. Try again shortly.",
+        });
       } finally {
         setIsLoading(false);
       }
@@ -406,7 +408,8 @@ const ChatSection = ({
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog> */}
-              <Button onClick={handleDigDeeper} variant="outline">Dig Deeper</Button>
+              <Button onClick={handleSubmitEdits} variant="outline">Expand Collection</Button>
+              <Button onClick={handleDigDeeper} variant="outline">Refine Collection</Button>
               <Button onClick={createPDF} variant="outline">Create PDF</Button>
               <Button onClick={handleCreateStructuredPowerPoint} variant="outline">Create PowerPoint</Button>
             </div>
