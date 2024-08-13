@@ -5,14 +5,10 @@ colorama
 duckduckgo_search
 md2pdf
 playwright
-openai
 python-dotenv
 pyyaml
 selenium
 webdriver-manager
-uvicorn
-pydantic
-fastapi
 python-multipart
 markdown
 langchain
@@ -29,7 +25,7 @@ langchain-openai
 mistune
 python-docx
 htmldocx
-lxml[html_clean]
+lxml_html_clean
 litellm
 # unstructured[all-docs]
 youtube-transcript-api
@@ -39,3 +35,8 @@ moviepy
 # hubspot-api-client
 setuptools
 simsimd == 3.7.7
+fastapi==0.103.2
+uvicorn==0.23.2
+openai==1.3.7
+python-pptx==0.6.21
+pydantic==2.4.2
