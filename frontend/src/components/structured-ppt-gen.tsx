@@ -6,7 +6,7 @@ export async function generatePowerPoint(userPrompt: string) {
       console.log('Sending request to generate PowerPoint...');
   
       toast.success("Creating presentation", {
-        description: "Your presentation will automatically download in a moment.",
+        description: "Your presentation will automatically download shortly.",
       });
       const response = await fetch('/api/generate-presentation', {
         method: 'POST',
