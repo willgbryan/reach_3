@@ -11,7 +11,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Prompt is required' }, { status: 400 });
     }
 
-    const pythonServerUrl = process.env.PYTHON_SERVER_URL || 'http://backend:8000';
+    // const pythonServerUrl = process.env.PYTHON_SERVER_URL || 'http://backend:8000';
+    const pythonServerUrl = process.env.PYTHON_SERVER_URL || 'https://themagi.systems';
+
     console.log('Sending request to Python server:', pythonServerUrl);
 
     const response = await fetch(`${pythonServerUrl}/generate-powerpoint`, {
