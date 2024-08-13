@@ -11,7 +11,6 @@ import { Carousel, Card } from "@/components/cult/apple-cards-carousel"
 import ReactMarkdown from 'react-markdown'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
-import { closeWebSocket, getWebSocket } from '@/utils/websocket'
 
 type User = {
   id: string;
@@ -45,89 +44,155 @@ const SkeletonCard = () => {
     )
   }
 
-  const NewsletterPage: React.FC = () => {
-    const router = useRouter()
-    const [user, setUser] = useState<User | null>(null)
-    const [newsletters, setNewsletters] = useState<NewsletterChat[]>([])
-    const [report, setReport] = useState<string>('')
-    const [isLoading, setIsLoading] = useState(true)
-  
-    useEffect(() => {
-      const fetchUserAndNewsletters = async () => {
-        setIsLoading(true)
-        const session = await getSession()
-        if (!session) {
-          router.push('/auth/sign-in')
-          return
-        }
-  
-        const userDetails = await getUserDetails()
-        setUser(userDetails)
-  
-        const fetchedNewsletters = await getNewsletterChats(session.user.id)
-        setNewsletters(fetchedNewsletters)
-        setIsLoading(false)
+const NewsletterPage: React.FC = () => {
+  const router = useRouter()
+  const [user, setUser] = useState<User | null>(null)
+  const [newsletters, setNewsletters] = useState<NewsletterChat[]>([])
+  const [socket, setSocket] = useState<WebSocket | null>(null)
+  const socketRef = useRef<WebSocket | null>(null)
+  const [report, setReport] = useState<string>('')
+
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchUserAndNewsletters = async () => {
+      setIsLoading(true)
+      const session = await getSession()
+      if (!session) {
+        router.push('/auth/sign-in')
+        return
       }
-  
-      fetchUserAndNewsletters()
-  
-      // Clean up WebSocket connection on component unmount
-      return () => {
-        closeWebSocket()
-      }
-    }, [router])
-  
-    const handleFormSubmit = async (formData: FormData): Promise<void> => {
-      const socket = getWebSocket()
-  
-      const chatId = nanoid()
-      const reportType = {
-        'succinct': 'newsletter_paragraph',
-        'standard': 'newsletter_report',
-        'in-depth': 'detailed_report'
-      }[formData.style]
-  
-      const requestData = {
-        task: formData.topic,
-        report_type: reportType,
-        sources: ['WEB'],
-        style: formData.style,
-        cadence: formData.cadence,
-        chatId: chatId,
-      }
-  
-      console.log('Sending data to WebSocket:', requestData)
-      socket.send(JSON.stringify(requestData))
-  
-      toast.success("Newsletter generation started", {
-        description: `Topic: ${formData.topic}, Style: ${formData.style}, Cadence: ${formData.cadence}`,
-      })
-  
-      return new Promise((resolve, reject) => {
-        let accumulatedReport = ''
-  
-        const messageHandler = (event: MessageEvent) => {
-          const data = JSON.parse(event.data)
-          if (data.type === 'report') {
-            accumulatedReport += data.output
-            setReport(prev => prev + data.output)
-          }
-          if (data.type === 'complete') {
-            socket.removeEventListener('message', messageHandler)
-            saveNewsletter(formData, accumulatedReport, chatId)
-              .then(() => resolve())
-              .catch(error => reject(error))
-          }
-        }
-  
-        socket.addEventListener('message', messageHandler)
-  
-        socket.onerror = (error) => {
-          socket.removeEventListener('message', messageHandler)
-          reject(error)
-        }
-      })
+
+      const userDetails = await getUserDetails()
+      setUser(userDetails)
+
+      const fetchedNewsletters = await getNewsletterChats(session.user.id)
+      setNewsletters(fetchedNewsletters)
+      setIsLoading(false)
     }
+
+    fetchUserAndNewsletters()
+  }, [router])
+
+  useEffect(() => {
+    const isProduction = process.env.NODE_ENV === 'production';
+    const ws_protocol = isProduction ? 'wss://' : 'ws://';
+    const ws_host = isProduction ? 'themagi.systems' : 'localhost:8000';
+    //PROD
+    const ws_uri = `wss://themagi.systems/ws`;
+
+    // //DEV
+    // const ws_uri = `ws://localhost:8000/ws`
+
+    const newSocket = new WebSocket(ws_uri);
+    setSocket(newSocket);
+    socketRef.current = newSocket;
+
+    newSocket.onopen = () => {
+      console.log('WebSocket connection opened');
+      setSocket(newSocket);
+    };
+
+    newSocket.onerror = (error) => {
+      console.error("WebSocket error:", error);
+    };
+
+    newSocket.onclose = () => {
+      console.log("WebSocket connection closed");
+      setSocket(null);
+    };
+
+    return () => {
+      if (newSocket) {
+        newSocket.close();
+      }
+    };
+  }, []);
+
+  const waitForSocketConnection = async (socket: WebSocket): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      const maxAttempts = 10;
+      const intervalTime = 1000;
+      let currentAttempt = 0;
+
+      const interval = setInterval(() => {
+        if (currentAttempt > maxAttempts - 1) {
+          clearInterval(interval);
+          reject(new Error('Maximum number of attempts exceeded'));
+        } else if (socket.readyState === WebSocket.OPEN) {
+          clearInterval(interval);
+          resolve();
+        }
+        currentAttempt++;
+      }, intervalTime);
+    });
+  };
+
+  const handleFormSubmit = async (formData: FormData): Promise<void> => {
+    if (!socketRef.current) {
+      toast.error("Connection error", {
+        description: "WebSocket is not initialized. Please try again later.",
+      });
+      throw new Error('WebSocket is not initialized');
+    }
+
+    try {
+      await waitForSocketConnection(socketRef.current);
+    } catch (error) {
+      toast.error("Connection error", {
+        description: "Unable to establish a stable connection. Please try again later.",
+      });
+      throw error;
+    }
+
+    const chatId = nanoid()
+    const reportType = {
+      'succinct': 'newsletter_paragraph',
+      'standard': 'newsletter_report',
+      'in-depth': 'detailed_report'
+    }[formData.style]
+
+    const requestData = {
+      task: formData.topic,
+      report_type: reportType,
+      sources: ['WEB'],
+      style: formData.style,
+      cadence: formData.cadence,
+      chatId: chatId,
+    }
+
+    console.log('Sending data to WebSocket:', requestData)
+    socketRef.current.send(JSON.stringify(requestData))
+
+    toast.success("Newsletter generation started", {
+      description: `Topic: ${formData.topic}, Style: ${formData.style}, Cadence: ${formData.cadence}`,
+    })
+
+    return new Promise((resolve, reject) => {
+      let accumulatedReport = ''
+
+      const messageHandler = (event: MessageEvent) => {
+        const data = JSON.parse(event.data)
+        if (data.type === 'report') {
+          accumulatedReport += data.output
+          setReport(prev => prev + data.output)
+        }
+        if (data.type === 'complete') {
+          socketRef.current!.removeEventListener('message', messageHandler)
+          saveNewsletter(formData, accumulatedReport, chatId)
+            .then(() => resolve())
+            .catch(error => reject(error))
+        }
+      }
+
+      socketRef.current!.addEventListener('message', messageHandler)
+
+      socketRef.current!.onerror = (error) => {
+        socketRef.current!.removeEventListener('message', messageHandler)
+        reject(error)
+      }
+    })
+  }
 
   const saveNewsletter = async (formData: FormData, content: string, chatId: string): Promise<void> => {
     try {

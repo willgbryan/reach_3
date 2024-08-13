@@ -6,10 +6,10 @@ export function getWebSocket(): WebSocket {
     const ws_protocol = isProduction ? 'wss://' : 'ws://';
     const ws_host = isProduction ? 'themagi.systems' : 'localhost:8000';
     //PROD
-    const ws_uri = `wss://themagi.systems/ws`;
+    // const ws_uri = `wss://themagi.systems/ws`;
 
     //DEV
-    // const ws_uri = `ws://localhost:8000/ws`
+    const ws_uri = `ws://localhost:8000/ws`
 
     socket = new WebSocket(ws_uri);
 
