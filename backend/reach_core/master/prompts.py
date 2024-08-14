@@ -32,12 +32,12 @@ def generate_search_queries_prompt(question: str, parent_query: str, report_type
         cadence = 'no restrictions'
 
     prompt = {
-        "task": f"Write {max_iterations} google search queries to search online that form an objective opinion from the following task: \"{task}\". If available in user_collected_info, the queries should aim to dig deeper into EXISTING_DATA, and ignore REMOVED_DATA.",
+        "task": f"Write {max_iterations} google search queries to search online that form an objective opinion from the following task: \"{task}\". If available in user_collected_info, enrich the EXISTING_DATA and reach for new information not contained in either the EXISTING_DATA or REMOVED_DATA.",
         "user_collected_info": f"The user has this EXISTING_DATA: {retained_text}, and has removed this REMOVED_DATA: {deleted_text}",
         "recency_requirement": f"Restrict information to the {cadence}.",
         "date_needed": f"Use the current date if needed: {datetime.now().strftime('%B %d, %Y')}. Adhere to recency_requirement. The provided information must be only within the requested time window of the previous day, week, or month depending on the cadence.",
         "files_info": f"Files can be present and questions can be asked about them. Uploaded files if any: {uploaded_files}",
-        "additional_instructions": "Also include in the queries specified task details such as locations, names, etc. user_collected_info should heavily influence the direction of the search queries, enrich the EXISTING_DATA and reach for new information not contained in either the EXISTING_DATA or REMOVED_DATA.",
+        "additional_instructions": "Also include in the queries specified task details such as locations, names, etc. user_collected_info should heavily influence the direction of the search queries.",
         "response_format": "You must respond with a list of strings in the following format: [\"query 1\", \"query 2\", \"query 3\"]."
     }
 
@@ -147,12 +147,13 @@ def generate_report_prompt(question, context, report_format="apa", total_words=2
     Returns: str: The report prompt for the given question and research summary
     """
 
-    return f'Information: """{context}""". Information: EXISTING REPORT """{retained_text}""". Information: REMOVED SECTIONS """{deleted_text}"""\n' \
+    return f'Information: """{context}""". Information: EXISTING_REPORT """{retained_text}""". Information: REMOVED_SECTIONS """{deleted_text}"""\n' \
            f'Using ONLY the above information, answer the following' \
            f' query or task: "{question}" in a detailed report --' \
            " The report should focus on the answer to the query, should be well structured, informative," \
            f" in depth and comprehensive, with facts and numbers if available and a minimum of {total_words} words.\n" \
-           "You should strive to write the report as long as you can using all relevant and necessary information provided, preserving the EXISTING REPORT and adding rich details. Do not include topics in REMOVED SECTIONS.\n" \
+           "Enrich and expand on the EXISTING_REPORT. Do not include topics in REMOVED SECTIONS.\n" \
+           "You should strive to write the report as long as you can using all relevant and necessary information provided.\n"\
            "You must write the report with markdown syntax.\n " \
            f"Use an unbiased and journalistic tone. \n" \
            "You MUST determine your own concrete and valid opinion based on the given information. Do NOT deter to general and meaningless conclusions.\n" \

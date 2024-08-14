@@ -244,7 +244,7 @@ class Reach:
                 # await stream_output("logs", f"No content found for '{sub_query}'...", self.websocket)
                 pass
 
-        print(f"Collected content: {content}")
+        self.websocket.send_json({"type": "sources", "message": content})
 
         return content
 
