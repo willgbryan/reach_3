@@ -184,8 +184,8 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
         chatId: actualChatId,
       };
 
-      console.log(`Accumulated Sources: ${JSON.stringify(accumulatedSources)}`);
-      await handleSaveSourcesAndContent(accumulatedSources);
+      console.log('Sending data to WebSocket:', requestData);
+      socketRef.current.send(JSON.stringify(requestData));
 
       // promise that resolves when the WebSocket communication is complete
       const wsComplete = new Promise<string>((resolve, reject) => {
