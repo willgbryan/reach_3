@@ -96,7 +96,17 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
     };
   }, []);
 
+  const condenseReports = async () =>{
+    // 1. create a new backend route /condense-reports
+    // 2. pass the state variable with all accumulated reports to it asking for a summary (in valid markdown prolly)
+  }
+
   const handleEvaluateStoppingCondition = async () =>{
+    // need to create a new state to track all report content {iteration_num: accumulatedOutput}
+    // 0. start a timer
+    // 1. get old sources from supabase table 'web_source_content_raw'
+    // 2. compare with new sources to find ratio of new/existing
+    // 3. if new/existing =< 1/10 stop the collection and call condenseReports, otherwise call handleApiCall again
     
   }
 
@@ -191,6 +201,7 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
           
           if (data.type === 'sources') {
             sourcesData = JSON.parse(data.output);
+            console.log(`SOURCES DATA ${sourcesData}`)
             setWebSources(sourcesData);
           }
           
