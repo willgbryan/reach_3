@@ -112,41 +112,40 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
 
   const handleSaveSourcesAndContent = async (sourcesData: any[]) => {
     if (!currentChatId) {
-      console.error('No current chat ID');
-      return;
+        console.error('No current chat ID');
+        return;
     }
 
     try {
-      const response = await fetch('/api/save-sources-content', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          chatId: currentChatId,
-          sources: sourcesData.map(d => d.metadata.source),
-          content: sourcesData.map(d => d.page_content),
-        }),
-      });
+        const response = await fetch('/api/save-sources-content', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                chatId: currentChatId,
+                sources: sourcesData.map(d => d.Source),
+                content: sourcesData.map(d => d.Content),
+            }),
+        });
 
-      if (!response.ok) {
-        throw new Error('Failed to save sources and content');
-      }
+        if (!response.ok) {
+            throw new Error('Failed to save sources and content');
+        }
 
-      const result = await response.json();
-      console.log(result.message);
-      
-      toast.success("Sources and content saved successfully");
+        const result = await response.json();
+        console.log(result.message);
+        toast.success("Sources and content saved successfully");
     } catch (error) {
-      console.error('Error saving sources and content:', error);
-      toast.error("Error saving sources and content");
+        console.error('Error saving sources and content:', error);
+        toast.error("Error saving sources and content");
     }
   };
 
   const handleApiCall = async (payload) => {
     setIsLoading(true);
     let accumulatedOutput = '';
-    let sourcesData: any[] = [];
+    let accumulatedSources: any[] = [];
     const actualChatId = currentChatId || nanoid();
 
     if (!currentChatId) {
@@ -185,8 +184,8 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
         chatId: actualChatId,
       };
 
-      console.log('Sending data to WebSocket:', requestData);
-      socketRef.current.send(JSON.stringify(requestData));
+      console.log(`Accumulated Sources: ${JSON.stringify(accumulatedSources)}`);
+      await handleSaveSourcesAndContent(accumulatedSources);
 
       // promise that resolves when the WebSocket communication is complete
       const wsComplete = new Promise<string>((resolve, reject) => {
@@ -200,11 +199,12 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
           }
           
           if (data.type === 'sources') {
-            sourcesData = JSON.parse(data.output);
-            console.log(`SOURCES DATA ${sourcesData}`)
-            setWebSources(sourcesData);
+            const parsedData = data.output;
+            console.log(`SOURCES DATA ${JSON.stringify(parsedData)}`);
+            accumulatedSources = [...accumulatedSources, ...parsedData];
+            setWebSources(accumulatedSources);
           }
-          
+
           if (data.type === 'logs') {
             console.log(data);
           }
@@ -236,16 +236,13 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
           messages: [...payload.messages, { content: accumulatedOutput, role: 'assistant' }],
         }),
       });
-
-      console.log(`saving ${messages}`);
       
       if (!saveChatResponse.ok) {
         throw new Error('Failed to save chat history');
       }
 
-      if (sourcesData.length > 0) {
-        await handleSaveSourcesAndContent(sourcesData);
-      }
+      console.log(`Accumulated Sources: ${JSON.stringify(accumulatedSources)}`);
+      await handleSaveSourcesAndContent(accumulatedSources);
 
     } catch (error) {
       console.error('Error:', error);
