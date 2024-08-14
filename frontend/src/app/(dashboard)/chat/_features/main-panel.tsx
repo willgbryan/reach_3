@@ -62,6 +62,7 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
   const [initialValue, setInitialValue] = useState('');
   const [editText, setEditText] = useState('');
   const [currentChatId, setCurrentChatId] = useState<string | undefined>(id);
+  const [webSources, setWebSources] = useState<any[]>([]);
 
   const router = useRouter()
   const sources = initialSources?.sources ?? [];
@@ -95,9 +96,47 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
     };
   }, []);
 
+  const handleEvaluateStoppingCondition = async () =>{
+    
+  }
+
+  const handleSaveSourcesAndContent = async (sourcesData: any[]) => {
+    if (!currentChatId) {
+      console.error('No current chat ID');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/save-sources-content', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          chatId: currentChatId,
+          sources: sourcesData.map(d => d.metadata.source),
+          content: sourcesData.map(d => d.page_content),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save sources and content');
+      }
+
+      const result = await response.json();
+      console.log(result.message);
+      
+      toast.success("Sources and content saved successfully");
+    } catch (error) {
+      console.error('Error saving sources and content:', error);
+      toast.error("Error saving sources and content");
+    }
+  };
+
   const handleApiCall = async (payload) => {
     setIsLoading(true);
     let accumulatedOutput = '';
+    let sourcesData: any[] = [];
     const actualChatId = currentChatId || nanoid();
 
     if (!currentChatId) {
@@ -144,10 +183,21 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
         const messageHandler = (event: MessageEvent) => {
           const data = JSON.parse(event.data);
           console.log(`Received WebSocket data: ${JSON.stringify(data)}`);
+          
           if (data.type === 'report') {
             accumulatedOutput += data.output;
             setReportContent(prev => prev + data.output);
           }
+          
+          if (data.type === 'sources') {
+            sourcesData = JSON.parse(data.output);
+            setWebSources(sourcesData);
+          }
+          
+          if (data.type === 'logs') {
+            console.log(data);
+          }
+          
           if (data.type === 'complete') {
             socketRef.current!.removeEventListener('message', messageHandler);
             resolve(accumulatedOutput);
@@ -163,32 +213,38 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
       });
 
       await wsComplete;
-    
-        const saveChatResponse = await fetch(`/api/save-chat`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            chatId: actualChatId,
-            completion: accumulatedOutput,
-            messages: [...payload.messages, { content: accumulatedOutput, role: 'assistant' }],
-          }),
-        });
-    
-        if (!saveChatResponse.ok) {
-          throw new Error('Failed to save chat history');
-        }
-    
-      } catch (error) {
-        console.error('Error:', error);
-        toast.error("Error saving response", {
-          description: "The previous response will not saved. Try again shortly.",
-        });
-      } finally {
-        setIsLoading(false);
+
+      const saveChatResponse = await fetch(`/api/save-chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          chatId: actualChatId,
+          completion: accumulatedOutput,
+          messages: [...payload.messages, { content: accumulatedOutput, role: 'assistant' }],
+        }),
+      });
+
+      console.log(`saving ${messages}`);
+      
+      if (!saveChatResponse.ok) {
+        throw new Error('Failed to save chat history');
       }
-    };
+
+      if (sourcesData.length > 0) {
+        await handleSaveSourcesAndContent(sourcesData);
+      }
+
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error("Error saving response", {
+        description: "The previous response will not be saved. Try again shortly.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
     const handleInputClick = async (value: string) => {
       if (value.length >= 1) {
@@ -236,6 +292,19 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
     });
   };
 
+  const handleExpandCollection = async () => {
+    const collectedString = `user-retained:${messages} user-deleted:""`;
+    setShowEditMode(false);
+    setShowBottomSection(false);
+  
+    await handleApiCall({
+      messages: messages,
+      id: currentChatId,
+      edits: collectedString,
+      task: initialValue,
+    });
+  };
+
   const handleDigDeeper = () => {
     setEditText(reportContent);
     setShowEditMode(true);
@@ -272,6 +341,7 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
           handleNewQuery={handleNewQuery}
           handleEditChange={handleEditChange}
           handleSubmitEdits={handleSubmitEdits}
+          handleExpandCollection={handleExpandCollection}
           editText={editText}
         />
       </div>
@@ -314,6 +384,7 @@ const ChatSection = ({
   handleNewQuery,
   handleEditChange,
   handleSubmitEdits,
+  handleExpandCollection,
   editText,
 }) => {
   const updatedMessages = [...messages, { content: reportContent, type: 'report' }];
@@ -408,7 +479,7 @@ const ChatSection = ({
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog> */}
-              <Button onClick={handleSubmitEdits} variant="outline">Expand Collection</Button>
+              <Button onClick={handleExpandCollection} variant="outline">Expand Collection</Button>
               <Button onClick={handleDigDeeper} variant="outline">Refine Collection</Button>
               <Button onClick={createPDF} variant="outline">Create PDF</Button>
               <Button onClick={handleCreateStructuredPowerPoint} variant="outline">Create PowerPoint</Button>

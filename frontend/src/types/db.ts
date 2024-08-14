@@ -35,6 +35,48 @@ export interface Database {
           },
         ]
       }
+      web_source_content_raw: {
+        Row: {
+          id: string
+          added_by: string
+          source_url: string
+          content: string
+          chat_id: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          added_by: string
+          source_url: string
+          content: string
+          chat_id: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          added_by?: string
+          source_url?: string
+          content?: string
+          chat_id?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "web_source_content_raw_chat_id_fkey"
+            columns: ["chat_id"]
+            isOneToOne: false
+            referencedRelation: "chats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "web_source_content_raw_added_by_fkey"
+            columns: ["added_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       newsletters: {
         Row: {
           id: string
