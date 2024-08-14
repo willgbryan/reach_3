@@ -236,7 +236,6 @@ class Reach:
             # await stream_output("logs", f"\nRunning research for '{sub_query}'...", self.websocket)
             scraped_sites = await self.scrape_sites_by_query(sub_query)
             web_content = await self.get_similar_content_by_query(sub_query, scraped_sites)
-            print(f"WEB CONTENT: {web_content}")
 
             if web_content:
                 # await stream_output("logs", f"{web_content}", self.websocket)
@@ -245,7 +244,7 @@ class Reach:
                 # await stream_output("logs", f"No content found for '{sub_query}'...", self.websocket)
                 pass
 
-        await stream_output("sources", {content}, self.websocket)
+        self.websocket.send_json({"type": "sources", "message": content})
 
         return content
 
