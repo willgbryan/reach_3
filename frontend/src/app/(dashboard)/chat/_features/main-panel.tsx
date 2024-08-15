@@ -304,7 +304,7 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
       console.log('-------------------');
     });
     try {
-      const response = await fetch('/condense-findings', {
+      const response = await fetch('/api/condense-reports', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -319,11 +319,10 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
         throw new Error('Failed to condense findings');
       }
   
-      const condensedFindings = await response.json();
-      console.log('Condensed Findings:', condensedFindings);
+      const { condensed_report } = await response.json();
+      console.log('Condensed Report:', condensed_report);
   
-      setCondensedFindings(condensedFindings);
-      console.log(`FINAL ${condensedFindings}`)
+      setCondensedFindings(condensed_report);
   
     } catch (error) {
       console.error('Error in condensing findings:', error);
