@@ -12,6 +12,7 @@ import logging
 import aiofiles
 from typing import List
 from reach_core.utils.websocket_manager import WebSocketManager
+from reach_core.master.prompts import generate_report_prompt
 from fastapi.middleware.cors import CORSMiddleware
 from pptx import Presentation
 from pptx.util import Inches, Pt
@@ -197,7 +198,34 @@ async def generate_powerpoint(request: PowerPointRequest):
     except Exception as e:
         print(f"Error in generate_powerpoint: {str(e)}")
         print(traceback.format_exc())
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500)
+
+class CondenseRequest(BaseModel):
+    task: str
+    accumulatedOutput: str
+    
+@app.post("/condense-findings")
+async def generate_powerpoint(request: CondenseRequest):
+    user_prompt = generate_report_prompt(
+        question=request.task,
+        context=request.accumulatedOutput
+    )
+    try:
+        completion = client.chat.completions.create(
+            model="gpt-4o-2024-08-06",
+            messages=[
+                {"role": "system", "content": "You are a seasoned analyst. Your primary goal is to compose comprehensive, astute, impartial, and methodically arranged reports of the provided research."},
+                {"role": "user", "content": user_prompt}
+            ],
+        )
+        
+        condensed_report = completion.choices[0].message.content
+
+        return {"condensed_report": condensed_report}
+    except Exception as e:
+        print(f"Error in condense-findings: {str(e)}")
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500)
 
 # @app.post("/setEnvironmentVariables")
 # async def set_environment_variables(credentials: SalesforceCredentials):

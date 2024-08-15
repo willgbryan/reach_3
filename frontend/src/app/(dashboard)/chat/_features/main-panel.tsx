@@ -46,15 +46,14 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
   const [deletedText, setDeletedText] = useState('');
   const [edits, setEdits] = useState<string | undefined>(undefined);
   const [initialValue, setInitialValue] = useState('');
-  const [currentTask, setCurrentTask] = useState('')
   const [editText, setEditText] = useState('');
   const [currentChatId, setCurrentChatId] = useState<string | undefined>(id);
   const [webSources, setWebSources] = useState<any[]>([]);
   const [accumulatedReports, setAccumulatedReports] = useState<{[key: number]: string}>({});
   const [iterationCount, setIterationCount] = useState(0);
   const [isCollectionComplete, setIsCollectionComplete] = useState(false);
-  const [previousSourcesCount, setPreviousSourcesCount] = useState(0)
   const [originalUserMessage, setOriginalUserMessage] = useState<Message | null>(null);
+  const [condensedFindings, setCondensedFindings] = useState<string | undefined>(undefined);
 
   const router = useRouter()
   const sources = initialSources?.sources ?? [];
@@ -304,6 +303,34 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
       console.log(output);
       console.log('-------------------');
     });
+    try {
+      const response = await fetch('/condense-findings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          task: payload.originalMessage ? payload.originalMessage.content : payload.messages[payload.messages.length - 1].content,
+          accumulatedOutput: allAccumulatedOutputs.join('\n\n')
+        }),
+      });
+  
+      if (!response.ok) {
+        throw new Error('Failed to condense findings');
+      }
+  
+      const condensedFindings = await response.json();
+      console.log('Condensed Findings:', condensedFindings);
+  
+      setCondensedFindings(condensedFindings);
+      console.log(`FINAL ${condensedFindings}`)
+  
+    } catch (error) {
+      console.error('Error in condensing findings:', error);
+      toast.error("Error condensing findings", {
+        description: "Failed to generate condensed report. Please try again.",
+      });
+    }
   };
 
   const handleInputClick = async (value: string) => {
