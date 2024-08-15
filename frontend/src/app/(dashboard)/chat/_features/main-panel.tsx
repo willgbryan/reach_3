@@ -9,13 +9,10 @@ import 'react-quill/dist/quill.snow.css';
 
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { marked } from 'marked';
 
 import { ModeToggle } from '@/components/theme-toggle'
-import { SelectScrollable } from '@/components/chat/chat-document-sets'
 import { ChatList } from '@/components/chat/chat-list'
 import { ChatScrollAnchor } from '@/components/chat/chat-scroll-anchor'
-import { SIZE_PRESETS, useDynamicBlobSize } from '@/components/cult/dynamic-blob'
 import { Heading } from '@/components/cult/gradient-heading'
 import { useGetDocumentSets } from '@/hooks/use-get-document-sets'
 import { useDocSetName, useFileData, useStage } from '@/hooks/use-vector-blob'
@@ -23,21 +20,11 @@ import { generatePowerPoint } from '@/components/structured-ppt-gen'
 
 import SimpleInputForm from './simple-input';
 
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import { UserProvider } from '@/components/user-provider';
 import { getWebSocket, closeWebSocket } from '@/utils/websocket'
 import { toast } from 'sonner'
+import { getOldSources } from '@/app/_data/sources'
 
 interface MainVectorPanelProps {
   id?: string | undefined
@@ -56,13 +43,18 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
   const [isLoading, setIsLoading] = useState(false);
   const [reportContent, setReportContent] = useState('');
   const [showEditMode, setShowEditMode] = useState(false);
-  const [currentText, setCurrentText] = useState('');
   const [deletedText, setDeletedText] = useState('');
   const [edits, setEdits] = useState<string | undefined>(undefined);
   const [initialValue, setInitialValue] = useState('');
+  const [currentTask, setCurrentTask] = useState('')
   const [editText, setEditText] = useState('');
   const [currentChatId, setCurrentChatId] = useState<string | undefined>(id);
   const [webSources, setWebSources] = useState<any[]>([]);
+  const [accumulatedReports, setAccumulatedReports] = useState<{[key: number]: string}>({});
+  const [iterationCount, setIterationCount] = useState(0);
+  const [isCollectionComplete, setIsCollectionComplete] = useState(false);
+  const [previousSourcesCount, setPreviousSourcesCount] = useState(0)
+  const [originalUserMessage, setOriginalUserMessage] = useState<Message | null>(null);
 
   const router = useRouter()
   const sources = initialSources?.sources ?? [];
@@ -101,15 +93,6 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
     // 2. pass the state variable with all accumulated reports to it asking for a summary (in valid markdown prolly)
   }
 
-  const handleEvaluateStoppingCondition = async () =>{
-    // need to create a new state to track all report content {iteration_num: accumulatedOutput}
-    // 0. start a timer
-    // 1. get old sources from supabase table 'web_source_content_raw'
-    // 2. compare with new sources to find ratio of new/existing
-    // 3. if new/existing =< 1/10 stop the collection and call condenseReports, otherwise call handleApiCall again
-    
-  }
-
   const handleSaveSourcesAndContent = async (sourcesData: any[]) => {
     if (!currentChatId) {
         console.error('No current chat ID');
@@ -142,7 +125,7 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
     }
   };
 
-  const handleApiCall = async (payload) => {
+  const handleApiCall = async (payload, iterationCount = 0) => {
     setIsLoading(true);
     let accumulatedOutput = '';
     let accumulatedSources: any[] = [];
@@ -177,15 +160,16 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
       }
 
       const requestData = {
-        task: payload.messages[payload.messages.length - 1].content,
+        task: payload.originalMessage ? payload.originalMessage.content : payload.messages[payload.messages.length - 1].content,
         report_type: "research_report",
         sources: ["WEB"],
         ...(payload.edits && { edits: payload.edits }),
         chatId: actualChatId,
       };
-
+  
       console.log('Sending data to WebSocket:', requestData);
       socketRef.current.send(JSON.stringify(requestData));
+  
 
       // promise that resolves when the WebSocket communication is complete
       const wsComplete = new Promise<string>((resolve, reject) => {
@@ -241,37 +225,106 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
         throw new Error('Failed to save chat history');
       }
 
-      console.log(`Accumulated Sources: ${JSON.stringify(accumulatedSources)}`);
-      await handleSaveSourcesAndContent(accumulatedSources);
+      // console.log(`Accumulated Sources: ${JSON.stringify(accumulatedSources)}`);
+      // await handleSaveSourcesAndContent(accumulatedSources);
 
+      setIterationCount(iterationCount + 1);
+      setAccumulatedReports(prev => ({...prev, [iterationCount + 1]: accumulatedOutput}));
+
+      return {
+        output: accumulatedOutput,
+        sources: accumulatedSources,
+        chatId: actualChatId,
+      };
     } catch (error) {
       console.error('Error:', error);
       toast.error("Error saving response", {
         description: "The previous response will not be saved. Try again shortly.",
       });
+      throw error;
     } finally {
       setIsLoading(false);
     }
   };
 
-    const handleInputClick = async (value: string) => {
-      if (value.length >= 1) {
-        setInitialValue(value);
-        const newMessage: Message = {
-          id: nanoid(),
-          content: value,
-          role: 'user',
-          createdAt: new Date()
-        };
-        setMessages(prevMessages => [...prevMessages, newMessage]);
+  const handleMultipleIterations = async (payload, maxIterations = 6) => {
+    let currentIteration = 0;
+    let currentPayload = { ...payload };
+    let allAccumulatedOutputs: string[] = [];
+  
+    while (currentIteration < maxIterations) {
+      const result = await handleApiCall(currentPayload, currentIteration);
+      console.log(`ITERATION ${currentIteration}`);
+      allAccumulatedOutputs.push(result.output);
+      currentIteration++;
+  
+      if (currentIteration > 2) {
+        // Evaluate stopping condition
+        const oldSources = await getOldSources(result.chatId);
+        const oldSourceUrls = new Set(oldSources.map(source => source.source_url));
+        const newSourceUrls = new Set(result.sources.map(source => source.Source));
+  
+        console.log('Old Source URLs:');
+        console.log([...oldSourceUrls]);
+  
+        console.log('New Source URLs:');
+        console.log([...newSourceUrls]);
+  
+        const uniqueNewSources = [...newSourceUrls].filter(url => !oldSourceUrls.has(url));
         
-        await handleApiCall({
-          messages: [...messages, newMessage],
-          id: currentChatId,
-          edits: edits,
-        });
+        console.log('Unique New Source URLs:');
+        console.log(uniqueNewSources);
+  
+        const ratio = uniqueNewSources.length / oldSourceUrls.size;
+        console.log(`New/existing ratio: ${ratio}`);
+        console.log(`Unique new sources: ${uniqueNewSources.length}`);
+        console.log(`Old sources size: ${oldSourceUrls.size}`);
+
+        if (ratio <= 0.1) {
+          console.log('Stopping condition met. Ending iterations.');
+          setIsCollectionComplete(true);
+          await condenseReports();
+          break;
+        } else {
+          console.log('Continuing to next iteration.');
+        }
       }
-    };
+      await handleSaveSourcesAndContent(result.sources);
+  
+      // Update payload for next iteration
+      currentPayload = {
+        ...currentPayload,
+        messages: [...currentPayload.messages, { content: result.output, role: 'assistant' }],
+        id: result.chatId,
+      };
+    }
+    console.log('All Accumulated Outputs:');
+    allAccumulatedOutputs.forEach((output, index) => {
+      console.log(`Iteration ${index + 1}:`);
+      console.log(output);
+      console.log('-------------------');
+    });
+  };
+
+  const handleInputClick = async (value: string) => {
+    if (value.length >= 1) {
+      setInitialValue(value);
+      const newMessage: Message = {
+        id: nanoid(),
+        content: value,
+        role: 'user',
+        createdAt: new Date()
+      };
+      setOriginalUserMessage(newMessage);
+      setMessages(prevMessages => [...prevMessages, newMessage]);
+      await handleMultipleIterations({
+        messages: [...messages, newMessage],
+        id: currentChatId,
+        edits: edits,
+        originalMessage: newMessage,
+      });
+    }
+  };
 
   const handleEditChange = (newContent) => {
     const oldContent = editText;
