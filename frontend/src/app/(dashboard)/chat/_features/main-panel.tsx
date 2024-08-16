@@ -1,6 +1,6 @@
 'use client'
 
-import React, { Suspense, useEffect, useRef, useState } from 'react'
+import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Message } from 'ai'
 import { nanoid } from 'nanoid'
@@ -56,23 +56,16 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
   const [messages, setMessages] = useState<Message[]>(initialMessages || []);
   const [isLoading, setIsLoading] = useState(false);
   const [reportContent, setReportContent] = useState('');
-  const [showEditMode, setShowEditMode] = useState(false);
-  const [deletedText, setDeletedText] = useState('');
   const [edits, setEdits] = useState<string | undefined>(undefined);
   const [initialValue, setInitialValue] = useState('');
-  const [editText, setEditText] = useState('');
   const [currentChatId, setCurrentChatId] = useState<string | undefined>(id);
   const [webSources, setWebSources] = useState<any[]>([]);
   const [accumulatedReports, setAccumulatedReports] = useState<{[key: number]: string}>({});
   const [iterationCount, setIterationCount] = useState(0);
   const [isCollectionComplete, setIsCollectionComplete] = useState(false);
   const [originalUserMessage, setOriginalUserMessage] = useState<Message | null>(null);
-  const [summaryCards, setSummaryCards] = useState<JSX.Element[]>([]);
   const [currentIteration, setCurrentIteration] = useState(0);
 
-  const [iterationCards, setIterationCards] = useState<JSX.Element[]>([]);
-  const [condensedFindingsCard, setCondensedFindingsCard] = useState<JSX.Element | null>(null);
-  const [sourcesCard, setSourcesCard] = useState<JSX.Element | null>(null);
   const [allIterations, setAllIterations] = useState<Array<{ content: string; sources: any[]; type?: string }>>([]);
   const [condensedFindings, setCondensedFindings] = useState<string | null>(null);
   const [allSources, setAllSources] = useState<Source[]>([]);
@@ -96,12 +89,6 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
       }
     }
   }, []);
-
-  useEffect(() => {
-    if (condensedFindingsCard && sourcesCard) {
-      setSummaryCards([condensedFindingsCard, sourcesCard]);
-    }
-  }, [condensedFindingsCard, sourcesCard]);
 
   useEffect(() => {
     socketRef.current = getWebSocket();
@@ -427,6 +414,7 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
           allIterations={allIterations}
           currentIteration={currentIteration}
           chatId={currentChatId}
+          allSources={allSources}
         />
       </div>
       {showBottomSection && (
@@ -462,27 +450,28 @@ const ChatSection = ({
   allIterations,
   currentIteration,
   chatId,
+  allSources,
 }) => {
+  const [localSources, setLocalSources] = useState<Source[]>([]);
   const updatedMessages = [...messages, { content: reportContent, role: 'assistant', type: 'report' }];
-  const [sources, setSources] = useState<Source[]>([]);
 
   useEffect(() => {
     const fetchSources = async () => {
-      if (chatId) {
         try {
           console.log(`Fetching sources for chat ID: ${chatId}`);
           const fetchedSources = await getOldSources(chatId);
           console.log('Fetched sources:', fetchedSources);
-          setSources(fetchedSources);
+          setLocalSources(fetchedSources);
         } catch (error) {
           console.error('Error fetching sources:', error);
           toast.error("Error fetching sources");
-        }
       }
     };
 
     fetchSources();
-  }, [chatId]);
+  }, [chatId, allSources]);
+
+  const sourcesToUse = allSources.length > 0 ? allSources : localSources;
 
   const createPDF = async () => {
     const doc = new jsPDF();
@@ -547,7 +536,7 @@ const ChatSection = ({
       category = 'Navigation Destinations';
       content = (
         <ul className="list-disc pl-5 space-y-2">
-          {sources.map((source, idx) => (
+          {sourcesToUse.map((source, idx) => (
             <li key={idx} className="text-stone-900">
               <a
                 href={source.source_url}
@@ -567,12 +556,11 @@ const ChatSection = ({
       category = 'Navigation Summary';
       content = item.content;
     } else if (item.type === 'iteration') {
-      title = `Dive ${index}`;
+      title = `Dive ${index + 1}`;
       category = 'Outbound Navigation';
       content = item.content;
     }
   
-    // Only create and return a card if we have valid title and category
     if (title && category) {
       return (
         <Card
@@ -600,12 +588,11 @@ const ChatSection = ({
       );
     }
   
-    // No valid title & category means no card
     return null;
   };
 
   const allCards = [
-    ...updatedMessages.slice(1).map((message, index) => createCard(message, index)), // Skip the user query
+    ...updatedMessages.slice(1).map((message, index) => createCard(message, index)),
     ...allIterations.slice(0, currentIteration).map((iteration, index) => 
       createCard(iteration, updatedMessages.length - 1 + index)
     )

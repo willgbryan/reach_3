@@ -19,21 +19,21 @@ export function NavLinks({ isCollapsed }) {
             disabled: false, 
             // label: 'Coming soon'
           },
-          { 
-            title: 'Library', 
-            icon: BookCopy, 
-            variant: 'ghost', 
-            href: `/library`, 
-            disabled: true, 
-            label: 'Coming soon'
-          },
+          // { 
+          //   title: 'Library', 
+          //   icon: BookCopy, 
+          //   variant: 'ghost', 
+          //   href: `/library`, 
+          //   disabled: true, 
+          //   label: 'Coming soon'
+          // },
           { 
             title: 'Pricing', 
             icon: DollarSign, 
             variant: 'ghost', 
             href: `/pricing`,
             disabled: true, 
-            label: 'Free for now :D'
+            label: 'Free for now'
           },
         ]}
       />
