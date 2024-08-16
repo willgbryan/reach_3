@@ -325,7 +325,7 @@ const NewsletterPage: React.FC = () => {
   }
 
   return (
-    <div className="flex h-screen bg-[#e4e4e4] text-white">
+    <div className="flex h-screen bg-brand text-white">
       <div className="w-1/3 h-full overflow-y-auto p-8">
         <NewsletterForm onSubmit={handleFormSubmit}/>
         <div className="mb-4"></div>

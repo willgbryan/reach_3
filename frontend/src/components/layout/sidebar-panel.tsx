@@ -59,7 +59,7 @@ export const Logo = () => {
         transition={{ duration: 0.5, delay: 0.2 }}
         className="font-base text-3xl text-black dark:text-white whitespace-pre"
       >
-        Magi
+        Heighliner
       </motion.span>
     </Link>
   );

@@ -231,20 +231,22 @@ class Reach:
         #                     self.websocket)
         print(f'sub queries {sub_queries}')
         content = []
+        all_docs_dicts = []
+
         # Run Sub-Queries
         for sub_query in sub_queries:
-            # await stream_output("logs", f"\nRunning research for '{sub_query}'...", self.websocket)
             scraped_sites = await self.scrape_sites_by_query(sub_query)
-            web_content = await self.get_similar_content_by_query(sub_query, scraped_sites)
+            web_content, docs_dict = await self.get_similar_content_by_query(sub_query, scraped_sites)
 
             if web_content:
-                # await stream_output("logs", f"{web_content}", self.websocket)
                 content.append(web_content)
+                all_docs_dicts.extend(docs_dict)
             else:
-                # await stream_output("logs", f"No content found for '{sub_query}'...", self.websocket)
                 pass
 
-        self.websocket.send_json({"type": "sources", "message": content})
+        print(f"Collected content: {content}")
+        print(f"dict content: {all_docs_dicts}")
+        await stream_output("sources", all_docs_dicts, self.websocket)
 
         return content
 
