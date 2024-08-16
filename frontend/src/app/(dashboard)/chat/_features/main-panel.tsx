@@ -68,10 +68,13 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
   const [isCollectionComplete, setIsCollectionComplete] = useState(false);
   const [originalUserMessage, setOriginalUserMessage] = useState<Message | null>(null);
   const [summaryCards, setSummaryCards] = useState<JSX.Element[]>([]);
+  const [currentIteration, setCurrentIteration] = useState(0);
 
   const [iterationCards, setIterationCards] = useState<JSX.Element[]>([]);
   const [condensedFindingsCard, setCondensedFindingsCard] = useState<JSX.Element | null>(null);
   const [sourcesCard, setSourcesCard] = useState<JSX.Element | null>(null);
+  const [allIterations, setAllIterations] = useState<Array<{ content: string; sources: any[]; type?: string }>>([]);
+  const [condensedFindings, setCondensedFindings] = useState<string | null>(null);
 
   const router = useRouter()
   const sources = initialSources?.sources ?? [];
@@ -282,7 +285,17 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
       await wsComplete;
 
       setIterationCount(iterationCount + 1);
+      setCurrentIteration(iterationCount + 1);
       setAccumulatedReports(prev => ({...prev, [iterationCount + 1]: accumulatedOutput}));
+
+      setAllIterations(prev => [
+        ...prev,
+        {
+          content: accumulatedOutput,
+          sources: accumulatedSources,
+          type: 'iteration'
+        }
+      ]);
 
       const newCard = createIterationCard(iterationCount + 1, accumulatedOutput);
       setIterationCards(prev => [...prev, newCard]);
@@ -306,17 +319,17 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
   const handleMultipleIterations = async (payload, maxIterations = 6) => {
     let currentIteration = 0;
     let currentPayload = { ...payload };
-    let allIterations: Array<{ content: string; sources: any[] }> = [];
+    let iterations: Array<{ content: string; sources: any[]; type?: string }> = [];
     let finalChatId: string | undefined;
   
     while (currentIteration < maxIterations) {
       const result = await handleApiCall(currentPayload, currentIteration);
       console.log(`ITERATION ${currentIteration}`);
       
-      // Add the current iteration to allIterations
-      allIterations.push({
+      iterations.push({
         content: result.output,
-        sources: result.sources
+        sources: result.sources,
+        type: 'iteration'
       });
   
       currentIteration++;
@@ -343,7 +356,6 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
   
       await handleSaveSourcesAndContent(result.sources);
   
-      // Update payload for next iteration
       currentPayload = {
         ...currentPayload,
         messages: [...currentPayload.messages, { content: result.output, role: 'assistant' }],
@@ -354,8 +366,11 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
     try {
       if (finalChatId) {
         const allSources = await getOldSources(finalChatId);
-        const newSourcesCard = createSourcesCard(allSources);
-        setSourcesCard(newSourcesCard);
+        iterations.push({
+          content: JSON.stringify(allSources),
+          sources: [],
+          type: 'sources'
+        });
       }
   
       const response = await fetch('/api/condense-reports', {
@@ -365,10 +380,10 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
         },
         body: JSON.stringify({
           task: payload.originalMessage ? payload.originalMessage.content : payload.messages[payload.messages.length - 1].content,
-          accumulatedOutput: allIterations.map(iter => iter.content).join('\n\n')
+          accumulatedOutput: iterations.filter(iter => iter.type === 'iteration').map(iter => iter.content).join('\n\n')
         }),
       });
-  
+
       if (!response.ok) {
         throw new Error('Failed to condense findings');
       }
@@ -376,37 +391,17 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
       const { condensed_report } = await response.json();
       console.log('Condensed Report:', condensed_report);
 
-      allIterations.push({
+      setCondensedFindings(condensed_report);
+
+      iterations.push({
         content: condensed_report,
-        sources: []
+        sources: [],
+        type: 'condensed'
       });
   
-      const condensedCard = (
-        <Card
-          key="condensed-findings"
-          card={{
-            category: "Condensed Findings",
-            title: "Research Summary",
-            src: "",
-            content: (
-              <div className="bg-[#e4e4e4] p-8 rounded-3xl mb-4 overflow-auto max-h-[60vh]">
-                <ReactMarkdown 
-                  className="text-stone-900 text-base md:text-xl font-sans prose prose-invert max-w-3xl mx-auto prose-a:text-blue-400 hover:prose-a:text-blue-300"
-                  components={{
-                    a: ({node, ...props}) => <a {...props} target="_blank" rel="noopener noreferrer" />
-                  }}
-                >
-                  {condensed_report}
-                </ReactMarkdown>
-              </div>
-            ),
-          }}
-          index={-1}
-        />
-      );
-      setCondensedFindingsCard(condensedCard);
+      setAllIterations(iterations);
+      setCurrentIteration(iterations.length);
   
-      // still need to save source and relevant chunks
       const saveChatResponse = await fetch(`/api/save-chat`, {
         method: 'POST',
         headers: {
@@ -414,10 +409,10 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
         },
         body: JSON.stringify({
           chatId: finalChatId,
-          iterations: allIterations,
+          iterations: iterations,
           messages: [
             ...payload.messages,
-            ...allIterations.map(iter => ({ content: iter.content, role: 'assistant'}))
+            ...iterations.map(iter => ({ content: iter.content, role: 'assistant', type: iter.type }))
           ],
         }),
       });
@@ -532,8 +527,9 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
           handleSubmitEdits={handleSubmitEdits}
           handleExpandCollection={handleExpandCollection}
           editText={editText}
-          iterationCards={iterationCards}
-          summaryCards={summaryCards}
+          allIterations={allIterations}
+          currentIteration={currentIteration}
+          condensedFindings={condensedFindings}
         />
       </div>
       {showBottomSection && (
@@ -577,12 +573,11 @@ const ChatSection = ({
   handleSubmitEdits,
   handleExpandCollection,
   editText,
-  iterationCards,
-  summaryCards,
+  allIterations,
+  currentIteration,
+  condensedFindings,
 }) => {
-  const updatedMessages = [...messages, { content: reportContent, type: 'report' }];
-  console.log(`updated messages ${JSON.stringify(updatedMessages)}`);
-  console.log(`messages ${JSON.stringify(messages)}`)
+  const updatedMessages = [...messages, { content: reportContent, role: 'assistant', type: 'report' }];
 
   const createPDF = async () => {
     const doc = new jsPDF();
@@ -633,22 +628,50 @@ const ChatSection = ({
     }
   };
 
-  const createMessageCard = (message, index, total) => {
-    let title, category;
-    if (index === total - 1) {
-      title = 'Sources';
+  const createCard = (item, index) => {
+    let title, category, content;
+
+    if (item.role === 'user') {
+      title = 'User Query';
+      category = 'User Input';
+      content = item.content;
+    } else if (item.type === 'sources') {
+      title = 'All Sources';
       category = 'References';
-    } else if (index === total - 2) {
+      const sources = JSON.parse(item.content);
+      content = (
+        <ul className="list-disc pl-5 space-y-2">
+          {sources.map((source, idx) => (
+            <li key={idx} className="text-stone-900">
+              <a 
+                href={source.source_url} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:text-blue-800"
+              >
+                {source.source_url}
+              </a>
+            </li>
+          ))}
+        </ul>
+      );
+    } else if (item.type === 'condensed') {
       title = 'Condensed Findings';
       category = 'Research Summary';
-    } else {
-      title = `Research Iteration ${index + 1}`;
+      content = item.content;
+    } else if (item.type === 'iteration') {
+      title = `Research Iteration ${index}`;
       category = 'AI Response';
+      content = item.content;
+    } else {
+      title = `AI Response`;
+      category = 'AI Response';
+      content = item.content;
     }
 
     return (
       <Card
-        key={`message-${index}`}
+        key={`item-${index}`}
         card={{
           category: category,
           title: title,
@@ -661,7 +684,7 @@ const ChatSection = ({
                   a: ({node, ...props}) => <a {...props} target="_blank" rel="noopener noreferrer" />
                 }}
               >
-                {message.content}
+                {content}
               </ReactMarkdown>
             </div>
           ),
@@ -671,18 +694,18 @@ const ChatSection = ({
     );
   };
 
-  // Exclude the first message (user query) from card creation
-  const messageCards = updatedMessages.slice(1).map((message, index) => 
-    createMessageCard(message, index, updatedMessages.length - 1)
-  );
+  const allCards = [
+    ...messages.map((message, index) => createCard(message, index)),
+    ...allIterations.slice(0, currentIteration).map((iteration, index) => createCard(iteration, messages.length + index))
+  ];
 
   return (
     <div className="flex flex-col items-center">
-      {updatedMessages.length > 1 ? (
+      {messages.length > 0 ? (
         <div className="pb-[100px] md:pb-40 w-full">
           <div className="mt-8">
-            <h2 className="text-2xl font-bold mb-4">{updatedMessages[0].content}</h2>
-            <Carousel items={messageCards} />
+            <h2 className="text-2xl font-bold mb-4">{messages[0].content}</h2>
+            <Carousel items={allCards} />
           </div>
           {showEditMode && (
             <div className="flex flex-col pt-12">
