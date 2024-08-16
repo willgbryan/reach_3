@@ -67,7 +67,7 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
   const [iterationCount, setIterationCount] = useState(0);
   const [isCollectionComplete, setIsCollectionComplete] = useState(false);
   const [originalUserMessage, setOriginalUserMessage] = useState<Message | null>(null);
-  const [condensedFindings, setCondensedFindings] = useState<string | undefined>(undefined);
+  const [summaryCards, setSummaryCards] = useState<JSX.Element[]>([]);
 
   const [iterationCards, setIterationCards] = useState<JSX.Element[]>([]);
   const [condensedFindingsCard, setCondensedFindingsCard] = useState<JSX.Element | null>(null);
@@ -131,6 +131,12 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
       index={-2}
     />
   );
+
+  useEffect(() => {
+    if (condensedFindingsCard && sourcesCard) {
+      setSummaryCards([condensedFindingsCard, sourcesCard]);
+    }
+  }, [condensedFindingsCard, sourcesCard]);
 
   useEffect(() => {
     socketRef.current = getWebSocket();
@@ -324,6 +330,8 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
       console.log(`ITERATION ${currentIteration}`);
       allAccumulatedOutputs.push(result.output);
       currentIteration++;
+      finalChatId = result.chatId;
+
   
       if (currentIteration > 2) {
         // Evaluate stopping condition
@@ -375,6 +383,7 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
       if (finalChatId) {
         const allSources = await getOldSources(finalChatId);
         
+        // Create and set the sources card
         const newSourcesCard = createSourcesCard(allSources);
         setSourcesCard(newSourcesCard);
       }
@@ -513,6 +522,18 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
     <div className="h-full w-full">
       <TopSection docSetName={docSetName} documentSets={documentSets} />
       <div className="w-full px-4">
+      {iterationCards.length > 0 && (
+          <div className="mt-8">
+            <h2 className="text-2xl font-bold mb-4">Research Iterations</h2>
+            <Carousel items={iterationCards} />
+          </div>
+        )}
+        {summaryCards.length > 0 && (
+          <div className="mt-8">
+            <h2 className="text-2xl font-bold mb-4">Research Summary</h2>
+            <Carousel items={summaryCards} />
+          </div>
+        )}
         <ChatSection 
           messages={messages}
           sources={sources}
@@ -529,18 +550,6 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
           handleExpandCollection={handleExpandCollection}
           editText={editText}
         />
-        {iterationCards.length > 0 && (
-          <div className="mt-8 max-w-full">
-            <h2 className="text-2xl font-bold mb-4">Research Iterations</h2>
-            <Carousel items={iterationCards} />
-          </div>
-        )}
-        {condensedFindingsCard && (
-          <div className="mt-8 max-w-full">
-            <h2 className="text-2xl font-bold mb-4">Condensed Findings</h2>
-            <Carousel items={[condensedFindingsCard]} />
-          </div>
-        )}
       </div>
       {showBottomSection && (
         <BottomSection
@@ -639,7 +648,7 @@ const ChatSection = ({
     <div className="flex flex-col items-center">
       {updatedMessages.length > 0 ? (
         <div className="pb-[100px] md:pb-40">
-          {showEditMode ? (
+          {/* {showEditMode ? (
             <div className="flex flex-row space-x-4">
               <div className="w-1/2">
                 <ChatList messages={updatedMessages} sources={sources} />
@@ -655,7 +664,7 @@ const ChatSection = ({
             </div>
           ) : (
             <ChatList messages={updatedMessages} sources={sources} />
-          )}
+          )} */}
           <ChatScrollAnchor trackVisibility={isLoading} />
           {reportContent && (
             <div className="flex justify-center space-x-4 mt-4">
@@ -676,8 +685,8 @@ const ChatSection = ({
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog> */}
-              <Button onClick={handleExpandCollection} variant="outline">Expand Collection</Button>
-              <Button onClick={handleDigDeeper} variant="outline">Refine Collection</Button>
+              {/* <Button onClick={handleExpandCollection} variant="outline">Expand Collection</Button>
+              <Button onClick={handleDigDeeper} variant="outline">Refine Collection</Button> */}
               <Button onClick={createPDF} variant="outline">Create PDF</Button>
               <Button onClick={handleCreateStructuredPowerPoint} variant="outline">Create PowerPoint</Button>
             </div>
