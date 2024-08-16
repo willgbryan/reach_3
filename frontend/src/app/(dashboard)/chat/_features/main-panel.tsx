@@ -25,6 +25,8 @@ import { UserProvider } from '@/components/user-provider';
 import { getWebSocket, closeWebSocket } from '@/utils/websocket'
 import { toast } from 'sonner'
 import { getOldSources } from '@/app/_data/sources'
+import { Card, Carousel } from '@/components/cult/apple-cards-carousel'
+import ReactMarkdown from 'react-markdown'
 
 interface MainVectorPanelProps {
   id?: string | undefined
@@ -32,6 +34,18 @@ interface MainVectorPanelProps {
   initialMessages?: Message[]
   initialSources?: any
 }
+
+type CardType = {
+  src: string;
+  title: string;
+  category: string;
+  content: React.ReactNode;
+};
+
+type Source = {
+  source_url: string;
+  content: string;
+};
 
 const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPanelProps) => {
   const { data: documentSets } = useGetDocumentSets()
@@ -55,10 +69,68 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
   const [originalUserMessage, setOriginalUserMessage] = useState<Message | null>(null);
   const [condensedFindings, setCondensedFindings] = useState<string | undefined>(undefined);
 
+  const [iterationCards, setIterationCards] = useState<JSX.Element[]>([]);
+  const [condensedFindingsCard, setCondensedFindingsCard] = useState<JSX.Element | null>(null);
+  const [sourcesCard, setSourcesCard] = useState<JSX.Element | null>(null);
+
   const router = useRouter()
   const sources = initialSources?.sources ?? [];
   const apiUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://themagi.systems';
   const socketRef = useRef<WebSocket | null>(null);
+
+  const createIterationCard = (iteration: number, content: string): JSX.Element => (
+    <Card
+      key={`iteration-${iteration}`}
+      card={{
+        category: `Iteration ${iteration}`,
+        title: `Research Iteration ${iteration}`,
+        src: "",
+        content: (
+          <div className="bg-[#e4e4e4] p-8 rounded-3xl mb-4 overflow-auto max-h-[60vh]">
+            <ReactMarkdown 
+              className="text-stone-900 text-base md:text-xl font-sans prose prose-invert max-w-3xl mx-auto prose-a:text-blue-400 hover:prose-a:text-blue-300"
+              components={{
+                a: ({node, ...props}) => <a {...props} target="_blank" rel="noopener noreferrer" />
+              }}
+            >
+              {content}
+            </ReactMarkdown>
+          </div>
+        ),
+      }}
+      index={iteration}
+    />
+  );
+
+  const createSourcesCard = (sources: Source[]): JSX.Element => (
+    <Card
+      key="sources"
+      card={{
+        category: "References",
+        title: "All Sources",
+        src: "", // Use an appropriate image for sources
+        content: (
+          <div className="bg-[#e4e4e4] p-8 rounded-3xl mb-4 overflow-auto max-h-[60vh]">
+            <ul className="list-disc pl-5 space-y-2">
+              {sources.map((source, index) => (
+                <li key={index} className="text-stone-900">
+                  <a 
+                    href={source.source_url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:text-blue-800"
+                  >
+                    {source.source_url}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ),
+      }}
+      index={-2}
+    />
+  );
 
   useEffect(() => {
     socketRef.current = getWebSocket();
@@ -86,11 +158,6 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
       closeWebSocket();
     };
   }, []);
-
-  const condenseReports = async () =>{
-    // 1. create a new backend route /condense-reports
-    // 2. pass the state variable with all accumulated reports to it asking for a summary (in valid markdown prolly)
-  }
 
   const handleSaveSourcesAndContent = async (sourcesData: any[]) => {
     if (!currentChatId) {
@@ -224,11 +291,11 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
         throw new Error('Failed to save chat history');
       }
 
-      // console.log(`Accumulated Sources: ${JSON.stringify(accumulatedSources)}`);
-      // await handleSaveSourcesAndContent(accumulatedSources);
-
       setIterationCount(iterationCount + 1);
       setAccumulatedReports(prev => ({...prev, [iterationCount + 1]: accumulatedOutput}));
+
+      const newCard = createIterationCard(iterationCount + 1, accumulatedOutput);
+      setIterationCards(prev => [...prev, newCard]);
 
       return {
         output: accumulatedOutput,
@@ -250,6 +317,7 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
     let currentIteration = 0;
     let currentPayload = { ...payload };
     let allAccumulatedOutputs: string[] = [];
+    let finalChatId: string | undefined;
   
     while (currentIteration < maxIterations) {
       const result = await handleApiCall(currentPayload, currentIteration);
@@ -282,7 +350,6 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
         if (ratio <= 0.1) {
           console.log('Stopping condition met. Ending iterations.');
           setIsCollectionComplete(true);
-          await condenseReports();
           break;
         } else {
           console.log('Continuing to next iteration.');
@@ -304,6 +371,14 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
       console.log('-------------------');
     });
     try {
+
+      if (finalChatId) {
+        const allSources = await getOldSources(finalChatId);
+        
+        const newSourcesCard = createSourcesCard(allSources);
+        setSourcesCard(newSourcesCard);
+      }
+
       const response = await fetch('/api/condense-reports', {
         method: 'POST',
         headers: {
@@ -322,8 +397,31 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
       const { condensed_report } = await response.json();
       console.log('Condensed Report:', condensed_report);
   
-      setCondensedFindings(condensed_report);
-  
+      const condensedCard = (
+        <Card
+          key="condensed-findings"
+          card={{
+            category: "Condensed Findings",
+            title: "Research Summary",
+            src: "", // Use a default image or generate one
+            content: (
+              <div className="bg-[#e4e4e4] p-8 rounded-3xl mb-4 overflow-auto max-h-[60vh]">
+                <ReactMarkdown 
+                  className="text-stone-900 text-base md:text-xl font-sans prose prose-invert max-w-3xl mx-auto prose-a:text-blue-400 hover:prose-a:text-blue-300"
+                  components={{
+                    a: ({node, ...props}) => <a {...props} target="_blank" rel="noopener noreferrer" />
+                  }}
+                >
+                  {condensed_report}
+                </ReactMarkdown>
+              </div>
+            ),
+          }}
+          index={-1}
+        />
+      );
+      setCondensedFindingsCard(condensedCard);
+
     } catch (error) {
       console.error('Error in condensing findings:', error);
       toast.error("Error condensing findings", {
@@ -431,6 +529,18 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
           handleExpandCollection={handleExpandCollection}
           editText={editText}
         />
+        {iterationCards.length > 0 && (
+          <div className="mt-8 max-w-full">
+            <h2 className="text-2xl font-bold mb-4">Research Iterations</h2>
+            <Carousel items={iterationCards} />
+          </div>
+        )}
+        {condensedFindingsCard && (
+          <div className="mt-8 max-w-full">
+            <h2 className="text-2xl font-bold mb-4">Condensed Findings</h2>
+            <Carousel items={[condensedFindingsCard]} />
+          </div>
+        )}
       </div>
       {showBottomSection && (
         <BottomSection
