@@ -4,20 +4,17 @@ import { createClient } from '@/db/server'
 
 export async function POST(req: NextRequest) {
   const db = createClient(cookies());
-  const {
-    data: { session },
-  } = await db.auth.getSession();
+  const { data: { session } } = await db.auth.getSession();
   const userId = session?.user.id;
   if (!userId) {
     return new NextResponse('Unauthorized', { status: 401 });
   }
 
   try {
-    const { chatId, iterations, condensedFindings, messages, isNewsletter, cadence, topic, style } = await req.json();
+    const { chatId, iterations, messages, isNewsletter, cadence, topic, style } = await req.json();
     await saveChatHistory({
       chatId,
       iterations,
-      condensedFindings,
       messages,
       userId,
       db,
@@ -51,8 +48,7 @@ export async function POST(req: NextRequest) {
 
 interface ChatHistoryParams {
   chatId: string;
-  iterations: Array<{ content: string; sources: any[] }>;
-  condensedFindings: string;
+  iterations: Array<{ content: string; sources: any[]; type?: string }>;
   messages: any[];
   userId: string;
   db: ReturnType<typeof createClient>;
@@ -63,7 +59,6 @@ interface ChatHistoryParams {
 async function saveChatHistory({
   chatId,
   iterations,
-  condensedFindings,
   messages,
   userId,
   db,
@@ -78,7 +73,6 @@ async function saveChatHistory({
     path: `/chat/${chatId}`,
     messages,
     iterations,
-    condensedFindings,
     isNewsletter,
     cadence: isNewsletter && cadence ? getCronExpression(cadence) : null,
   };

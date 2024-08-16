@@ -375,6 +375,11 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
   
       const { condensed_report } = await response.json();
       console.log('Condensed Report:', condensed_report);
+
+      allIterations.push({
+        content: condensed_report,
+        sources: []
+      });
   
       const condensedCard = (
         <Card
@@ -410,10 +415,9 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
         body: JSON.stringify({
           chatId: finalChatId,
           iterations: allIterations,
-          condensedFindings: condensed_report,
           messages: [
             ...payload.messages,
-            ...allIterations.map(iter => ({ content: iter.content, role: 'assistant' }))
+            ...allIterations.map(iter => ({ content: iter.content, role: 'assistant'}))
           ],
         }),
       });
@@ -513,18 +517,6 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
     <div className="h-full w-full">
       <TopSection docSetName={docSetName} documentSets={documentSets} />
       <div className="w-full px-4">
-      {iterationCards.length > 0 && (
-          <div className="mt-8">
-            <h2 className="text-2xl font-bold mb-4">Research Iterations</h2>
-            <Carousel items={iterationCards} />
-          </div>
-        )}
-        {summaryCards.length > 0 && (
-          <div className="mt-8">
-            <h2 className="text-2xl font-bold mb-4">Research Summary</h2>
-            <Carousel items={summaryCards} />
-          </div>
-        )}
         <ChatSection 
           messages={messages}
           sources={sources}
@@ -540,6 +532,8 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
           handleSubmitEdits={handleSubmitEdits}
           handleExpandCollection={handleExpandCollection}
           editText={editText}
+          iterationCards={iterationCards}
+          summaryCards={summaryCards}
         />
       </div>
       {showBottomSection && (
@@ -583,8 +577,12 @@ const ChatSection = ({
   handleSubmitEdits,
   handleExpandCollection,
   editText,
+  iterationCards,
+  summaryCards,
 }) => {
   const updatedMessages = [...messages, { content: reportContent, type: 'report' }];
+  console.log(`updated messages ${JSON.stringify(updatedMessages)}`);
+  console.log(`messages ${JSON.stringify(messages)}`)
 
   const createPDF = async () => {
     const doc = new jsPDF();
@@ -635,49 +633,70 @@ const ChatSection = ({
     }
   };
 
+  const createMessageCard = (message, index, total) => {
+    let title, category;
+    if (index === total - 1) {
+      title = 'Sources';
+      category = 'References';
+    } else if (index === total - 2) {
+      title = 'Condensed Findings';
+      category = 'Research Summary';
+    } else {
+      title = `Research Iteration ${index + 1}`;
+      category = 'AI Response';
+    }
+
+    return (
+      <Card
+        key={`message-${index}`}
+        card={{
+          category: category,
+          title: title,
+          src: "",
+          content: (
+            <div className="bg-[#e4e4e4] p-8 rounded-3xl mb-4 overflow-auto max-h-[60vh]">
+              <ReactMarkdown 
+                className="text-stone-900 text-base md:text-xl font-sans prose prose-invert max-w-3xl mx-auto prose-a:text-blue-400 hover:prose-a:text-blue-300"
+                components={{
+                  a: ({node, ...props}) => <a {...props} target="_blank" rel="noopener noreferrer" />
+                }}
+              >
+                {message.content}
+              </ReactMarkdown>
+            </div>
+          ),
+        }}
+        index={index}
+      />
+    );
+  };
+
+  // Exclude the first message (user query) from card creation
+  const messageCards = updatedMessages.slice(1).map((message, index) => 
+    createMessageCard(message, index, updatedMessages.length - 1)
+  );
+
   return (
     <div className="flex flex-col items-center">
-      {updatedMessages.length > 0 ? (
-        <div className="pb-[100px] md:pb-40">
-          {/* {showEditMode ? (
-            <div className="flex flex-row space-x-4">
-              <div className="w-1/2">
-                <ChatList messages={updatedMessages} sources={sources} />
-              </div>
-              <div className="w-1/2 flex flex-col pt-12">
-                <ReactQuill 
-                  value={editText} 
-                  className='max-w-full p-2 shadow-sm sm:p-4 no-border'
-                  onChange={handleEditChange}
-                />
-                <Button variant="ghost" onClick={handleSubmitEdits} className="mt-12">Submit Edits</Button>
-              </div>
+      {updatedMessages.length > 1 ? (
+        <div className="pb-[100px] md:pb-40 w-full">
+          <div className="mt-8">
+            <h2 className="text-2xl font-bold mb-4">{updatedMessages[0].content}</h2>
+            <Carousel items={messageCards} />
+          </div>
+          {showEditMode && (
+            <div className="flex flex-col pt-12">
+              <ReactQuill 
+                value={editText} 
+                className='max-w-full p-2 shadow-sm sm:p-4 no-border'
+                onChange={handleEditChange}
+              />
+              <Button variant="ghost" onClick={handleSubmitEdits} className="mt-12">Submit Edits</Button>
             </div>
-          ) : (
-            <ChatList messages={updatedMessages} sources={sources} />
-          )} */}
+          )}
           <ChatScrollAnchor trackVisibility={isLoading} />
           {reportContent && (
             <div className="flex justify-center space-x-4 mt-4">
-              {/* <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="outline">New Query</Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Are you sure you want to start a new query?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This action may interfere with the current training state.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleNewQuery}>Continue</AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog> */}
-              {/* <Button onClick={handleExpandCollection} variant="outline">Expand Collection</Button>
-              <Button onClick={handleDigDeeper} variant="outline">Refine Collection</Button> */}
               <Button onClick={createPDF} variant="outline">Create PDF</Button>
               <Button onClick={handleCreateStructuredPowerPoint} variant="outline">Create PowerPoint</Button>
             </div>
@@ -685,7 +704,7 @@ const ChatSection = ({
         </div>
       ) : (
         <div className="pt-64 md:pt-16">
-          <Heading>Where knowledge begins</Heading>
+          <Heading>Heighliner</Heading>
         </div>
       )}
     </div>

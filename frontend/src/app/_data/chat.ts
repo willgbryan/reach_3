@@ -33,7 +33,6 @@ export async function getChats(userId?: string | null) {
       'title' in chat &&
       'messages' in chat &&
       'iterations' in chat &&
-      'condensedFindings' in chat &&
       Array.isArray(chat.messages) &&
       Array.isArray(chat.iterations)
     );
