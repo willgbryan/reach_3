@@ -698,7 +698,7 @@ const ChatSection = ({
       category = 'Navigation Summary';
       content = item.content;
     } else if (item.type === 'iteration') {
-      title = `Dive ${index + 1}`;
+      title = `Dive ${index}`;
       category = 'Outbound Navigation';
       content = item.content;
     }
@@ -747,7 +747,7 @@ const ChatSection = ({
       {updatedMessages.length > 1 ? (
         <div className="pb-[100px] md:pb-40 w-full">
           <div className="mt-8">
-            <h2 className="text-2xl font-bold mb-4">{updatedMessages[0].content}</h2>
+            <h2 className="text-3xl pl-12 font-bold">{updatedMessages[0].content}</h2>
             <Carousel items={allCards} />
           </div>
           {showEditMode && (
