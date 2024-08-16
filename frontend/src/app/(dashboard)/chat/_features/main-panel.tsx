@@ -75,11 +75,27 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
   const [sourcesCard, setSourcesCard] = useState<JSX.Element | null>(null);
   const [allIterations, setAllIterations] = useState<Array<{ content: string; sources: any[]; type?: string }>>([]);
   const [condensedFindings, setCondensedFindings] = useState<string | null>(null);
+  const [allSources, setAllSources] = useState<Source[]>([]);
 
   const router = useRouter()
   const sources = initialSources?.sources ?? [];
   const apiUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://themagi.systems';
   const socketRef = useRef<WebSocket | null>(null);
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlChatId = urlParams.get('id');
+    if (urlChatId) {
+      setCurrentChatId(urlChatId);
+    } else {
+      // Check URL for chat ID
+      const pathSegments = window.location.pathname.split('/');
+      const chatIdFromPath = pathSegments[pathSegments.length - 1];
+      if (chatIdFromPath && chatIdFromPath !== 'chat') {
+        setCurrentChatId(chatIdFromPath);
+      }
+    }
+  }, []);
 
   const createIterationCard = (iteration: number, content: string): JSX.Element => (
     <Card
@@ -365,9 +381,10 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
   
     try {
       if (finalChatId) {
-        const allSources = await getOldSources(finalChatId);
+        const fetchedSources = await getOldSources(finalChatId);
+        setAllSources(fetchedSources);
         iterations.push({
-          content: JSON.stringify(allSources),
+          content: JSON.stringify(fetchedSources),
           sources: [],
           type: 'sources'
         });
@@ -514,7 +531,6 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
       <div className="w-full px-4">
         <ChatSection 
           messages={messages}
-          sources={sources}
           isLoading={isLoading}
           reportContent={reportContent}
           showEditMode={showEditMode}
@@ -530,6 +546,7 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
           allIterations={allIterations}
           currentIteration={currentIteration}
           condensedFindings={condensedFindings}
+          chatId={currentChatId}
         />
       </div>
       {showBottomSection && (
@@ -560,7 +577,6 @@ const TopSection = ({ docSetName, documentSets }) => {
 
 const ChatSection = ({ 
   messages, 
-  sources, 
   isLoading, 
   reportContent,
   showEditMode,
@@ -576,8 +592,28 @@ const ChatSection = ({
   allIterations,
   currentIteration,
   condensedFindings,
+  chatId,
 }) => {
   const updatedMessages = [...messages, { content: reportContent, role: 'assistant', type: 'report' }];
+  const [sources, setSources] = useState<Source[]>([]);
+
+  useEffect(() => {
+    const fetchSources = async () => {
+      if (chatId) {
+        try {
+          console.log(`Fetching sources for chat ID: ${chatId}`);
+          const fetchedSources = await getOldSources(chatId);
+          console.log('Fetched sources:', fetchedSources);
+          setSources(fetchedSources);
+        } catch (error) {
+          console.error('Error fetching sources:', error);
+          toast.error("Error fetching sources");
+        }
+      }
+    };
+
+    fetchSources();
+  }, [chatId]);
 
   const createPDF = async () => {
     const doc = new jsPDF();
@@ -628,83 +664,90 @@ const ChatSection = ({
     }
   };
 
-  const createCard = (item, index) => {
-    let title, category, content;
-
+  const createCard = (item: any, index: number): JSX.Element | null => {
+    let title: string | undefined;
+    let category: string | undefined;
+    let content: React.ReactNode;
+  
     if (item.role === 'user') {
       title = 'User Query';
       category = 'User Input';
       content = item.content;
     } else if (item.type === 'sources') {
-      title = 'All Sources';
-      category = 'References';
-      const sources = JSON.parse(item.content);
+      title = 'Sources';
+      category = 'Navigation Destinations';
       content = (
         <ul className="list-disc pl-5 space-y-2">
           {sources.map((source, idx) => (
             <li key={idx} className="text-stone-900">
-              <a 
-                href={source.source_url} 
-                target="_blank" 
+              <a
+                href={source.source_url}
+                target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-600 hover:text-blue-800"
               >
                 {source.source_url}
               </a>
+              {source.content}
             </li>
           ))}
         </ul>
       );
     } else if (item.type === 'condensed') {
-      title = 'Condensed Findings';
-      category = 'Research Summary';
+      title = 'Findings';
+      category = 'Navigation Summary';
       content = item.content;
     } else if (item.type === 'iteration') {
-      title = `Research Iteration ${index}`;
-      category = 'AI Response';
-      content = item.content;
-    } else {
-      title = `AI Response`;
-      category = 'AI Response';
+      title = `Dive ${index + 1}`;
+      category = 'Outbound Navigation';
       content = item.content;
     }
-
-    return (
-      <Card
-        key={`item-${index}`}
-        card={{
-          category: category,
-          title: title,
-          src: "",
-          content: (
-            <div className="bg-[#e4e4e4] p-8 rounded-3xl mb-4 overflow-auto max-h-[60vh]">
-              <ReactMarkdown 
-                className="text-stone-900 text-base md:text-xl font-sans prose prose-invert max-w-3xl mx-auto prose-a:text-blue-400 hover:prose-a:text-blue-300"
-                components={{
-                  a: ({node, ...props}) => <a {...props} target="_blank" rel="noopener noreferrer" />
-                }}
-              >
-                {content}
-              </ReactMarkdown>
-            </div>
-          ),
-        }}
-        index={index}
-      />
-    );
+  
+    // Only create and return a card if we have valid title and category
+    if (title && category) {
+      return (
+        <Card
+          key={`item-${index}`}
+          card={{
+            category,
+            title,
+            src: "",
+            content: (
+              <div className="bg-[#e4e4e4] p-8 rounded-3xl mb-4 overflow-auto max-h-[60vh]">
+                <ReactMarkdown
+                  className="text-stone-900 text-base md:text-xl font-sans prose prose-invert max-w-3xl mx-auto prose-a:text-blue-400 hover:prose-a:text-blue-300"
+                  components={{
+                    a: ({node, ...props}) => <a {...props} target="_blank" rel="noopener noreferrer" />
+                  }}
+                >
+                  {typeof content === 'string' ? content : ''}
+                </ReactMarkdown>
+                {typeof content !== 'string' && content}
+              </div>
+            ),
+          }}
+          index={index}
+        />
+      );
+    }
+  
+    // No valid title & category means no card
+    return null;
   };
 
   const allCards = [
-    ...messages.map((message, index) => createCard(message, index)),
-    ...allIterations.slice(0, currentIteration).map((iteration, index) => createCard(iteration, messages.length + index))
+    ...updatedMessages.slice(1).map((message, index) => createCard(message, index)), // Skip the user query
+    ...allIterations.slice(0, currentIteration).map((iteration, index) => 
+      createCard(iteration, updatedMessages.length - 1 + index)
+    )
   ];
 
   return (
     <div className="flex flex-col items-center">
-      {messages.length > 0 ? (
+      {updatedMessages.length > 1 ? (
         <div className="pb-[100px] md:pb-40 w-full">
           <div className="mt-8">
-            <h2 className="text-2xl font-bold mb-4">{messages[0].content}</h2>
+            <h2 className="text-2xl font-bold mb-4">{updatedMessages[0].content}</h2>
             <Carousel items={allCards} />
           </div>
           {showEditMode && (
