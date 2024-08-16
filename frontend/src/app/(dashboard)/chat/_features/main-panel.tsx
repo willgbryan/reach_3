@@ -97,60 +97,6 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
     }
   }, []);
 
-  const createIterationCard = (iteration: number, content: string): JSX.Element => (
-    <Card
-      key={`iteration-${iteration}`}
-      card={{
-        category: `Iteration ${iteration}`,
-        title: `Research Iteration ${iteration}`,
-        src: "",
-        content: (
-          <div className="bg-[#e4e4e4] p-8 rounded-3xl mb-4 overflow-auto max-h-[60vh]">
-            <ReactMarkdown 
-              className="text-stone-900 text-base md:text-xl font-sans prose prose-invert max-w-3xl mx-auto prose-a:text-blue-400 hover:prose-a:text-blue-300"
-              components={{
-                a: ({node, ...props}) => <a {...props} target="_blank" rel="noopener noreferrer" />
-              }}
-            >
-              {content}
-            </ReactMarkdown>
-          </div>
-        ),
-      }}
-      index={iteration}
-    />
-  );
-
-  const createSourcesCard = (sources: Source[]): JSX.Element => (
-    <Card
-      key="sources"
-      card={{
-        category: "References",
-        title: "All Sources",
-        src: "", // Use an appropriate image for sources
-        content: (
-          <div className="bg-[#e4e4e4] p-8 rounded-3xl mb-4 overflow-auto max-h-[60vh]">
-            <ul className="list-disc pl-5 space-y-2">
-              {sources.map((source, index) => (
-                <li key={index} className="text-stone-900">
-                  <a 
-                    href={source.source_url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:text-blue-800"
-                  >
-                    {source.source_url}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ),
-      }}
-      index={-2}
-    />
-  );
-
   useEffect(() => {
     if (condensedFindingsCard && sourcesCard) {
       setSummaryCards([condensedFindingsCard, sourcesCard]);
@@ -312,10 +258,7 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
           type: 'iteration'
         }
       ]);
-
-      const newCard = createIterationCard(iterationCount + 1, accumulatedOutput);
-      setIterationCards(prev => [...prev, newCard]);
-
+      
       return {
         output: accumulatedOutput,
         sources: accumulatedSources,
@@ -466,58 +409,6 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
     }
   };
 
-  const handleEditChange = (newContent) => {
-    const oldContent = editText;
-    setEditText(newContent);
-  
-    const deletedParts = oldContent.split(' ').filter(word => !newContent.includes(word));
-    const newDeletedText = deletedParts.join(' ');
-    setDeletedText(prevDeletedText => {
-      const combinedDeletedText = prevDeletedText + ' ' + newDeletedText;
-      return combinedDeletedText.trim();
-    });
-  };
-
-  const handleSubmitEdits = async () => {
-    const editsString = `user-retained:${editText} user-deleted:${deletedText}`;
-    console.log(`edits string ${editsString}`)
-    setEdits(editsString);
-    setShowEditMode(false);
-    setShowBottomSection(false);
-  
-    await handleApiCall({
-      messages: messages,
-      id: currentChatId,
-      edits: editsString,
-      task: initialValue,
-    });
-  };
-
-  const handleExpandCollection = async () => {
-    const collectedString = `user-retained:${messages} user-deleted:""`;
-    setShowEditMode(false);
-    setShowBottomSection(false);
-  
-    await handleApiCall({
-      messages: messages,
-      id: currentChatId,
-      edits: collectedString,
-      task: initialValue,
-    });
-  };
-
-  const handleDigDeeper = () => {
-    setEditText(reportContent);
-    setShowEditMode(true);
-    setShowBottomSection(false);
-  };
-
-  const handleNewQuery = () => {
-    setShowBottomSection(true);
-    setShowEditMode(false);
-    router.push('/chat');
-  };
-
   const handleReset = () => {
     setStage('reset')
     setFileData(null)
@@ -533,19 +424,8 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
           messages={messages}
           isLoading={isLoading}
           reportContent={reportContent}
-          showEditMode={showEditMode}
-          setShowEditMode={setShowEditMode}
-          showBottomSection={showBottomSection}
-          setShowBottomSection={setShowBottomSection}
-          handleDigDeeper={handleDigDeeper}
-          handleNewQuery={handleNewQuery}
-          handleEditChange={handleEditChange}
-          handleSubmitEdits={handleSubmitEdits}
-          handleExpandCollection={handleExpandCollection}
-          editText={editText}
           allIterations={allIterations}
           currentIteration={currentIteration}
-          condensedFindings={condensedFindings}
           chatId={currentChatId}
         />
       </div>
@@ -579,19 +459,8 @@ const ChatSection = ({
   messages, 
   isLoading, 
   reportContent,
-  showEditMode,
-  setShowEditMode,
-  showBottomSection,
-  setShowBottomSection,
-  handleDigDeeper,
-  handleNewQuery,
-  handleEditChange,
-  handleSubmitEdits,
-  handleExpandCollection,
-  editText,
   allIterations,
   currentIteration,
-  condensedFindings,
   chatId,
 }) => {
   const updatedMessages = [...messages, { content: reportContent, role: 'assistant', type: 'report' }];
@@ -750,21 +619,11 @@ const ChatSection = ({
             <h2 className="text-3xl pl-12 font-bold">{updatedMessages[0].content}</h2>
             <Carousel items={allCards} />
           </div>
-          {showEditMode && (
-            <div className="flex flex-col pt-12">
-              <ReactQuill 
-                value={editText} 
-                className='max-w-full p-2 shadow-sm sm:p-4 no-border'
-                onChange={handleEditChange}
-              />
-              <Button variant="ghost" onClick={handleSubmitEdits} className="mt-12">Submit Edits</Button>
-            </div>
-          )}
           <ChatScrollAnchor trackVisibility={isLoading} />
           {reportContent && (
             <div className="flex justify-center space-x-4 mt-4">
-              <Button onClick={createPDF} variant="outline">Create PDF</Button>
-              <Button onClick={handleCreateStructuredPowerPoint} variant="outline">Create PowerPoint</Button>
+              {/* <Button onClick={createPDF} variant="outline">Create PDF</Button>
+              <Button onClick={handleCreateStructuredPowerPoint} variant="outline">Create PowerPoint</Button> */}
             </div>
           )}
         </div>
