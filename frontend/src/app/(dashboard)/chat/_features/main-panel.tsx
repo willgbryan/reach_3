@@ -281,22 +281,6 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
 
       await wsComplete;
 
-      const saveChatResponse = await fetch(`/api/save-chat`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          chatId: actualChatId,
-          completion: accumulatedOutput,
-          messages: [...payload.messages, { content: accumulatedOutput, role: 'assistant' }],
-        }),
-      });
-      
-      if (!saveChatResponse.ok) {
-        throw new Error('Failed to save chat history');
-      }
-
       setIterationCount(iterationCount + 1);
       setAccumulatedReports(prev => ({...prev, [iterationCount + 1]: accumulatedOutput}));
 
@@ -322,16 +306,21 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
   const handleMultipleIterations = async (payload, maxIterations = 6) => {
     let currentIteration = 0;
     let currentPayload = { ...payload };
-    let allAccumulatedOutputs: string[] = [];
+    let allIterations: Array<{ content: string; sources: any[] }> = [];
     let finalChatId: string | undefined;
   
     while (currentIteration < maxIterations) {
       const result = await handleApiCall(currentPayload, currentIteration);
       console.log(`ITERATION ${currentIteration}`);
-      allAccumulatedOutputs.push(result.output);
+      
+      // Add the current iteration to allIterations
+      allIterations.push({
+        content: result.output,
+        sources: result.sources
+      });
+  
       currentIteration++;
       finalChatId = result.chatId;
-
   
       if (currentIteration > 2) {
         // Evaluate stopping condition
@@ -339,22 +328,10 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
         const oldSourceUrls = new Set(oldSources.map(source => source.source_url));
         const newSourceUrls = new Set(result.sources.map(source => source.Source));
   
-        console.log('Old Source URLs:');
-        console.log([...oldSourceUrls]);
-  
-        console.log('New Source URLs:');
-        console.log([...newSourceUrls]);
-  
         const uniqueNewSources = [...newSourceUrls].filter(url => !oldSourceUrls.has(url));
         
-        console.log('Unique New Source URLs:');
-        console.log(uniqueNewSources);
-  
         const ratio = uniqueNewSources.length / oldSourceUrls.size;
-        console.log(`New/existing ratio: ${ratio}`);
-        console.log(`Unique new sources: ${uniqueNewSources.length}`);
-        console.log(`Old sources size: ${oldSourceUrls.size}`);
-
+  
         if (ratio <= 0.1) {
           console.log('Stopping condition met. Ending iterations.');
           setIsCollectionComplete(true);
@@ -363,6 +340,7 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
           console.log('Continuing to next iteration.');
         }
       }
+  
       await handleSaveSourcesAndContent(result.sources);
   
       // Update payload for next iteration
@@ -372,22 +350,14 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
         id: result.chatId,
       };
     }
-    console.log('All Accumulated Outputs:');
-    allAccumulatedOutputs.forEach((output, index) => {
-      console.log(`Iteration ${index + 1}:`);
-      console.log(output);
-      console.log('-------------------');
-    });
+  
     try {
-
       if (finalChatId) {
         const allSources = await getOldSources(finalChatId);
-        
-        // Create and set the sources card
         const newSourcesCard = createSourcesCard(allSources);
         setSourcesCard(newSourcesCard);
       }
-
+  
       const response = await fetch('/api/condense-reports', {
         method: 'POST',
         headers: {
@@ -395,7 +365,7 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
         },
         body: JSON.stringify({
           task: payload.originalMessage ? payload.originalMessage.content : payload.messages[payload.messages.length - 1].content,
-          accumulatedOutput: allAccumulatedOutputs.join('\n\n')
+          accumulatedOutput: allIterations.map(iter => iter.content).join('\n\n')
         }),
       });
   
@@ -412,7 +382,7 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
           card={{
             category: "Condensed Findings",
             title: "Research Summary",
-            src: "", // Use a default image or generate one
+            src: "",
             content: (
               <div className="bg-[#e4e4e4] p-8 rounded-3xl mb-4 overflow-auto max-h-[60vh]">
                 <ReactMarkdown 
@@ -430,11 +400,32 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
         />
       );
       setCondensedFindingsCard(condensedCard);
-
+  
+      // still need to save source and relevant chunks
+      const saveChatResponse = await fetch(`/api/save-chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          chatId: finalChatId,
+          iterations: allIterations,
+          condensedFindings: condensed_report,
+          messages: [
+            ...payload.messages,
+            ...allIterations.map(iter => ({ content: iter.content, role: 'assistant' }))
+          ],
+        }),
+      });
+  
+      if (!saveChatResponse.ok) {
+        throw new Error('Failed to save chat history');
+      }
+  
     } catch (error) {
-      console.error('Error in condensing findings:', error);
-      toast.error("Error condensing findings", {
-        description: "Failed to generate condensed report. Please try again.",
+      console.error('Error in condensing findings or saving chat:', error);
+      toast.error("Error processing research", {
+        description: "Failed to generate condensed report or save chat. Please try again.",
       });
     }
   };

@@ -12,18 +12,18 @@ import { getCurrentUserId } from './user'
 
 export async function getChats(userId?: string | null) {
   if (!userId) {
-    return []
+    return [];
   }
 
   try {
-    const db = createClient(cookies())
+    const db = createClient(cookies());
     const { data } = await db
       .from('chats')
       .select('payload')
       .order('payload->createdAt', { ascending: false })
       .eq('user_id', userId)
       .eq('is_newsletter', false)
-      .throwOnError()
+      .throwOnError();
 
     return (data?.map((entry) => entry.payload as Chat) ?? []).filter(chat => 
       chat && 
@@ -32,11 +32,14 @@ export async function getChats(userId?: string | null) {
       'path' in chat &&
       'title' in chat &&
       'messages' in chat &&
-      Array.isArray(chat.messages)
-    )
+      'iterations' in chat &&
+      'condensedFindings' in chat &&
+      Array.isArray(chat.messages) &&
+      Array.isArray(chat.iterations)
+    );
   } catch (error) {
-    console.error('Error fetching chats:', error)
-    return []
+    console.error('Error fetching chats:', error);
+    return [];
   }
 }
 
