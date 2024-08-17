@@ -25,8 +25,9 @@ import { UserProvider } from '@/components/user-provider';
 import { getWebSocket, closeWebSocket } from '@/utils/websocket'
 import { toast } from 'sonner'
 import { getOldSources } from '@/app/_data/sources'
-import { Card, Carousel } from '@/components/cult/apple-cards-carousel'
 import ReactMarkdown from 'react-markdown'
+import { GridLayout, Card } from '@/components/cult/dive-grid'
+import { PlaceholdersAndVanishInput } from '@/components/cult/placeholder-vanish-input'
 
 interface MainVectorPanelProps {
   id?: string | undefined
@@ -65,6 +66,8 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
   const [isCollectionComplete, setIsCollectionComplete] = useState(false);
   const [originalUserMessage, setOriginalUserMessage] = useState<Message | null>(null);
   const [currentIteration, setCurrentIteration] = useState(0);
+  const [currentStep, setCurrentStep] = useState('initial');
+  const [placeholders, setPlaceholders] = useState(['Ask anything...']);
 
   const [allIterations, setAllIterations] = useState<Array<{ content: string; sources: any[]; type?: string }>>([]);
   const [condensedFindings, setCondensedFindings] = useState<string | null>(null);
@@ -273,6 +276,8 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
     let finalChatId: string | undefined;
   
     while (currentIteration < maxIterations) {
+      setCurrentStep(`dive-${currentIteration + 1}`);
+      setPlaceholders([`Navigating dive number ${currentIteration + 1}`]);
       const result = await handleApiCall(currentPayload, currentIteration);
       console.log(`ITERATION ${currentIteration}`);
       
@@ -324,6 +329,8 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
         });
       }
   
+      setCurrentStep('condensing');
+      setPlaceholders(['Condensing dive content']);
       const response = await fetch('/api/condense-reports', {
         method: 'POST',
         headers: {
@@ -378,6 +385,8 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
         description: "Failed to generate condensed report or save chat. Please try again.",
       });
     }
+    setCurrentStep('complete');
+    setPlaceholders(['Research complete. Ask another question?']);
   };
 
   const handleInputClick = async (value: string) => {
@@ -423,11 +432,11 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
         />
       </div>
       {showBottomSection && (
-        <BottomSection
-          handleInputClick={handleInputClick}
-          handleReset={handleReset}
+        <SimpleInputForm
+          onSubmit={handleInputClick}
           isLoading={isLoading}
           inputDisabled={inputDisabled}
+          placeholders={placeholders}
         />
       )}
     </div>
@@ -574,7 +583,6 @@ const ChatSection = ({
           card={{
             category,
             title,
-            src: "",
             content: (
               <div className="bg-[#e4e4e4] p-8 rounded-3xl mb-4 overflow-auto max-h-[60vh]">
                 <ReactMarkdown
@@ -605,13 +613,12 @@ const ChatSection = ({
   ];
 
   return (
-    <div className="flex flex-col items-center">
-      {/* 2 works 1 doesnt, dont ask questions */}
+    <div className="flex flex-col items-center w-full">
       {updatedMessages.length > 2 ? (
         <div className="pb-[100px] md:pb-40 w-full">
           <div className="mt-8">
-            <h2 className="text-3xl pl-12 font-bold">{updatedMessages[0].content}</h2>
-            <Carousel items={allCards} />
+            <h2 className="text-4xl pl-12 font-bold">{updatedMessages[0].content}</h2>
+            <GridLayout items={allCards} />
           </div>
           <ChatScrollAnchor trackVisibility={isLoading} />
           {reportContent && (
@@ -632,26 +639,32 @@ const ChatSection = ({
 
 const BottomSection = ({
   handleReset,
-  handleInputClick,
+  handleInputSubmit,
+  handleInputChange,
   isLoading,
   inputDisabled,
+  placeholders,
+  currentStep,
 }: {
   handleReset: () => void;
-  handleInputClick: (value: string) => Promise<void>;
+  handleInputSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
+  handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   isLoading: boolean;
   inputDisabled: boolean;
+  placeholders: string[];
+  currentStep: string;
 }) => {
-  const handleSubmit = (value: string) => {
-    handleInputClick(value);
-  };
-
   return (
-    <SimpleInputForm 
-      onSubmit={handleSubmit} 
-      isLoading={isLoading}
-      inputDisabled={inputDisabled}
-    />
+    <div className="absolute bottom-2 md:bottom-8 left-0 right-0 px-4">
+      <div className="relative max-w-3xl mx-auto">
+        <PlaceholdersAndVanishInput
+          placeholders={placeholders}
+          onChange={handleInputChange}
+          onSubmit={handleInputSubmit}
+        />
+      </div>
+    </div>
   );
 };
 
-export default MainVectorPanel
+export default MainVectorPanel;
