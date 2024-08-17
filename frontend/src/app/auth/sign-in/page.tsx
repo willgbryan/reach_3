@@ -39,7 +39,7 @@ export default async function SignIn() {
 
       {/* Sign-in form (full width and height on small screens, half width on md and up) */}
       <div className="flex-grow w-full md:w-1/2 flex flex-col items-center justify-center bg-[#e4e4e4] p-8">
-        <Heading variant="secondary" weight="thin" size="xl" className="mb-8">Magi</Heading>
+        <Heading variant="secondary" weight="thin" size="xl" className="mb-8">Heighliner</Heading>
         <Card className="w-full max-w-md bg-[#e4e4e4] border-none relative corner-borders">
           <CardContent className="items-center justify-center space-y-4 p-6">
             <OTPAuthFlow />
