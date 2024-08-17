@@ -386,7 +386,7 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
       });
     }
     setCurrentStep('complete');
-    setPlaceholders(['Research complete. Ask another question?']);
+    setPlaceholders(['Research complete.']);
   };
 
   const handleInputClick = async (value: string) => {
@@ -542,11 +542,7 @@ const ChatSection = ({
     let category: string | undefined;
     let content: React.ReactNode;
   
-    if (item.role === 'user') {
-      title = 'User Query';
-      category = 'User Input';
-      content = item.content;
-    } else if (item.type === 'sources') {
+    if (item.type === 'sources') {
       title = 'Sources';
       category = 'Navigation Destinations';
       content = (
@@ -571,7 +567,7 @@ const ChatSection = ({
       category = 'Navigation Summary';
       content = item.content;
     } else if (item.type === 'iteration') {
-      title = `Dive ${index + 1}`;
+      title = `Dive ${index}`;
       category = 'Outbound Navigation';
       content = item.content;
     }
