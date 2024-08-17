@@ -75,6 +75,10 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
   const apiUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://themagi.systems';
   const socketRef = useRef<WebSocket | null>(null);
 
+  const updatedMessages = [...messages, { content: reportContent, role: 'assistant', type: 'report' }];
+
+  const inputDisabled = updatedMessages.length > 1;
+
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const urlChatId = urlParams.get('id');
@@ -377,7 +381,7 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
   };
 
   const handleInputClick = async (value: string) => {
-    if (value.length >= 1) {
+    if (value.length >= 1 && !inputDisabled) {
       setInitialValue(value);
       const newMessage: Message = {
         id: nanoid(),
@@ -400,6 +404,7 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
     setStage('reset')
     setFileData(null)
     setMessages([])
+    setReportContent('')
     router.push('/chat')
   };
 
@@ -408,7 +413,7 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
       <TopSection docSetName={docSetName} documentSets={documentSets} />
       <div className="w-full px-4">
         <ChatSection 
-          messages={messages}
+          messages={updatedMessages}
           isLoading={isLoading}
           reportContent={reportContent}
           allIterations={allIterations}
@@ -422,6 +427,7 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
           handleInputClick={handleInputClick}
           handleReset={handleReset}
           isLoading={isLoading}
+          inputDisabled={inputDisabled}
         />
       )}
     </div>
@@ -600,7 +606,8 @@ const ChatSection = ({
 
   return (
     <div className="flex flex-col items-center">
-      {updatedMessages.length > 1 ? (
+      {/* 2 works 1 doesnt, dont ask questions */}
+      {updatedMessages.length > 2 ? (
         <div className="pb-[100px] md:pb-40 w-full">
           <div className="mt-8">
             <h2 className="text-3xl pl-12 font-bold">{updatedMessages[0].content}</h2>
@@ -627,17 +634,23 @@ const BottomSection = ({
   handleReset,
   handleInputClick,
   isLoading,
+  inputDisabled,
 }: {
   handleReset: () => void;
   handleInputClick: (value: string) => Promise<void>;
   isLoading: boolean;
+  inputDisabled: boolean;
 }) => {
   const handleSubmit = (value: string) => {
     handleInputClick(value);
   };
 
   return (
-    <SimpleInputForm onSubmit={handleSubmit} isLoading={isLoading} />
+    <SimpleInputForm 
+      onSubmit={handleSubmit} 
+      isLoading={isLoading}
+      inputDisabled={inputDisabled}
+    />
   );
 };
 
