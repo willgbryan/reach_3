@@ -535,7 +535,8 @@ const ChatSection = ({
     const lines = content.split('\n');
     let html = '';
     let inList = false;
-
+    let listItemNumber = 1;
+  
     lines.forEach((line, index) => {
       if (line.startsWith('# ')) {
         html += `<h1 class="text-3xl font-bold mt-6 mb-4">${line.slice(2)}</h1>`;
@@ -543,21 +544,15 @@ const ChatSection = ({
         html += `<h2 class="text-2xl font-semibold mt-5 mb-3">${line.slice(3)}</h2>`;
       } else if (line.startsWith('### ')) {
         html += `<h3 class="text-xl font-medium mt-4 mb-2">${line.slice(4)}</h3>`;
-      } else if (line.match(/^\d+\.\s/)) {
-        const matchResult = line.match(/^(\d+\.\s)(.*)$/);
-        if (matchResult) {
-          if (!inList) {
-            html += '<ol class="list-decimal list-inside my-2">';
-            inList = true;
-          }
-          html += `<li class="mb-1"><strong>${matchResult[1]}</strong>${matchResult[2]}</li>`;
-        } else {
-          if (inList) {
-            html += '</ol>';
-            inList = false;
-          }
-          html += `<p class="mb-4">${line}</p>`;
+      } else if (line.match(/^\d+\.\s/) || (inList && line.trim().startsWith('**'))) {
+        if (!inList) {
+          html += '<ol class="list-decimal list-inside my-2">';
+          inList = true;
+          listItemNumber = 1;
         }
+        const content = line.replace(/^\d+\.\s/, '').replace(/^\*\*/, '');
+        html += `<li class="mb-1">${content}</li>`;
+        listItemNumber++;
       } else if (line.trim() === '' && inList) {
         html += '</ol>';
         inList = false;
@@ -569,11 +564,11 @@ const ChatSection = ({
         html += `<p class="mb-4">${line}</p>`;
       }
     });
-
+  
     if (inList) {
       html += '</ol>';
     }
-
+  
     return html;
   };
 
