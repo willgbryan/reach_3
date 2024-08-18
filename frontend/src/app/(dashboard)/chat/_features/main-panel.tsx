@@ -582,9 +582,9 @@ const ChatSection = ({
             category,
             title,
             content: (
-              <div className="bg-[#e4e4e4] p-8 rounded-3xl mb-4 overflow-auto max-h-[60vh]">
+              <div className="bg-transparent p-8 rounded-lg mb-4 overflow-auto max-h-[60vh]">
                 <ReactMarkdown
-                  className="text-stone-900 text-base md:text-xl font-sans prose prose-invert max-w-3xl mx-auto prose-a:text-blue-400 hover:prose-a:text-blue-300"
+                  className="text-stone-900 dark:text-stone-100 text-base md:text-xl font-sans prose prose-invert max-w-3xl mx-auto prose-a:text-blue-400 hover:prose-a:text-blue-300"
                   components={{
                     a: ({node, ...props}) => <a {...props} target="_blank" rel="noopener noreferrer" />
                   }}
