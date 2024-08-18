@@ -589,9 +589,16 @@ const ChatSection = ({
     if (item.type === 'sources') {
       title = 'Sources';
       category = 'Navigation Destinations';
+      const uniqueSources = sourcesToUse.reduce((acc, source) => {
+        const duplicate = acc.find(item => item.source_url === source.source_url);
+        if (!duplicate) {
+          acc.push(source);
+        }
+        return acc;
+      }, []);
       content = (
         <ol className="list-decimal pl-5 space-y-2">
-          {sourcesToUse.map((source, idx) => (
+          {uniqueSources.map((source, idx) => (
             <li key={idx} className="text-stone-900 dark:text-stone-100">
               <a
                 href={source.source_url}

@@ -29,7 +29,7 @@ def generate_search_queries_prompt(question: str, parent_query: str, report_type
     elif cadence == 'monthly':
         cadence = 'previous month'
     else:
-        cadence = 'no restrictions'
+        cadence = 'task specification.'
 
     prompt = {
         "task": f"Write {max_iterations} google search queries to search online that form an objective opinion from the following task: \"{task}\".",
