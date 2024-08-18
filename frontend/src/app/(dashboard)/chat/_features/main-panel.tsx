@@ -567,9 +567,11 @@ const ChatSection = ({
       category = 'Navigation Summary';
       content = item.content;
     } else if (item.type === 'iteration') {
-      title = `Dive ${index}`;
+      title = `Dive ${index + 1}`;
       category = 'Outbound Navigation';
       content = item.content;
+    } else if (item.role === 'user') {
+      return null;
     }
   
     if (title && category) {
@@ -604,9 +606,9 @@ const ChatSection = ({
   const allCards = [
     ...updatedMessages.slice(1).map((message, index) => createCard(message, index)),
     ...allIterations.slice(0, currentIteration).map((iteration, index) => 
-      createCard(iteration, updatedMessages.length - 1 + index)
+      createCard(iteration, index)
     )
-  ];
+  ].filter(Boolean);
 
   return (
     <div className="flex flex-col items-center w-full">
