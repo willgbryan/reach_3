@@ -4,14 +4,13 @@ import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react
 import { useRouter } from 'next/navigation'
 import { Message } from 'ai'
 import { nanoid } from 'nanoid'
-import ReactQuill from 'react-quill';
+import DOMPurify from 'dompurify';
 import 'react-quill/dist/quill.snow.css';
 
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
 import { ModeToggle } from '@/components/theme-toggle'
-import { ChatList } from '@/components/chat/chat-list'
 import { ChatScrollAnchor } from '@/components/chat/chat-scroll-anchor'
 import { Heading } from '@/components/cult/gradient-heading'
 import { useGetDocumentSets } from '@/hooks/use-get-document-sets'
@@ -25,7 +24,6 @@ import { UserProvider } from '@/components/user-provider';
 import { getWebSocket, closeWebSocket } from '@/utils/websocket'
 import { toast } from 'sonner'
 import { getOldSources } from '@/app/_data/sources'
-import ReactMarkdown from 'react-markdown'
 import { GridLayout, Card } from '@/components/cult/dive-grid'
 import { PlaceholdersAndVanishInput } from '@/components/cult/placeholder-vanish-input'
 
@@ -385,7 +383,7 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
         description: "Failed to generate condensed report or save chat. Please try again.",
       });
     }
-    setCurrentStep('complete');
+    setCurrentStep('initial');
     setPlaceholders(['Research complete.']);
   };
 
@@ -434,9 +432,9 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
       {showBottomSection && (
         <SimpleInputForm
           onSubmit={handleInputClick}
-          isLoading={isLoading}
           inputDisabled={inputDisabled}
           placeholders={placeholders}
+          currentStep={currentStep}
         />
       )}
     </div>
@@ -537,6 +535,52 @@ const ChatSection = ({
     }
   };
 
+  const formatContentToHTML = (content: string): string => {
+    const lines = content.split('\n');
+    let html = '';
+    let inList = false;
+
+    lines.forEach((line, index) => {
+      if (line.startsWith('# ')) {
+        html += `<h1 class="text-3xl font-bold mt-6 mb-4">${line.slice(2)}</h1>`;
+      } else if (line.startsWith('## ')) {
+        html += `<h2 class="text-2xl font-semibold mt-5 mb-3">${line.slice(3)}</h2>`;
+      } else if (line.startsWith('### ')) {
+        html += `<h3 class="text-xl font-medium mt-4 mb-2">${line.slice(4)}</h3>`;
+      } else if (line.match(/^\d+\.\s/)) {
+        const matchResult = line.match(/^(\d+\.\s)(.*)$/);
+        if (matchResult) {
+          if (!inList) {
+            html += '<ol class="list-decimal list-inside my-2">';
+            inList = true;
+          }
+          html += `<li class="mb-1"><strong>${matchResult[1]}</strong>${matchResult[2]}</li>`;
+        } else {
+          if (inList) {
+            html += '</ol>';
+            inList = false;
+          }
+          html += `<p class="mb-4">${line}</p>`;
+        }
+      } else if (line.trim() === '' && inList) {
+        html += '</ol>';
+        inList = false;
+      } else {
+        if (inList) {
+          html += '</ol>';
+          inList = false;
+        }
+        html += `<p class="mb-4">${line}</p>`;
+      }
+    });
+
+    if (inList) {
+      html += '</ol>';
+    }
+
+    return html;
+  };
+
   const createCard = (item: any, index: number): JSX.Element | null => {
     let title: string | undefined;
     let category: string | undefined;
@@ -546,30 +590,35 @@ const ChatSection = ({
       title = 'Sources';
       category = 'Navigation Destinations';
       content = (
-        <ul className="list-disc pl-5 space-y-2">
+        <ol className="list-decimal pl-5 space-y-2">
           {sourcesToUse.map((source, idx) => (
-            <li key={idx} className="text-stone-900">
+            <li key={idx} className="text-stone-900 dark:text-stone-100">
               <a
                 href={source.source_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-blue-600 hover:text-blue-800"
+                className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
               >
                 {source.source_url}
               </a>
               {source.content}
             </li>
           ))}
-        </ul>
+        </ol>
       );
-    } else if (item.type === 'condensed') {
-      title = 'Findings';
-      category = 'Navigation Summary';
-      content = item.content;
-    } else if (item.type === 'iteration') {
-      title = `Dive ${index + 1}`;
-      category = 'Outbound Navigation';
-      content = item.content;
+    } else if (item.type === 'condensed' || item.type === 'iteration') {
+      title = item.type === 'condensed' ? 'Findings' : `Dive ${index + 1}`;
+      category = item.type === 'condensed' ? 'Navigation Summary' : 'Outbound Navigation';
+      
+      const formattedContent = formatContentToHTML(item.content);
+      // critical for xss mitigation using dangerouslySetInnerHTML (we should still find an alternative)
+      const sanitizedContent = DOMPurify.sanitize(formattedContent);
+      content = (
+        <div 
+          className="text-stone-900 dark:text-stone-100 text-base md:text-lg font-sans prose prose-stone dark:prose-invert max-w-none"
+          dangerouslySetInnerHTML={{ __html: sanitizedContent }}
+        />
+      );
     } else if (item.role === 'user') {
       return null;
     }
@@ -583,15 +632,7 @@ const ChatSection = ({
             title,
             content: (
               <div className="bg-transparent p-8 rounded-lg mb-4 overflow-auto max-h-[60vh]">
-                <ReactMarkdown
-                  className="text-stone-900 dark:text-stone-100 text-base md:text-xl font-sans prose prose-invert max-w-3xl mx-auto prose-a:text-blue-400 hover:prose-a:text-blue-300"
-                  components={{
-                    a: ({node, ...props}) => <a {...props} target="_blank" rel="noopener noreferrer" />
-                  }}
-                >
-                  {typeof content === 'string' ? content : ''}
-                </ReactMarkdown>
-                {typeof content !== 'string' && content}
+                {content}
               </div>
             ),
           }}
@@ -639,8 +680,6 @@ const BottomSection = ({
   handleReset,
   handleInputSubmit,
   handleInputChange,
-  isLoading,
-  inputDisabled,
   placeholders,
   currentStep,
 }: {
@@ -659,6 +698,7 @@ const BottomSection = ({
           placeholders={placeholders}
           onChange={handleInputChange}
           onSubmit={handleInputSubmit}
+          currentStep={currentStep}
         />
       </div>
     </div>

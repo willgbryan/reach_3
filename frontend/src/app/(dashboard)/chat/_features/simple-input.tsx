@@ -3,16 +3,16 @@ import { PlaceholdersAndVanishInput } from "@/components/cult/placeholder-vanish
 
 interface SimpleInputFormProps {
   onSubmit: (value: string) => void;
-  isLoading: boolean;
   inputDisabled: boolean;
   placeholders?: string[];
+  currentStep: string;
 }
 
 const SimpleInputForm: React.FC<SimpleInputFormProps> = ({
   onSubmit,
-  isLoading,
   inputDisabled,
-  placeholders = ["Ask anything..."]
+  placeholders = ["Ask anything..."],
+  currentStep
 }) => {
   const [inputValue, setInputValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -51,12 +51,8 @@ const SimpleInputForm: React.FC<SimpleInputFormProps> = ({
           onChange={handleInputChange}
           onSubmit={handleSubmit}
           disabled={inputDisabled}
+          currentStep={currentStep}
         />
-        {/* {isLoading && (
-          <div className="absolute right-0 top-1/2 transform -translate-y-1/2 mr-3">
-            <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-purple-500"></div>
-          </div>
-        )} */}
       </div>
     </div>
   );
