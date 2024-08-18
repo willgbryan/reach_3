@@ -120,25 +120,25 @@ export const Card: React.FC<CardProps> = ({
             >
               <div className="sticky top-4 right-0 ml-auto flex flex-col md:flex-row justify-end space-y-2 md:space-y-0 md:space-x-2">
                 <button
-                  className="flex items-center justify-center px-3 py-2 bg-gray-200 dark:bg-gray-700 rounded-full text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                  className="flex items-center justify-center px-3 py-2 bg-stone-900 dark:bg-stone-100 rounded-full text-sm font-medium text-stone-100 dark:text-stone-900 hover:bg-stone-300 dark:hover:bg-stone-600 transition-colors"
                   onClick={handleCreatePDF}
-                  title="Export to PDF"
+                  title="Download as PDF"
                 >
                   <IconFileText className="h-5 w-5 mr-2" />
                   Download as PDF
                 </button>
                 {card.type !== 'sources' && onCreatePowerPoint && (
                   <button
-                    className="flex items-center justify-center px-3 py-2 bg-gray-200 dark:bg-gray-700 rounded-full text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                    className="flex items-center justify-center px-3 py-2 bg-stone-900 dark:bg-stone-100 rounded-full text-sm font-medium text-stone-100 dark:text-stone-900 hover:bg-stone-300 dark:hover:bg-stone-600 transition-colors"
                     onClick={handleCreatePowerPoint}
-                    title="Export to PowerPoint"
+                    title="Download as PowerPoint"
                   >
                     <IconPresentation className="h-5 w-5 mr-2" />
                     Download as PowerPoint
                   </button>
                 )}
                 <button
-                  className="flex items-center justify-center w-10 h-10 bg-black dark:bg-white rounded-full"
+                  className="flex items-center justify-center w-10 h-10 bg-black dark:bg-white rounded-full hover:bg-stone-300 dark:hover:bg-stone-600"
                   onClick={handleClose}
                 >
                   <IconX className="h-6 w-6 text-neutral-100 dark:text-neutral-900" />
