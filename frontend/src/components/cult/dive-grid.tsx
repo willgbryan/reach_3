@@ -1,6 +1,6 @@
 import React, { useContext, useState, useRef, useEffect, createContext } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { IconX } from "@tabler/icons-react";
+import { IconFileText, IconPresentation, IconX } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import { useOutsideClick } from "@/hooks/use-outside-click";
 import ReactMarkdown from 'react-markdown';
@@ -9,6 +9,8 @@ type Card = {
   title: string;
   category: string;
   content: React.ReactNode;
+  rawContent: string;
+  type: 'iteration' | 'condensed' | 'sources';
 };
 
 export const CarouselContext = createContext<{
@@ -46,12 +48,18 @@ export const GridLayout = ({ items }: { items: JSX.Element[] }) => {
   );
 };
 
-export const Card = ({
-  card,
-  index,
-}: {
+type CardProps = {
   card: Card;
   index: number;
+  onCreatePDF: (content: string) => void;
+  onCreatePowerPoint?: (content: string) => void;
+};
+
+export const Card: React.FC<CardProps> = ({
+  card,
+  index,
+  onCreatePDF,
+  onCreatePowerPoint,
 }) => {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -82,6 +90,16 @@ export const Card = ({
     onCardClose(index);
   };
 
+  const handleCreatePDF = () => {
+    onCreatePDF(card.rawContent);
+  };
+
+  const handleCreatePowerPoint = () => {
+    if (onCreatePowerPoint) {
+      onCreatePowerPoint(card.rawContent);
+    }
+  };
+
   return (
     <>
       <AnimatePresence>
@@ -100,12 +118,32 @@ export const Card = ({
               ref={containerRef}
               className="max-w-5xl mx-auto bg-white dark:bg-neutral-900 h-fit z-[60] my-10 p-4 md:p-10 rounded-lg font-sans relative"
             >
-              <button
-                className="sticky top-4 h-8 w-8 right-0 ml-auto bg-black dark:bg-white rounded-full flex items-center justify-center"
-                onClick={handleClose}
-              >
-                <IconX className="h-6 w-6 text-neutral-100 dark:text-neutral-900" />
-              </button>
+              <div className="sticky top-4 right-0 ml-auto flex flex-col md:flex-row justify-end space-y-2 md:space-y-0 md:space-x-2">
+                <button
+                  className="flex items-center justify-center px-3 py-2 bg-gray-200 dark:bg-gray-700 rounded-full text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                  onClick={handleCreatePDF}
+                  title="Export to PDF"
+                >
+                  <IconFileText className="h-5 w-5 mr-2" />
+                  Download as PDF
+                </button>
+                {card.type !== 'sources' && onCreatePowerPoint && (
+                  <button
+                    className="flex items-center justify-center px-3 py-2 bg-gray-200 dark:bg-gray-700 rounded-full text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                    onClick={handleCreatePowerPoint}
+                    title="Export to PowerPoint"
+                  >
+                    <IconPresentation className="h-5 w-5 mr-2" />
+                    Download as PowerPoint
+                  </button>
+                )}
+                <button
+                  className="flex items-center justify-center w-10 h-10 bg-black dark:bg-white rounded-full"
+                  onClick={handleClose}
+                >
+                  <IconX className="h-6 w-6 text-neutral-100 dark:text-neutral-900" />
+                </button>
+              </div>
               <p className="text-base font-medium text-black dark:text-white">
                 {card.category}
               </p>

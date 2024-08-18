@@ -486,7 +486,7 @@ const ChatSection = ({
 
   const sourcesToUse = allSources.length > 0 ? allSources : localSources;
 
-  const createPDF = async () => {
+  const createPDF = async (content: string) => {
     const doc = new jsPDF();
     
     try {
@@ -496,42 +496,38 @@ const ChatSection = ({
       const margin = 10;
       const maxLineWidth = pageWidth - 2 * margin;
   
-      for (const message of updatedMessages) {
-        doc.setFontSize(12);
-        doc.setFont('bold');
-        doc.text(message.role || 'System', margin, yOffset);
-        yOffset += lineHeight;
-  
-        doc.setFontSize(10);
-        doc.setFont('normal');
-        const contentLines = doc.splitTextToSize(message.content, maxLineWidth);
-        
-        for (const line of contentLines) {
-          if (yOffset > doc.internal.pageSize.getHeight() - margin) {
-            doc.addPage();
-            yOffset = margin;
-          }
-          doc.text(line, margin, yOffset);
-          yOffset += lineHeight;
+      doc.setFontSize(12);
+      doc.setFont('bold');
+      doc.text('Content', margin, yOffset);
+      yOffset += lineHeight;
+
+      doc.setFontSize(10);
+      doc.setFont('normal');
+      const contentLines = doc.splitTextToSize(content, maxLineWidth);
+      
+      for (const line of contentLines) {
+        if (yOffset > doc.internal.pageSize.getHeight() - margin) {
+          doc.addPage();
+          yOffset = margin;
         }
-  
+        doc.text(line, margin, yOffset);
         yOffset += lineHeight;
       }
   
-      doc.save("conversation_report.pdf");
+      doc.save("exported_content.pdf");
     } catch (error) {
       console.error("Error creating PDF:", error);
+      toast.error("Error creating PDF");
     }
   };
 
-  const handleCreateStructuredPowerPoint = async () => {
+  const handleCreateStructuredPowerPoint = async (content: string) => {
     try {
-      const prompt = updatedMessages.map(msg => msg.content).join('\n\n');
-      console.log('Generating PowerPoint with prompt:', prompt);
-      await generatePowerPoint(prompt);
+      console.log('Generating PowerPoint with content:', content);
+      await generatePowerPoint(content);
     } catch (error) {
       console.error("Error creating PowerPoint:", error);
-      // toast the error
+      toast.error("Error creating PowerPoint");
     }
   };
 
@@ -585,10 +581,13 @@ const ChatSection = ({
     let title: string | undefined;
     let category: string | undefined;
     let content: React.ReactNode;
+    let rawContent: string;
+    let type: 'iteration' | 'condensed' | 'sources';
   
     if (item.type === 'sources') {
       title = 'Sources';
       category = 'Navigation Destinations';
+      type = 'sources';
       const uniqueSources = sourcesToUse.reduce((acc, source) => {
         const duplicate = acc.find(item => item.source_url === source.source_url);
         if (!duplicate) {
@@ -613,10 +612,13 @@ const ChatSection = ({
           ))}
         </ol>
       );
+      rawContent = JSON.stringify(uniqueSources, null, 2);  // Format sources as JSON string
     } else if (item.type === 'condensed' || item.type === 'iteration') {
       title = item.type === 'condensed' ? 'Findings' : `Dive ${index + 1}`;
       category = item.type === 'condensed' ? 'Navigation Summary' : 'Outbound Navigation';
+      type = item.type;
       
+      rawContent = item.content;
       const formattedContent = formatContentToHTML(item.content);
       // critical for xss mitigation using dangerouslySetInnerHTML (we should still find an alternative)
       const sanitizedContent = DOMPurify.sanitize(formattedContent);
@@ -628,22 +630,25 @@ const ChatSection = ({
       );
     } else if (item.role === 'user') {
       return null;
+    } else {
+      // other cases or unknown types
+      return null;
     }
   
-    if (title && category) {
+    if (title && category && type) {
       return (
         <Card
           key={`item-${index}`}
           card={{
             category,
             title,
-            content: (
-              <div className="bg-transparent p-8 rounded-lg mb-4 overflow-auto max-h-[60vh]">
-                {content}
-              </div>
-            ),
+            content,
+            rawContent,
+            type,
           }}
           index={index}
+          onCreatePDF={createPDF}
+          onCreatePowerPoint={handleCreateStructuredPowerPoint}
         />
       );
     }
@@ -667,12 +672,6 @@ const ChatSection = ({
             <GridLayout items={allCards} />
           </div>
           <ChatScrollAnchor trackVisibility={isLoading} />
-          {reportContent && (
-            <div className="flex justify-center space-x-4 mt-4">
-              {/* <Button onClick={createPDF} variant="outline">Create PDF</Button>
-              <Button onClick={handleCreateStructuredPowerPoint} variant="outline">Create PowerPoint</Button> */}
-            </div>
-          )}
         </div>
       ) : (
         <div className="pt-64 md:pt-16">
