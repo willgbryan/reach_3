@@ -1,89 +1,155 @@
-import { cookies } from 'next/headers'
-import Link from 'next/link'
+import React from 'react';
+import { Check } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { StripeCheckout } from '@/app/api/stripe/server';
+import { Heading } from './cult/gradient-heading';
 
-import { getLifetimePaymentStatus, getSession } from '@/app/_data/user'
-import { StripeCheckout } from '@/app/api/stripe/server'
-import { Card, CardHeader, CardTitle } from '@/components/ui/card'
-import { createClient } from '@/db/server'
-import { cn } from '@/lib/utils'
+const pricingTiers = [
+  {
+    title: "Basic",
+    price: 0,
+    description: "Take it for a spin",
+    features: [
+      "Individual use",
+      "10 queries per month",
+      "Maximum of 1 concurrent newsletter(s)",
+      "Default static file exports"
+    ]
+  },
+  {
+    title: "Pro",
+    price: 29,
+    description: "Accelerate your professional work",
+    features: [
+      "Individual use with added memory layer",
+      "Unlimited queries",
+      "Maximum of 5 concurrent newsletters",
+      "Static file export customization",
+      "24/7 support"
+    ],
+    emphasized: true
+  },
+  {
+    title: "Team",
+    price: 49,
+    description: "Collaborative tools for teams",
+    features: [
+      "Team level memory layer",
+      "Unlimited queries",
+      "Maximum of 5 concurrent newsletters per team member",
+      "Export sharing via Slack",
+      "24/7 support"
+    ]
+  },
+  {
+    title: "Enterprise",
+    price: 99,
+    description: "Integrated analysis ",
+    features: [
+      "Custom user limit",
+      "Configurable memory layer granularity",
+      "Organization wide observability dashboard",
+      "Unlimited queries",
+      "Unlimited concurrent newsletters",
+      "24/7 support"
+    ]
+  }
+];
 
-import { Heading } from './cult/gradient-heading'
-
-export async function LifetimePayment() {
-  const PAYMENT_MODE = 'one-time'
-  const ONE_TIME_PAYMENT_TYPE = 'lifetime' // null
-  const PRICE = 5_00
-
-  const db = createClient(cookies())
-  const hasLicense = await getLifetimePaymentStatus(db)
-  const session = await getSession()
+const PricingCard = ({ tier, session, emphasized, index, totalCards }) => {
+  const isFirst = index === 0;
+  const isLast = index === totalCards - 1;
 
   return (
-    <>
-      {hasLicense ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>Welcome back</CardTitle>
-            <div>
-              <Link href={'/'}>Access </Link>
-            </div>
-          </CardHeader>
-        </Card>
-      ) : (
-        <>
-          <p className="text-base font-semibold text-neutral-800">Limited time offer</p>
-          <p className="mt-6 flex items-baseline justify-center gap-x-2">
-            <span className="text-5xl font-bold tracking-tight text-neutral-900">$5</span>
-            <span className="text-sm font-semibold leading-6 tracking-wide text-neutral-600">
-              USD
-            </span>
-          </p>
-          <StripeCheckout
+    <div className={cn(
+      "relative w-full",
+      emphasized ? "z-10 scale-y-[1.03] -mt-1.5 -mb-1.5" : ""
+    )}>
+      <Card className={cn(
+        "h-full",
+        emphasized ? "shadow-lg" : "shadow-sm",
+        // Apply different border radius based on card position
+        isFirst ? "rounded-r-none" : isLast ? "rounded-l-none" : "rounded-none",
+        emphasized && "rounded-lg" // Keep all corners rounded for emphasized card
+      )}>
+        <CardHeader>
+          <CardTitle>{tier.title}</CardTitle>
+          <CardDescription>{tier.description}</CardDescription>
+        </CardHeader>
+        <StripeCheckout
             metadata={{
               userId: session?.user.id ?? null,
-              oneTimePaymentType: ONE_TIME_PAYMENT_TYPE,
+              pricingTier: tier.title,
             }}
-            paymentType={PAYMENT_MODE}
-            price={PRICE}
-            className="my-1 rounded border bg-gray-50 px-4 py-2 transition duration-100 hover:bg-blue-600 hover:text-white"
+            paymentType="subscription"
+            price={tier.price * 100} // Convert to cents
+            className="w-full"
           >
-            Buy the product
+            <Button className={cn(
+              "w-full",
+              emphasized ? "bg-primary text-primary-foreground hover:bg-primary/90" : ""
+            )}>
+              Get started
+            </Button>
           </StripeCheckout>
-        </>
-      )}
-    </>
-  )
-}
+        <CardContent className="grid gap-4">
+          <div className="flex items-baseline justify-center gap-x-2">
+            <span className="text-3xl font-bold">${tier.price}</span>
+            <span className="text-sm text-muted-foreground">/month</span>
+          </div>
+          <div>
+            {tier.features.map((feature, index) => (
+              <div
+                key={index}
+                className="mb-2 grid grid-cols-[25px_1fr] items-start pb-2 last:mb-0 last:pb-0"
+              >
+                <Check className="h-4 w-4 text-green-500" />
+                <p className="text-sm">{feature}</p>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+        <CardFooter>
+        </CardFooter>
+      </Card>
+    </div>
+  );
+};
 
-export function Pricing({ children }) {
+export function PricingPage({ session }) {
   return (
-    <div className=" py-24 sm:py-36 rounded-t-[64px]">
+    <div className="py-18 sm:py-36">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="mx-auto max-w-2xl sm:text-center">
-          <Heading variant="default" size="xxl">
-            Pricing
+          <Heading variant="default" size="xl">
+            Choose Your Plan
           </Heading>
+          <p className="mt-6 text-lg leading-8 text-gray-600">
+            Select the perfect plan for your needs. Upgrade or downgrade at any time.
+          </p>
         </div>
-        <div className="mx-auto mt-16 max-w-2xl rounded-3xl ring-1 bg-neutral-900 ring-neutral-200 sm:mt-20 lg:mx-0 lg:flex lg:max-w-none">
-          <div className="p-8 sm:p-10 lg:flex-auto">
-            <h3 className="text-2xl font-bold tracking-tight text-neutral-100">
-              <Heading variant="default" size="xxl">
-                Product
-              </Heading>
-            </h3>
-            <p className="mt-6 text-base leading-7 text-neutral-300">
-              Lorem ipsum dolor sit amet consectetur adipisicing elit. A voluptates asperiores
-              nostrum dignissimos ut quia aliquam harum eaque ipsa. Iusto ad sapiente earum libero
-              quibusdam neque optio architecto suscipit ipsam!
-            </p>
-          </div>
-          <div className="-mt-2 p-2 lg:mt-[3px] lg:mr-1  lg:w-full lg:max-w-md lg:flex-shrink-0">
-            <div className="rounded-2xl bg-brand-400 py-10 text-center ring-1 ring-inset ring-neutral-900/5 lg:flex lg:flex-col lg:justify-center lg:py-[4.2rem]">
-              <div className="mx-auto max-w-xs px-8">{children}</div>
-            </div>
-          </div>
+        <div className="mx-auto mt-16 grid max-w-lg grid-cols-1 sm:mt-20 lg:max-w-none lg:grid-cols-4">
+          {pricingTiers.map((tier, index) => (
+            <PricingCard 
+              key={index} 
+              tier={tier} 
+              session={session} 
+              emphasized={tier.title === "Pro"}
+              index={index}
+              totalCards={pricingTiers.length}
+            />
+          ))}
         </div>
       </div>
     </div>
-  )
+  );
 }

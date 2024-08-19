@@ -32,8 +32,8 @@ export function NavLinks({ isCollapsed }) {
             icon: DollarSign, 
             variant: 'ghost', 
             href: `/pricing`,
-            disabled: true, 
-            label: 'Free for now'
+            disabled: false, 
+            label: ''
           },
         ]}
       />
