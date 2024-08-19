@@ -33,7 +33,7 @@ export function NavLinks({ isCollapsed }) {
             variant: 'ghost', 
             href: `/pricing`,
             disabled: true, 
-            label: 'Free for now'
+            label: ''
           },
         ]}
       />

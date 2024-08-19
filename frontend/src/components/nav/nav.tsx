@@ -66,7 +66,7 @@ export function Nav({ links, isCollapsed }: NavProps) {
               className={cn(
                 buttonVariants({ variant: link.variant, size: 'sm' }),
                 link.variant === 'default' && '',
-                'hover:text-purple-500 dark:hover:border-neutral-100/10',
+                'dark:hover:text-stone-100 hover:text-stone-900 dark:hover:border-neutral-100/10',
                 'justify-start text-lg tracking-tight text-muted-foreground',
                 link.disabled && 'opacity-50 cursor-not-allowed pointer-events-none'
               )}

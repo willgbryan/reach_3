@@ -35,7 +35,7 @@ export function CheckoutButton(props: {
 
   return (
     <Button
-      className="relative mt-10 text-white bg-gradient-to-b from-neutral-800 via-neutral-800 to-black px-6 py-2 rounded-full group transition-[width] duration-100 ease-[cubic-bezier(0.64_0.57_0.67_1.53)] text-lg flex items-center mx-auto w-auto shadow-[0_1px_5px_rgba(0,0,0,0.2)]"
+      className="relative mb-4 text-stone-100 dark:text-stone-900 bg-stone-900 dark:bg-stone-100 from-neutral-800 via-neutral-800 to-black px-6 py-2 rounded-lg group transition-[width] duration-100 ease-[cubic-bezier(0.64_0.57_0.67_1.53)] text-lg flex items-center mx-auto w-auto shadow-[0_1px_5px_rgba(0,0,0,0.2)]"
       onClick={async () => {
         setLoading(true)
         // Await the creation of a Stripe Checkout session
@@ -67,7 +67,7 @@ export function CheckoutButton(props: {
       }}
       disabled={loading}
     >
-      Purchase now
+      Get started
       <div className="w-0 opacity-0 group-hover:w-[16px] group-hover:opacity-100 ml-1 overflow-hidden duration-100 ease-[cubic-bezier(0.64_0.57_0.67_1.53)] transition-[width]">
         →
       </div>
