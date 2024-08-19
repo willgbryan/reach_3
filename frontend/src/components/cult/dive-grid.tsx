@@ -4,6 +4,7 @@ import { IconFileText, IconPresentation, IconX } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import { useOutsideClick } from "@/hooks/use-outside-click";
 import ReactMarkdown from 'react-markdown';
+import { Meteors } from './meteors';
 
 type Card = {
   title: string;
@@ -154,24 +155,52 @@ export const Card: React.FC<CardProps> = ({
             </motion.div>
           </div>
         )}
-      </AnimatePresence>
+       </AnimatePresence>
       <motion.button
         onClick={handleOpen}
         className={cn(
           "rounded-lg bg-gray-100 dark:bg-neutral-900 h-full w-full overflow-hidden flex flex-col items-start justify-start relative z-10",
           "lg:border-r lg:border-b dark:border-neutral-800",
           index % 4 === 0 && "lg:border-l",
-          "group/feature"
+          "group/feature transition-all duration-300"
         )}
       >
-        <div className="opacity-0 group-hover/feature:opacity-100 transition duration-200 absolute inset-0 h-full w-full bg-gradient-to-t from-neutral-100 dark:from-neutral-800 to-transparent pointer-events-none" />
-        <div className="relative z-40 p-8">
-          <p className="text-neutral-600 dark:text-neutral-400 text-sm md:text-base font-medium font-sans text-left">
+        <div className="absolute inset-0 bg-gray-100 dark:bg-neutral-900 group-hover/feature:opacity-0 transition-opacity duration-300" />
+        
+        <div className="absolute inset-0 opacity-0 group-hover/feature:opacity-100 transition-opacity duration-300">
+          <div className="absolute inset-0 h-full w-full bg-gradient-to-r from-blue-500 to-teal-500 transform scale-[0.80] rounded-full blur-3xl" />
+          <div className="absolute inset-0 bg-gray-900 dark:bg-neutral-900" />
+        </div>
+
+        <div className="relative z-40 p-8 h-full w-full flex flex-col justify-start group-hover/feature:justify-end transition-all duration-300">
+          <div className="h-5 w-5 rounded-full border flex items-center justify-center mb-4 border-gray-500 opacity-0 group-hover/feature:opacity-100 transition-opacity duration-300">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth="1.5"
+              stroke="currentColor"
+              className="h-2 w-2 text-gray-300"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M4.5 4.5l15 15m0 0V8.25m0 11.25H8.25"
+              />
+            </svg>
+          </div>
+          
+          <p className="text-neutral-600 dark:text-neutral-400 group-hover/feature:text-neutral-300 text-sm md:text-base font-medium font-sans text-left mb-2 transition-colors duration-300">
             {card.category}
           </p>
-          <p className="text-neutral-800 dark:text-neutral-100 text-xl md:text-3xl font-semibold max-w-xs text-left [text-wrap:balance] font-sans mt-2 group-hover/feature:translate-x-2 transition duration-200">
+          
+          <p className="text-neutral-800 dark:text-neutral-100 group-hover/feature:text-white text-xl md:text-3xl font-normal max-w-xs text-left [text-wrap:balance] font-sans group-hover/feature:translate-x-2 transition duration-300">
             {card.title}
           </p>
+        </div>
+
+        <div className="absolute inset-0 opacity-0 group-hover/feature:opacity-100 transition-opacity duration-300 pointer-events-none overflow-hidden">
+          <Meteors number={20} />
         </div>
       </motion.button>
     </>

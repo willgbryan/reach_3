@@ -663,7 +663,7 @@ const ChatSection = ({
       {updatedMessages.length > 2 ? (
         <div className="pb-[100px] md:pb-40 w-full">
           <div className="mt-8">
-            <h2 className="text-4xl pl-12 font-bold">{updatedMessages[0].content}</h2>
+            <h2 className="text-4xl pl-12 font-normal">{updatedMessages[0].content}</h2>
             <GridLayout items={allCards} />
           </div>
           <ChatScrollAnchor trackVisibility={isLoading} />

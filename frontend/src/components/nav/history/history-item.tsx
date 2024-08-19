@@ -63,7 +63,7 @@ export function HistoryItem({ index, chat, children }: HistoryItemProps) {
             isActive &&
               ' pr-4 pl-14 font-semibold dark:bg-[#040404] border dark:border-brand-50/10 dark:text-white bg-neutral-100/50 hover:bg-neutral-100/70 hover:text-black border-black/5 text-black',
             !isActive &&
-              'dark:hover:bg-transparent dark:hover:text-purple-500 text-muted-foreground z-10 hover:bg-transparent hover:text-purple-500',
+              'dark:hover:bg-transparent dark:hover:text-stone-100 text-muted-foreground z-10 hover:bg-transparent hover:text-stone-900',
             isGlobalCollapsed && ' pl-2 pr-2 w-[70px]',
             isGlobalCollapsed &&
               isActive &&

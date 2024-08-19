@@ -32,7 +32,7 @@ export function NavLinks({ isCollapsed }) {
             icon: DollarSign, 
             variant: 'ghost', 
             href: `/pricing`,
-            disabled: false, 
+            disabled: true, 
             label: ''
           },
         ]}
