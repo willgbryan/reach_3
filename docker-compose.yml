@@ -59,8 +59,7 @@
 #   reach:
 #     driver: bridge
 
-# #PROD
-version: '3.8'
+#PROD
 services:
   traefik:
     image: traefik:v2.5
@@ -72,7 +71,7 @@ services:
       - "--entrypoints.websecure.address=:443"
       - "--certificatesresolvers.myresolver.acme.httpchallenge=true"
       - "--certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web"
-      - "--certificatesresolvers.myresolver.acme.email=will@themagi.tech"
+      - "--certificatesresolvers.myresolver.acme.email=will@heighliner.tech"
       - "--certificatesresolvers.myresolver.acme.storage=/acme.json"
       - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
       - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
@@ -84,7 +83,6 @@ services:
       - ./traefik/acme.json:/acme.json
     networks:
       - reach
-
   searxng:
     image: searxng/searxng:latest
     volumes:
@@ -93,11 +91,10 @@ services:
       - reach
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.searxng.rule=Host(`searx.themagi.systems`)"
+      - "traefik.http.routers.searxng.rule=Host(`searx.heighliner.tech`)"
       - "traefik.http.routers.searxng.entrypoints=websecure"
       - "traefik.http.routers.searxng.tls.certresolver=myresolver"
       - "traefik.http.services.searxng.loadbalancer.server.port=8080"
-
   backend:
     build:
       context: ./backend
@@ -109,21 +106,20 @@ services:
       - reach
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.backend.rule=Host(`themagi.systems`) && PathPrefix(`/ws`)"
+      - "traefik.http.routers.backend.rule=Host(`heighliner.tech`) && PathPrefix(`/ws`)"
       - "traefik.http.routers.backend.entrypoints=websecure"
       - "traefik.http.routers.backend.tls.certresolver=myresolver"
       - "traefik.http.services.backend.loadbalancer.server.port=8000"
       - "traefik.http.middlewares.websocket.headers.customrequestheaders.Connection=Upgrade"
       - "traefik.http.middlewares.websocket.headers.customrequestheaders.Upgrade=websocket"
       - "traefik.http.routers.backend.middlewares=websocket"
-
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile.nextjs
     environment:
-      - NEXT_PUBLIC_BASE_URL=https://themagi.systems/
-      - NEXT_PUBLIC_BACKEND_URL=https://themagi.systems/
+      - NEXT_PUBLIC_BASE_URL=https://heighliner.tech/
+      - NEXT_PUBLIC_BACKEND_URL=https://heighliner.tech/
       - DEPLOYMENT="PROD"
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - SEARX_URL=http://searxng:8080
@@ -133,11 +129,10 @@ services:
       - reach
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.frontend.rule=Host(`themagi.systems`)"
+      - "traefik.http.routers.frontend.rule=Host(`heighliner.tech`)"
       - "traefik.http.routers.frontend.entrypoints=websecure"
       - "traefik.http.routers.frontend.tls.certresolver=myresolver"
       - "traefik.http.services.frontend.loadbalancer.server.port=3000"
-
 networks:
   reach:
     driver: bridge
