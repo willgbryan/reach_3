@@ -77,9 +77,9 @@ const NewsletterPage: React.FC = () => {
   useEffect(() => {
     const isProduction = process.env.NODE_ENV === 'production';
     const ws_protocol = isProduction ? 'wss://' : 'ws://';
-    const ws_host = isProduction ? 'themagi.systems' : 'localhost:8000';
+    const ws_host = isProduction ? 'heighliner.tech' : 'localhost:8000';
     //PROD
-    const ws_uri = `wss://themagi.systems/ws`;
+    const ws_uri = `wss://heighliner.tech/ws`;
 
     // //DEV
     // const ws_uri = `ws://localhost:8000/ws`

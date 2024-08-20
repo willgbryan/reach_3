@@ -7,11 +7,11 @@ function getBaseUrl(): string {
   const deployment = process.env.DEPLOYMENT
 
   if (deployment === "PROD") {
-    return 'https://themagi.systems'
+    return 'https://heighliner.tech'
   } else if (deployment === "DEV") {
     return ''
   } else {
-    return process.env.NEXT_PUBLIC_BASE_URL || 'https://themagi.systems'
+    return process.env.NEXT_PUBLIC_BASE_URL || 'https://heighliner.tech'
   }
 }
 
@@ -19,7 +19,7 @@ const baseUrl = getBaseUrl()
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://themagi.systems';
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://heighliner.tech';
   const token_hash = searchParams.get('token_hash')
   const type = searchParams.get('type') as EmailOtpType
 

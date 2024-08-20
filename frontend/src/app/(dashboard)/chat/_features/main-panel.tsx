@@ -73,7 +73,7 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
 
   const router = useRouter()
   const sources = initialSources?.sources ?? [];
-  const apiUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://themagi.systems';
+  const apiUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://heighliner.tech';
   const socketRef = useRef<WebSocket | null>(null);
 
   const updatedMessages = [...messages, { content: reportContent, role: 'assistant', type: 'report' }];

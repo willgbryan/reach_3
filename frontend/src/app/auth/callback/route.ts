@@ -18,7 +18,7 @@ const getUrl = () => {
 function getBaseUrl(): string {
   const deployment = process.env.DEPLOYMENT
   if (deployment === "PROD") {
-    return 'https://themagi.systems'
+    return 'https://heighliner.tech'
   } else if (deployment === "DEV") {
     return ''
   } else {
