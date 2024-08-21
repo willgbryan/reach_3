@@ -12,7 +12,8 @@ export const TutorialOverlay: React.FC<TutorialOverlayProps> = ({ children, isFi
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className={`fixed inset-0 z-50 ${isFirstOrLastStep ? 'bg-black bg-opacity-50' : ''}`}
+    //   className={`fixed inset-0 z-50 ${isFirstOrLastStep ? 'bg-black bg-opacity-50' : ''}`}
+      className={`fixed inset-0 z-50 ${isFirstOrLastStep ? 'bg-black bg-opacity-50' : 'bg-black bg-opacity-50'}`}
       style={{ pointerEvents: 'auto' }}
     >
       {children}

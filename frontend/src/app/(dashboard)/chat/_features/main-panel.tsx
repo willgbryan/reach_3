@@ -25,6 +25,7 @@ import { getOldSources } from '@/app/_data/sources'
 import { GridLayout, Card } from '@/components/cult/dive-grid'
 import { TutorialOverlay } from '@/components/tutorial/tutorial-overlay'
 import { TutorialStep } from '@/components/tutorial/tutorial-step'
+import InfoButton from '@/components/tutorial/info-button'
 
 interface MainVectorPanelProps {
   id?: string | undefined
@@ -61,7 +62,7 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
   const [allSources, setAllSources] = useState<Source[]>([]);
   const [isTutorialActive, setIsTutorialActive] = useState(false)
   const [currentTutorialStep, setCurrentTutorialStep] = useState(0)
-  const [dontShowAgain, setDontShowAgain] = useState(false)
+  const [dontShowAgain, setDontShowAgain] = useState(true)
 
   const router = useRouter()
   const socketRef = useRef<WebSocket | null>(null);
@@ -69,6 +70,11 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
   const updatedMessages = [...messages, { content: reportContent, role: 'assistant', type: 'report' }];
 
   const inputDisabled = updatedMessages.length > 1;
+
+  const handleTriggerTutorial = () => {
+    setIsTutorialActive(true);
+    setCurrentTutorialStep(0);
+  };
 
   const tutorialSteps = [
   {
@@ -82,13 +88,13 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
     highlightId: ""
   },
   {
-    title: "Heighliner constantly improves",
-    description: "Heighliner learns what information is most valuable to you and your role over time. Start by updating your profile in the top right and Heighliner will instantly begin optimizing its research.",
+    title: "Need frequent updates?",
+    description: "Heighliner allows you to schedule research and analysis. Whether its keeping up with competitor publishings or curating a custom newsfeed, head over to the 'Newsletter' section to get started with scheduling.",
     highlightId: ""
   },
   {
-    title: "Need frequent updates?",
-    description: "Heighliner allows you to schedule research and analysis. Whether its keeping up with competitor publishings or curating a custom newsfeed, head over to the 'Newsletter' section to get started.",
+    title: "Heighliner constantly improves",
+    description: "Heighliner learns what information is most valuable to you and your role over time. Start by updating your profile in the top right and Heighliner will instantly begin optimizing its research.",
     highlightId: ""
   },
 ];
@@ -454,7 +460,7 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
 
   return (
     <div className="h-full w-full">
-      <TopSection docSetName={docSetName} documentSets={documentSets} />
+      <TopSection onTriggerTutorial={handleTriggerTutorial} docSetName={docSetName} documentSets={documentSets} />
       <div className="w-full px-4">
         <ChatSection 
           messages={updatedMessages}
@@ -499,13 +505,14 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
   )
 }
 
-const TopSection = ({ docSetName, documentSets }) => {
+const TopSection = ({ docSetName, documentSets, onTriggerTutorial }) => {
   return (
     <div className="flex justify-between items-center pt-8 px-8">
       <div>
         {/* <SelectScrollable prevDocSets={documentSets} /> */}
       </div>
       <div id="profile" className="flex items-center space-x-4">
+        <InfoButton onTriggerTutorial={onTriggerTutorial} />
         <ModeToggle/>
         <UserProvider id="profile"/>
       </div>
@@ -520,7 +527,7 @@ const ChatSection = ({
   allIterations,
   currentIteration,
   chatId,
-  allSources,
+  allSources
 }) => {
   const [localSources, setLocalSources] = useState<Source[]>([]);
   const updatedMessages = [...messages, { content: reportContent, role: 'assistant', type: 'report' }];
