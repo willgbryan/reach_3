@@ -31,7 +31,7 @@ export function GoogleSignIn() {
     <Button
       onClick={signInWithGoogle}
       variant="outline"
-      className="w-full bg-[#e4e4e4] text-black hover:bg-stone-900 flex items-center justify-center border-none" 
+      className="w-full bg-[#e4e4e4] text-black hover:text-stone-100 hover:bg-stone-900 flex items-center justify-center border-none" 
     >
       <img
         src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"

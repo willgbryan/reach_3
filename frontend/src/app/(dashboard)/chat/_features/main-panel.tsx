@@ -4,28 +4,27 @@ import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react
 import { useRouter } from 'next/navigation'
 import { Message } from 'ai'
 import { nanoid } from 'nanoid'
-import DOMPurify from 'dompurify';
-import 'react-quill/dist/quill.snow.css';
-
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import DOMPurify from 'dompurify'
+import 'react-quill/dist/quill.snow.css'
+import jsPDF from 'jspdf'
+import 'jspdf-autotable'
+import Cookies from 'js-cookie'
+import { AnimatePresence } from 'framer-motion'
 
 import { ModeToggle } from '@/components/theme-toggle'
 import { ChatScrollAnchor } from '@/components/chat/chat-scroll-anchor'
 import { Heading } from '@/components/cult/gradient-heading'
 import { useGetDocumentSets } from '@/hooks/use-get-document-sets'
-import { useDocSetName, useFileData, useStage } from '@/hooks/use-vector-blob'
+import { useDocSetName } from '@/hooks/use-vector-blob'
 import { generatePowerPoint } from '@/components/structured-ppt-gen'
-
-import SimpleInputForm from './simple-input';
-
-import { Button } from "@/components/ui/button"
-import { UserProvider } from '@/components/user-provider';
+import SimpleInputForm from './simple-input'
+import UserProvider from '@/components/user-provider'
 import { getWebSocket, closeWebSocket } from '@/utils/websocket'
 import { toast } from 'sonner'
 import { getOldSources } from '@/app/_data/sources'
 import { GridLayout, Card } from '@/components/cult/dive-grid'
-import { PlaceholdersAndVanishInput } from '@/components/cult/placeholder-vanish-input'
+import { TutorialOverlay } from '@/components/tutorial/tutorial-overlay'
+import { TutorialStep } from '@/components/tutorial/tutorial-step'
 
 interface MainVectorPanelProps {
   id?: string | undefined
@@ -33,13 +32,6 @@ interface MainVectorPanelProps {
   initialMessages?: Message[]
   initialSources?: any
 }
-
-type CardType = {
-  src: string;
-  title: string;
-  category: string;
-  content: React.ReactNode;
-};
 
 type Source = {
   source_url: string;
@@ -49,13 +41,10 @@ type Source = {
 const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPanelProps) => {
   const { data: documentSets } = useGetDocumentSets()
   const { docSetName } = useDocSetName()
-  const { setFileData } = useFileData()
-  const { setStage } = useStage()
   const [showBottomSection, setShowBottomSection] = useState(true);
   const [messages, setMessages] = useState<Message[]>(initialMessages || []);
   const [isLoading, setIsLoading] = useState(false);
   const [reportContent, setReportContent] = useState('');
-  const [edits, setEdits] = useState<string | undefined>(undefined);
   const [initialValue, setInitialValue] = useState('');
   const [currentChatId, setCurrentChatId] = useState<string | undefined>(id);
   const [webSources, setWebSources] = useState<any[]>([]);
@@ -70,15 +59,60 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
   const [allIterations, setAllIterations] = useState<Array<{ content: string; sources: any[]; type?: string }>>([]);
   const [condensedFindings, setCondensedFindings] = useState<string | null>(null);
   const [allSources, setAllSources] = useState<Source[]>([]);
+  const [isTutorialActive, setIsTutorialActive] = useState(false)
+  const [currentTutorialStep, setCurrentTutorialStep] = useState(0)
+  const [dontShowAgain, setDontShowAgain] = useState(false)
 
   const router = useRouter()
-  const sources = initialSources?.sources ?? [];
-  const apiUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://heighliner.tech';
   const socketRef = useRef<WebSocket | null>(null);
 
   const updatedMessages = [...messages, { content: reportContent, role: 'assistant', type: 'report' }];
 
   const inputDisabled = updatedMessages.length > 1;
+
+  const tutorialSteps = [
+  {
+    title: "Welcome to Heighliner",
+    description: "Heighliner is purpose built for accelerating competitive analysis and deep internet research.",
+    highlightId: ""
+  },
+  {
+    title: "Heighliner prioritizes high source coverage",
+    description: "Covering a broad landscape of possible sources takes time. Give Heighliner a task and allow up to 5 minutes for a comprehensive response.",
+    highlightId: ""
+  },
+  {
+    title: "Heighliner constantly improves",
+    description: "Heighliner learns what information is most valuable to you and your role over time. Start by updating your profile in the top right and Heighliner will instantly begin optimizing its research.",
+    highlightId: ""
+  },
+  {
+    title: "Need frequent updates?",
+    description: "Heighliner allows you to schedule research and analysis. Whether its keeping up with competitor publishings or curating a custom newsfeed, head over to the 'Newsletter' section to get started.",
+    highlightId: ""
+  },
+];
+  useEffect(() => {
+      const hasSeenTutorial = Cookies.get('hasSeenTutorial')
+      if (!hasSeenTutorial) {
+        setIsTutorialActive(true)
+      }
+    }, [])
+
+    const handleNextTutorialStep = () => {
+      setCurrentTutorialStep((prev) => Math.min(prev + 1, tutorialSteps.length - 1))
+    }
+
+    const handlePreviousTutorialStep = () => {
+      setCurrentTutorialStep((prev) => Math.max(prev - 1, 0))
+    }
+
+    const handleCloseTutorial = () => {
+      setIsTutorialActive(false)
+      if (dontShowAgain) {
+        Cookies.set('hasSeenTutorial', 'true', { expires: 365 })
+      }
+    }
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -401,7 +435,7 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
       await handleMultipleIterations({
         messages: [...messages, newMessage],
         id: currentChatId,
-        edits: edits,
+        edits: '', // deprecated, need to remove downstream dependencies
         originalMessage: newMessage,
       });
     }
@@ -435,15 +469,32 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
       {showBottomSection && (
         <div className="w-full px-4 z-40">
           <SimpleInputForm
-              onSubmit={handleInputClick}
-              onStartOver={handleStartOver}
-              inputDisabled={inputDisabled}
-              placeholders={placeholders}
-              currentStep={currentStep}
-              hasContent={updatedMessages.length > 1}
-            />
+            id="input-section"
+            onSubmit={handleInputClick}
+            onStartOver={handleStartOver}
+            inputDisabled={inputDisabled}
+            placeholders={placeholders}
+            currentStep={currentStep}
+            hasContent={updatedMessages.length > 1}
+          />
         </div>
       )}
+      <AnimatePresence>
+        {isTutorialActive && (
+          <TutorialOverlay isFirstOrLastStep={currentTutorialStep === 0 || currentTutorialStep === tutorialSteps.length - 1}>
+            <TutorialStep
+              {...tutorialSteps[currentTutorialStep]}
+              onNext={handleNextTutorialStep}
+              onPrevious={handlePreviousTutorialStep}
+              onClose={handleCloseTutorial}
+              isFirstStep={currentTutorialStep === 0}
+              isLastStep={currentTutorialStep === tutorialSteps.length - 1}
+              dontShowAgain={dontShowAgain}
+              setDontShowAgain={setDontShowAgain}
+            />
+          </TutorialOverlay>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
@@ -454,10 +505,9 @@ const TopSection = ({ docSetName, documentSets }) => {
       <div>
         {/* <SelectScrollable prevDocSets={documentSets} /> */}
       </div>
-      <div className="flex items-center space-x-4">
-        {/* <Heading>{docSetName}</Heading> */}
-        <ModeToggle />
-        <UserProvider />
+      <div id="profile" className="flex items-center space-x-4">
+        <ModeToggle/>
+        <UserProvider id="profile"/>
       </div>
     </div>
   )
