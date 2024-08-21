@@ -676,8 +676,8 @@ const ChatSection = ({
           <ChatScrollAnchor trackVisibility={isLoading} />
         </div>
       ) : (
-        <div className="pt-64 md:pt-16">
-          <Heading>Heighliner</Heading>
+        <div className="md:pt-16">
+          <Heading size="xxl" weight="base">Heighliner</Heading>
         </div>
       )}
     </div>

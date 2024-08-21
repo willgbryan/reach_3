@@ -27,14 +27,14 @@ export function NavLinks({ isCollapsed }) {
           //   disabled: true, 
           //   label: 'Coming soon'
           // },
-          { 
-            title: 'Pricing', 
-            icon: DollarSign, 
-            variant: 'ghost', 
-            href: `/pricing`,
-            disabled: true, 
-            label: ''
-          },
+          // { 
+          //   title: 'Pricing', 
+          //   icon: DollarSign, 
+          //   variant: 'ghost', 
+          //   href: `/pricing`,
+          //   disabled: true, 
+          //   label: ''
+          // },
         ]}
       />
     </div>
