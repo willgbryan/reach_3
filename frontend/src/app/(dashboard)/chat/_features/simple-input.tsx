@@ -3,31 +3,36 @@ import { PlaceholdersAndVanishInput } from "@/components/cult/placeholder-vanish
 
 interface SimpleInputFormProps {
   onSubmit: (value: string) => void;
+  onStartOver: () => void;
   inputDisabled: boolean;
   placeholders?: string[];
   currentStep: string;
+  hasContent: boolean;
 }
 
 const SimpleInputForm: React.FC<SimpleInputFormProps> = ({
   onSubmit,
+  onStartOver,
   inputDisabled,
   placeholders = ["Ask anything..."],
-  currentStep
+  currentStep,
+  hasContent
 }) => {
   const [inputValue, setInputValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const handleWindowClick = () => {
-      if (!inputDisabled && inputRef.current) {
+      if (!inputDisabled && inputRef.current && !hasContent) {
         inputRef.current.focus();
       }
     };
+
     window.addEventListener('click', handleWindowClick);
     return () => {
       window.removeEventListener('click', handleWindowClick);
     };
-  }, [inputDisabled]);
+  }, [inputDisabled, hasContent]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!inputDisabled) {
@@ -50,8 +55,10 @@ const SimpleInputForm: React.FC<SimpleInputFormProps> = ({
           placeholders={placeholders}
           onChange={handleInputChange}
           onSubmit={handleSubmit}
+          onStartOver={onStartOver}
           disabled={inputDisabled}
           currentStep={currentStep}
+          hasContent={hasContent}
         />
       </div>
     </div>

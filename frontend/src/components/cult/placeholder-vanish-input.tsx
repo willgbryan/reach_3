@@ -1,5 +1,3 @@
-"use client";
-
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
@@ -15,14 +13,18 @@ export function PlaceholdersAndVanishInput({
     placeholders,
     onChange,
     onSubmit,
+    onStartOver,
     disabled = false,
     currentStep,
+    hasContent = false,
   }: {
     placeholders: string[];
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
     onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
+    onStartOver: () => void;
     disabled?: boolean;
     currentStep: string;
+    hasContent?: boolean;
   }) {
     const [currentPlaceholder, setCurrentPlaceholder] = useState(0);
 
@@ -191,7 +193,7 @@ export function PlaceholdersAndVanishInput({
       className={cn(
         "w-full relative max-w-xl mx-auto bg-white dark:bg-zinc-800 h-12 rounded-full overflow-hidden shadow-[0px_2px_3px_-1px_rgba(0,0,0,0.1),_0px_1px_0px_0px_rgba(25,28,33,0.02),_0px_0px_0px_1px_rgba(25,28,33,0.08)] transition duration-200",
         value && "bg-gray-50",
-        disabled && "opacity-50 cursor-not-allowed"
+        disabled && !hasContent && "opacity-50 cursor-not-allowed"
       )}
       onSubmit={handleSubmit}
     >
@@ -210,22 +212,38 @@ export function PlaceholdersAndVanishInput({
         type="text"
         disabled={disabled}
         className={cn(
-          "w-full relative text-sm sm:text-base z-50 border-none dark:text-white bg-transparent text-black h-full rounded-full focus:outline-none focus:ring-0 pl-4 sm:pl-10 pr-20",
+          "w-full relative text-sm sm:text-base border-none dark:text-white bg-transparent text-black h-full rounded-full focus:outline-none focus:ring-0 pl-4 sm:pl-10 pr-20",
           animating && "text-transparent dark:text-transparent",
           disabled && "cursor-not-allowed"
         )}
       />
 
-    {currentStep !== 'initial' ? (
-        <div className="absolute right-2 top-1/2 z-50 -translate-y-1/2 h-8 w-8 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-purple-500"></div>
+      {currentStep !== 'initial' ? (
+        <div className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-stone-900 dark:border-stone-100"></div>
         </div>
+      ) : hasContent ? (
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            onStartOver();
+          }}
+          className={cn(
+            "absolute right-2 top-1/2 -translate-y-1/2 h-8 px-4 rounded-full",
+            "bg-stone-100 dark:bg-zinc-900 text-stone-900 dark:text-stone-100",
+            "transition duration-200 flex items-center justify-center",
+            "hover:bg-gray-800 dark:hover:bg-zinc-700 hover:text-stone-100",
+            "active:bg-gray-700 dark:active:bg-zinc-600"
+          )}
+        >
+          Start over
+        </button>
       ) : (
         <button
           disabled={!value || disabled}
           type="submit"
           className={cn(
-            "absolute right-2 top-1/2 z-50 -translate-y-1/2 h-8 w-8 rounded-full",
+            "absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full",
             "disabled:bg-gray-100 bg-black dark:bg-zinc-900 dark:disabled:bg-zinc-800",
             "transition duration-200 flex items-center justify-center",
             disabled && "cursor-not-allowed"
@@ -287,7 +305,7 @@ export function PlaceholdersAndVanishInput({
               }}
               className={cn(
                 "dark:text-stone-100 text-sm sm:text-base font-normal text-neutral-500 pl-4 sm:pl-12 text-left w-[calc(100%-2rem)] truncate",
-                disabled && "text-stone-400 dark:text-stone-600"
+                disabled && !hasContent && "text-stone-900 dark:text-stone-100"
               )}
             >
               {placeholders[currentPlaceholder]}

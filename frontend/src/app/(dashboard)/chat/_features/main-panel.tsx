@@ -407,13 +407,16 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
     }
   };
 
-  const handleReset = () => {
-    setStage('reset')
-    setFileData(null)
-    setMessages([])
-    setReportContent('')
-    router.push('/chat')
-  };
+  const handleStartOver = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      const currentPath = window.location.pathname;
+      if (currentPath.endsWith('/chat')) {
+        window.location.reload();
+      } else {
+        router.push('/chat');
+      }
+    }
+  }, [router]);
 
   return (
     <div className="h-full w-full">
@@ -430,12 +433,16 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
         />
       </div>
       {showBottomSection && (
-        <SimpleInputForm
-          onSubmit={handleInputClick}
-          inputDisabled={inputDisabled}
-          placeholders={placeholders}
-          currentStep={currentStep}
-        />
+        <div className="w-full px-4 z-40">
+          <SimpleInputForm
+              onSubmit={handleInputClick}
+              onStartOver={handleStartOver}
+              inputDisabled={inputDisabled}
+              placeholders={placeholders}
+              currentStep={currentStep}
+              hasContent={updatedMessages.length > 1}
+            />
+        </div>
       )}
     </div>
   )
@@ -676,34 +683,5 @@ const ChatSection = ({
     </div>
   )
 }
-
-const BottomSection = ({
-  handleReset,
-  handleInputSubmit,
-  handleInputChange,
-  placeholders,
-  currentStep,
-}: {
-  handleReset: () => void;
-  handleInputSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
-  handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  isLoading: boolean;
-  inputDisabled: boolean;
-  placeholders: string[];
-  currentStep: string;
-}) => {
-  return (
-    <div className="absolute bottom-2 md:bottom-8 left-0 right-0 px-4">
-      <div className="relative max-w-3xl mx-auto">
-        <PlaceholdersAndVanishInput
-          placeholders={placeholders}
-          onChange={handleInputChange}
-          onSubmit={handleInputSubmit}
-          currentStep={currentStep}
-        />
-      </div>
-    </div>
-  );
-};
 
 export default MainVectorPanel;

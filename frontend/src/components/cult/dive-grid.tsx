@@ -105,7 +105,7 @@ export const Card: React.FC<CardProps> = ({
     <>
       <AnimatePresence>
         {open && (
-          <div className="fixed inset-0 h-screen z-50 overflow-auto">
+          <div className="fixed inset-0 h-screen z-[100] overflow-auto">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -117,7 +117,7 @@ export const Card: React.FC<CardProps> = ({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               ref={containerRef}
-              className="max-w-5xl mx-auto bg-white dark:bg-neutral-900 h-fit z-[60] my-10 p-4 md:p-10 rounded-lg font-sans relative"
+              className="max-w-5xl mx-auto bg-white dark:bg-neutral-900 h-fit z-[110] my-10 p-4 md:p-10 rounded-lg font-sans relative"
             >
               <div className="sticky top-4 right-0 ml-auto flex flex-col md:flex-row justify-end space-y-2 md:space-y-0 md:space-x-2">
                 <button
