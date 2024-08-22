@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Heading } from "@/components/cult/gradient-heading";
 
@@ -8,7 +8,6 @@ type Card = {
   id: number;
   content: JSX.Element | React.ReactNode | string;
   className: string;
-  thumbnail: string;
   title: string;
 };
 
@@ -27,26 +26,23 @@ export const LayoutGrid = ({ cards }: { cards: Card[] }) => {
   };
 
   return (
-    <div className="w-full h-full p-10 grid grid-cols-1 md:grid-cols-3 max-w-7xl mx-auto gap-4 relative">
+    <div className="w-full min-h-screen p-4 md:p-8 grid grid-cols-1 md:grid-cols-3 max-w-7xl mx-auto gap-4 relative">
       {cards.map((card, i) => (
-        <div key={i} className={cn(card.className, "")}>
+        <div key={i} className={cn(card.className, "h-full")}>
           <motion.div
             onClick={() => handleClick(card)}
             className={cn(
-              card.className,
-              "relative overflow-hidden",
+              "relative overflow-hidden rounded-lg h-full",
               selected?.id === card.id
-                ? "rounded-lg cursor-pointer absolute inset-0 h-1/2 w-full md:w-1/2 m-auto z-50 flex justify-center items-center flex-wrap flex-col"
-                : lastSelected?.id === card.id
-                ? "z-40 bg-white dark:bg-stone-800 rounded-lg h-full w-full"
-                : "bg-white dark:bg-stone-800 rounded-lg h-full w-full"
+                ? "cursor-pointer absolute inset-0 w-full md:w-3/4 lg:w-2/3 xl:w-1/2 m-auto z-50 flex justify-center items-center"
+                : "bg-white dark:bg-stone-800"
             )}
             layoutId={`card-${card.id}`}
           >
             {selected?.id === card.id ? (
               <SelectedCard selected={selected} />
             ) : (
-              <div className="flex items-center justify-center h-full">
+              <div className="flex items-center justify-center h-full p-6">
                 <Heading weight="base" size="xl">
                   {card.title}
                 </Heading>
@@ -55,42 +51,31 @@ export const LayoutGrid = ({ cards }: { cards: Card[] }) => {
           </motion.div>
         </div>
       ))}
-      <motion.div
-        onClick={handleOutsideClick}
-        className={cn(
-          "absolute h-full w-full left-0 top-0 bg-transparent dark:bg-transparent opacity-0 z-10",
-          selected?.id ? "pointer-events-auto" : "pointer-events-none"
+      <AnimatePresence>
+        {selected && (
+          <motion.div
+            key="overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={handleOutsideClick}
+            className="fixed inset-0 bg-black bg-opacity-50 z-40"
+          />
         )}
-        animate={{ opacity: selected?.id ? 0.3 : 0 }}
-      />
+      </AnimatePresence>
     </div>
   );
 };
 
 const SelectedCard = ({ selected }: { selected: Card | null }) => {
   return (
-    <div className="bg-transparent h-full w-full flex flex-col justify-end rounded-lg shadow-2xl relative z-[60]">
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 0.6 }}
-        className="absolute inset-0 h-full w-full bg-black dark:bg-gray-900 opacity-60 z-10"
-      />
-      <motion.img
-        layoutId={`image-${selected?.id}-image`}
-        src={selected?.thumbnail}
-        alt="thumbnail"
-        className="absolute inset-0 h-full w-full object-cover object-top"
-      />
-      <motion.div
-        layoutId={`content-${selected?.id}`}
-        initial={{ opacity: 0, y: 100 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: 100 }}
-        transition={{ duration: 0.3, ease: "easeInOut" }}
-        className="relative px-8 pb-4 z-[70]"
-      >
+    <div className="bg-white dark:bg-stone-800 h-full w-full flex flex-col justify-start rounded-lg shadow-2xl relative z-[60] overflow-y-auto p-6">
+      {/* <Heading weight="base" size="xl" className="mb-4">
+        {selected?.title}
+      </Heading> */}
+      <div className="flex-grow">
         {selected?.content}
-      </motion.div>
+      </div>
     </div>
   );
 };
