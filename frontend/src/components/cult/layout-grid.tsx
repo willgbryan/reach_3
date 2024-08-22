@@ -38,8 +38,8 @@ export const LayoutGrid = ({ cards }: { cards: Card[] }) => {
               selected?.id === card.id
                 ? "rounded-lg cursor-pointer absolute inset-0 h-1/2 w-full md:w-1/2 m-auto z-50 flex justify-center items-center flex-wrap flex-col"
                 : lastSelected?.id === card.id
-                ? "z-40 bg-white dark:bg-stone-800 rounded-xl h-full w-full"
-                : "bg-white dark:bg-stone-800 rounded-xl h-full w-full"
+                ? "z-40 bg-white dark:bg-stone-800 rounded-lg h-full w-full"
+                : "bg-white dark:bg-stone-800 rounded-lg h-full w-full"
             )}
             layoutId={`card-${card.id}`}
           >
@@ -47,7 +47,7 @@ export const LayoutGrid = ({ cards }: { cards: Card[] }) => {
               <SelectedCard selected={selected} />
             ) : (
               <div className="flex items-center justify-center h-full">
-                <Heading weight="base" size="xxl">
+                <Heading weight="base" size="xl">
                   {card.title}
                 </Heading>
               </div>

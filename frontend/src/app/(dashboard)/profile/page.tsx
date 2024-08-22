@@ -2,7 +2,8 @@
 import React from "react";
 import { LayoutGrid } from "@/components/cult/layout-grid";
 import { Heading } from "@/components/cult/gradient-heading";
-export default function LayoutGridDemo() {
+import { ProfileForm } from "@/components/ui/profile-form";
+export default function ConfigGrid() {
   return (
     <div className="h-screen py-20 w-full">
       <LayoutGrid cards={cards} />
@@ -14,9 +15,7 @@ const SkeletonOne = () => {
   return (
     <div>
       <Heading weight="base" size="xl">Profile</Heading>
-      <p className="font-normal text-base my-4 max-w-lg text-neutral-200">
-        View and manage your profile information, settings, and preferences.
-      </p>
+      <ProfileForm/>
     </div>
   );
 };
