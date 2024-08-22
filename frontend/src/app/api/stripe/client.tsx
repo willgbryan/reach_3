@@ -41,9 +41,15 @@ export function CheckoutButton(props: {
         // Await the creation of a Stripe Checkout session
         const session = await props.createStripeSession()
 
-        // Alert and exit function if session creation fails
-        if (!session) {
-          toast.error('Could not create stripe session')
+        // <TODO>Bring this back in after payment is integrated</TODO>
+        // // Alert and exit function if session creation fails
+        // // if (!session) {
+        // //   toast.error('Could not create stripe session')
+        // //   return
+        // // }
+
+        if (!session){
+          toast.message('Everything is free for now!')
           return
         }
 
