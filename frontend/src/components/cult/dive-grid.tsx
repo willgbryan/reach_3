@@ -121,7 +121,7 @@ export const Card: React.FC<CardProps> = ({
             >
               <div className="sticky top-4 right-0 ml-auto flex flex-col md:flex-row justify-end space-y-2 md:space-y-0 md:space-x-2">
                 <button
-                  className="flex items-center justify-center px-3 py-2 bg-stone-900 dark:bg-stone-100 rounded-full text-sm font-medium text-stone-100 dark:hover:text-stone-100 dark:text-stone-900 hover:bg-stone-300 dark:hover:bg-stone-600 transition-colors"
+                  className="flex items-center justify-center px-3 py-2 hover:text-stone-900 bg-stone-900 dark:bg-stone-100 rounded-full text-sm font-medium text-stone-100 dark:hover:text-stone-100 dark:text-stone-900 hover:bg-stone-300 dark:hover:bg-stone-600 transition-colors"
                   onClick={handleCreatePDF}
                   title="Download as PDF"
                 >
@@ -130,7 +130,7 @@ export const Card: React.FC<CardProps> = ({
                 </button>
                 {card.type !== 'sources' && onCreatePowerPoint && (
                   <button
-                    className="flex items-center justify-center px-3 py-2 bg-stone-900 dark:bg-stone-100 rounded-full text-sm font-medium text-stone-100 dark:hover:text-stone-100 dark:text-stone-900 hover:bg-stone-300 dark:hover:bg-stone-600 transition-colors"
+                    className="flex items-center justify-center px-3 py-2 hover:text-stone-900 bg-stone-900 dark:bg-stone-100 rounded-full text-sm font-medium text-stone-100 dark:hover:text-stone-100 dark:text-stone-900 hover:bg-stone-300 dark:hover:bg-stone-600 transition-colors"
                     onClick={handleCreatePowerPoint}
                     title="Download as PowerPoint"
                   >
@@ -139,7 +139,7 @@ export const Card: React.FC<CardProps> = ({
                   </button>
                 )}
                 <button
-                  className="flex items-center justify-center w-10 h-10 bg-black rounded-full dark:bg-white dark:text-stone-900 hover:bg-stone-300 dark:hover:bg-stone-600 dark:text-neutral-900 dark:hover:text-stone-100"
+                  className="flex items-center justify-center w-10 h-10 bg-black rounded-full hover:text-stone-900 text-stone-100 dark:bg-white dark:text-stone-900 hover:bg-stone-300 dark:hover:bg-stone-600 dark:text-neutral-900 dark:hover:text-stone-100"
                   onClick={handleClose}
                 >
                   <IconX className="h-6 w-6" />
