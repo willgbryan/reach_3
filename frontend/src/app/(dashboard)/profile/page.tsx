@@ -1,9 +1,10 @@
 "use client";
 import React from "react";
 import { LayoutGrid } from "@/components/cult/layout-grid";
-import { Heading } from "@/components/cult/gradient-heading";
 import { ProfileForm } from "@/components/ui/profile-form";
-import { SlidesForm } from "@/components/ui/slides-form"; // Make sure to adjust this import path
+import { SlidesForm } from "@/components/ui/slides-form";
+import { ReportsForm } from "@/components/ui/reports-form";
+import { MetricsShowcase } from "@/components/ui/metrics-showcase";
 
 export default function ConfigGrid() {
   return (
@@ -13,47 +14,37 @@ export default function ConfigGrid() {
   );
 }
 
-const SkeletonOne = () => {
-  return (
-    <div className="w-full">
-      <div className="mt-4">
-        <ProfileForm />
-      </div>
+const SkeletonOne = () => (
+  <div className="w-full">
+    <div className="mt-4">
+      <ProfileForm />
     </div>
-  );
-};
+  </div>
+);
 
-const SkeletonTwo = () => {
-  return (
-    <div className="w-full">
-      <div className="mt-4">
-        <SlidesForm />
-      </div>
+const SkeletonTwo = () => (
+  <div className="w-full">
+    <div className="mt-4">
+      <SlidesForm />
     </div>
-  );
-};
+  </div>
+);
 
-const SkeletonThree = () => {
-  return (
-    <div>
-      <Heading weight="base" size="xl">Reports</Heading>
-      <p className="font-normal text-base my-4 text-neutral-600 dark:text-neutral-300">
-        Generate and analyze reports to gain insights into your business performance.
-      </p>
+const SkeletonThree = () => (
+  <div className="w-full">
+    <div className="mt-4">
+      <ReportsForm />
     </div>
-  );
-};
+  </div>
+);
 
-const SkeletonFour = () => {
-  return (
-    <div>
-      <Heading weight="base" size="xl">Metrics</Heading>
-      <p className="font-normal text-base my-4 text-neutral-600 dark:text-neutral-300">
-        Track and visualize key performance indicators and metrics for your projects and teams.
-      </p>
+const SkeletonFour = () => (
+  <div className="w-full">
+    <div className="mt-4">
+      <MetricsShowcase />
     </div>
-  );
-};
+  </div>
+);
 
 const cards = [
   {
