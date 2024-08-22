@@ -121,7 +121,7 @@ export const Card: React.FC<CardProps> = ({
             >
               <div className="sticky top-4 right-0 ml-auto flex flex-col md:flex-row justify-end space-y-2 md:space-y-0 md:space-x-2">
                 <button
-                  className="flex items-center justify-center px-3 py-2 bg-stone-900 dark:bg-stone-100 rounded-full text-sm font-medium text-stone-100 dark:text-stone-900 hover:bg-stone-300 dark:hover:bg-stone-600 transition-colors"
+                  className="flex items-center justify-center px-3 py-2 hover:text-stone-900 bg-stone-900 dark:bg-stone-100 rounded-full text-sm font-medium text-stone-100 dark:hover:text-stone-100 dark:text-stone-900 hover:bg-stone-300 dark:hover:bg-stone-600 transition-colors"
                   onClick={handleCreatePDF}
                   title="Download as PDF"
                 >
@@ -130,7 +130,7 @@ export const Card: React.FC<CardProps> = ({
                 </button>
                 {card.type !== 'sources' && onCreatePowerPoint && (
                   <button
-                    className="flex items-center justify-center px-3 py-2 bg-stone-900 dark:bg-stone-100 rounded-full text-sm font-medium text-stone-100 dark:text-stone-900 hover:bg-stone-300 dark:hover:bg-stone-600 transition-colors"
+                    className="flex items-center justify-center px-3 py-2 hover:text-stone-900 bg-stone-900 dark:bg-stone-100 rounded-full text-sm font-medium text-stone-100 dark:hover:text-stone-100 dark:text-stone-900 hover:bg-stone-300 dark:hover:bg-stone-600 transition-colors"
                     onClick={handleCreatePowerPoint}
                     title="Download as PowerPoint"
                   >
@@ -139,10 +139,10 @@ export const Card: React.FC<CardProps> = ({
                   </button>
                 )}
                 <button
-                  className="flex items-center justify-center w-10 h-10 bg-black dark:bg-white rounded-full hover:bg-stone-300 dark:hover:bg-stone-600"
+                  className="flex items-center justify-center w-10 h-10 bg-black rounded-full hover:text-stone-900 text-stone-100 dark:bg-white dark:text-stone-900 hover:bg-stone-300 dark:hover:bg-stone-600 dark:text-neutral-900 dark:hover:text-stone-100"
                   onClick={handleClose}
                 >
-                  <IconX className="h-6 w-6 text-neutral-100 dark:text-neutral-900" />
+                  <IconX className="h-6 w-6" />
                 </button>
               </div>
               <p className="text-base font-medium text-black dark:text-white">
@@ -159,8 +159,8 @@ export const Card: React.FC<CardProps> = ({
       <motion.button
         onClick={handleOpen}
         className={cn(
-          "rounded-lg bg-gray-100 dark:bg-neutral-900 h-full w-full overflow-hidden flex flex-col items-start justify-start relative z-10",
-          "lg:border-r lg:border-b dark:border-neutral-800",
+          "rounded-lg bg-gray-100 dark:bg-stone-800 h-full w-full overflow-hidden flex flex-col items-start justify-start relative z-10",
+          "lg:border-r lg:border-b dark:border-stone-800",
           index % 4 === 0 && "lg:border-l",
           "group/feature transition-all duration-300"
         )}
@@ -169,7 +169,7 @@ export const Card: React.FC<CardProps> = ({
         
         <div className="absolute inset-0 opacity-0 group-hover/feature:opacity-100 transition-opacity duration-300">
           <div className="absolute inset-0 h-full w-full bg-gradient-to-r from-blue-500 to-teal-500 transform scale-[0.80] rounded-full blur-3xl" />
-          <div className="absolute inset-0 bg-gray-900 dark:bg-neutral-900" />
+          <div className="absolute inset-0 bg-gray-900 dark:bg-stone-800" />
         </div>
 
         <div className="relative z-40 p-8 h-full w-full flex flex-col justify-start group-hover/feature:justify-end transition-all duration-300">

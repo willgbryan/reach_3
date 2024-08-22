@@ -31,7 +31,7 @@ export function LinkedInSignIn() {
     <Button
       onClick={signInWithLinkedIn}
       variant="outline"
-      className="w-full bg-[#e4e4e4] text-black hover:bg-stone-900 flex items-center justify-center border-none"
+      className="w-full bg-[#e4e4e4] text-black hover:text-stone-100 hover:bg-stone-900 flex items-center justify-center border-none"
     >
       <img
         src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/81/LinkedIn_icon.svg/144px-LinkedIn_icon.svg.png?20210220164014"

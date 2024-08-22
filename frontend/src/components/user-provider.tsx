@@ -1,10 +1,10 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, forwardRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { HeaderAccountDropdown } from './header-account-dropdown'
 
-export function UserProvider() {
+const UserProvider = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>((props, ref) => {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const router = useRouter()
@@ -35,8 +35,10 @@ export function UserProvider() {
   }, [router])
 
   if (loading) {
-    return <div>Loading...</div>
+    return <div ref={ref} {...props}>Loading...</div>
   }
 
   return user ? <HeaderAccountDropdown user={user} /> : null
-}
+})
+
+export default UserProvider

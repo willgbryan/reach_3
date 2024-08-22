@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, forwardRef } from 'react';
 import { PlaceholdersAndVanishInput } from "@/components/cult/placeholder-vanish-input";
 
 interface SimpleInputFormProps {
+  id?: string;
   onSubmit: (value: string) => void;
   onStartOver: () => void;
   inputDisabled: boolean;
@@ -10,14 +11,14 @@ interface SimpleInputFormProps {
   hasContent: boolean;
 }
 
-const SimpleInputForm: React.FC<SimpleInputFormProps> = ({
+const SimpleInputForm = forwardRef<HTMLDivElement, SimpleInputFormProps>(({
   onSubmit,
   onStartOver,
   inputDisabled,
   placeholders = ["Ask anything..."],
   currentStep,
   hasContent
-}) => {
+}, ref) => {
   const [inputValue, setInputValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -49,7 +50,7 @@ const SimpleInputForm: React.FC<SimpleInputFormProps> = ({
   };
 
   return (
-    <div className="absolute bottom-2 md:bottom-8 left-0 right-0 px-4">
+    <div ref={ref} className="absolute bottom-2 md:bottom-8 left-0 right-0 px-4">
       <div className="relative max-w-3xl mx-auto">
         <PlaceholdersAndVanishInput
           placeholders={placeholders}
@@ -63,6 +64,6 @@ const SimpleInputForm: React.FC<SimpleInputFormProps> = ({
       </div>
     </div>
   );
-};
+});
 
 export default SimpleInputForm;

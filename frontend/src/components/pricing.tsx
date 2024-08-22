@@ -139,10 +139,10 @@ export function PricingPage({ session }) {
     <div className="py-18 sm:py-36">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="mx-auto max-w-2xl sm:text-center">
-          <Heading variant="default" size="xl">
+          <Heading weight="base" variant="default" size="xl">
             Choose Your Plan
           </Heading>
-          <p className="mt-6 text-lg leading-8 text-gray-600">
+          <p className="mt-6 text-lg leading-8 text-stone-900 dark:text-stone-100">
             Select the perfect plan for your needs. Upgrade or downgrade at any time.
           </p>
         </div>

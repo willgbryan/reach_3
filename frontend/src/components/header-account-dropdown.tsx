@@ -25,23 +25,23 @@ export function HeaderAccountDropdown({ user }: any) {
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-48 px-0 py-1" align="end">
         <div className="flex items-center gap-2 p-2">
-          <div className="flex flex-col text-left text-xs">
-            {user.name ? <h2 className="text-[14px] font-medium">@{user.name}</h2> : null}
+          <div className="flex flex-col text-left text-sm">
+            {user.name ? <h2 className="font-medium">@{user.name}</h2> : null}
             <h1>{user.email}</h1>
           </div>
         </div>
         <Separator />
         <div className="py-1">
           {/* <DropdownMenuItem>
-            <Link href="/discover" className="flex w-full items-center justify-between gap-2">
+            <Link href="/profile" className="flex w-full items-center justify-between gap-2">
+              <span>Profile</span>
+            </Link>
+          </DropdownMenuItem> */}
+          <DropdownMenuItem>
+            <Link href="/pricing" className="flex w-full items-center justify-between gap-2">
               <span>Try Pro</span>
             </Link>
-          </DropdownMenuItem> */}
-          {/* <DropdownMenuItem>
-            <Link href="/chat" className="flex w-full items-center justify-between gap-2">
-              <span>Home</span>
-            </Link>
-          </DropdownMenuItem> */}
+          </DropdownMenuItem>
           {/* <DropdownMenuItem>
             <Link href="/library" className="flex w-full items-center justify-between gap-2">
               <span>Library</span>
@@ -50,7 +50,6 @@ export function HeaderAccountDropdown({ user }: any) {
         </div>
         <Separator />
         <div className="py-1">
-          <DropdownMenuItem className="px-2"></DropdownMenuItem>
           <DropdownMenuItem>
             <form className="block" action="/auth/sign-out" method="post">
               <button type="submit">Sign out</button>

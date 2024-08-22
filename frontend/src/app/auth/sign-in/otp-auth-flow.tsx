@@ -128,7 +128,7 @@ export function OTPAuthFlow() {
               />
             </div>
             {errors?.email && <InputErrorMessage>{errors.email}</InputErrorMessage>}
-            <Button variant="ghost" type="submit" className="w-full text-black hover:bg-stone-900">
+            <Button variant="ghost" type="submit" className="w-full text-black hover:text-stone-100 hover:bg-stone-900">
              [ Sign In / Sign Up ]
             </Button>
           </form>
@@ -161,7 +161,7 @@ export function OTPAuthFlow() {
               </InputOTP>
             </div>
           </div>
-          <Button variant="ghost" type="submit" className="w-full mt-4 text-black hover:bg-stone-900">
+          <Button variant="ghost" type="submit" className="w-full mt-4 text-black hover:text-stone-100 hover:bg-stone-900">
             Verify OTP
           </Button>
         </form>
