@@ -4,7 +4,7 @@ import * as React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { MessageSquareDashedIcon, MessageSquareIcon } from 'lucide-react'
+import { MessageSquareDashedIcon, MessageSquareIcon, Navigation } from 'lucide-react'
 
 import { useCollapsedState } from '@//hooks/use-vector-blob'
 import { buttonVariants } from '@/components/ui/button'
@@ -237,7 +237,7 @@ function ItemTypeIcon({ path, isActive, isGlobalCollapsed = false }) {
     return (
       <Tooltip delayDuration={1000}>
         <TooltipTrigger tabIndex={-1} className="focus:bg-muted focus:ring-1 focus:ring-ring ">
-          <MessageSquareDashedIcon
+          <Navigation
             className={cn(
               'h-5 w-5 text-muted-foreground',
               isGlobalCollapsed ? 'ml-2' : '',
@@ -245,10 +245,10 @@ function ItemTypeIcon({ path, isActive, isGlobalCollapsed = false }) {
             )}
           />
         </TooltipTrigger>
-        <TooltipContent>This is a previous chat.</TooltipContent>
+        <TooltipContent>This is a previous dive set.</TooltipContent>
       </Tooltip>
     )
   }
-  if (!isActive) return <MessageSquareIcon className="mr-2 mt-2 text-muted-foreground" />
+  if (!isActive) return <Navigation className="mr-2 mt-2 text-muted-foreground" />
   return null
 }

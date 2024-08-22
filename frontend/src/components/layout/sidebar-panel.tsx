@@ -44,7 +44,7 @@ const BlackHoleSVG = ({ className }) => (
 
 export const Logo = () => {
   return (
-    <Link href="#" className="flex space-x-2 items-center text-sm">
+    <Link href="/chat" className="flex space-x-2 items-center text-sm">
       <motion.div
         initial={{ rotate: 45 }}
         animate={{ rotate: 0 }}
@@ -67,7 +67,7 @@ export const Logo = () => {
 
 export const LogoIcon = () => {
   return (
-    <Link href="#" className="flex space-x-2 items-center text-sm">
+    <Link href="/chat" className="flex space-x-2 items-center text-sm">
       <motion.div
         initial={{ rotate: 0 }}
         animate={{ rotate: 45 }}

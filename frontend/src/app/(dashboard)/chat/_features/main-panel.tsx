@@ -79,12 +79,12 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
   const tutorialSteps = [
   {
     title: "Welcome to Heighliner",
-    description: "Heighliner is purpose built for accelerating competitive analysis and deep internet research.",
+    description: "Heighliner is purpose-built for professional work, accelerating competitive analysis and deep internet research.",
     highlightId: ""
   },
   {
     title: "Heighliner prioritizes high source coverage",
-    description: "Covering a broad landscape of possible sources takes time. Give Heighliner a task and allow up to 5 minutes for a comprehensive response.",
+    description: "Covering a broad landscape of possible sources takes time. Give Heighliner a task and allow up to five minutes for a comprehensive response.",
     highlightId: ""
   },
   {
