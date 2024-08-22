@@ -24,7 +24,8 @@ export function NavLinks({ isCollapsed }) {
             icon: Settings, 
             variant: 'ghost', 
             href: `/profile`, 
-            disabled: false, 
+            disabled: true, 
+            label: 'Coming soon'
           },
           // { 
           //   title: 'Library', 
