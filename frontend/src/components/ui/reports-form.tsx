@@ -48,7 +48,7 @@ export function ReportsForm() {
   useEffect(() => {
     const fetchReportConfig = async () => {
       try {
-        const response = await fetch('/api/user-config/fetch');
+        const response = await fetch('/api/fetch-report-config');
         if (!response.ok) {
           throw new Error('Failed to fetch report configuration');
         }
@@ -90,7 +90,7 @@ export function ReportsForm() {
     setError(null);
 
     try {
-      const response = await fetch('/api/user-config/save', {
+      const response = await fetch('/api/save-report-config', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

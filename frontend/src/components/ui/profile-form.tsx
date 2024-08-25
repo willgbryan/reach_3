@@ -31,7 +31,7 @@ export function ProfileForm() {
     useEffect(() => {
       const fetchProfileData = async () => {
         try {
-          const response = await fetch('/api/profile/fetch');
+          const response = await fetch('/api/fetch-profile');
           if (!response.ok) {
             throw new Error('Failed to fetch profile data');
           }
@@ -66,7 +66,7 @@ export function ProfileForm() {
       setError(null);
   
       try {
-        const response = await fetch('/api/profile/save', {
+        const response = await fetch('/api/save-profile', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
