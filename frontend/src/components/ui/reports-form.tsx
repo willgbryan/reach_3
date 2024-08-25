@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -34,6 +34,101 @@ const colorSchemes = [
 ];
 
 export function ReportsForm() {
+  const [reportConfig, setReportConfig] = useState({
+    font: "",
+    bulletStyle: "",
+    colorScheme: "",
+    headerStyle: "",
+    pageOrientation: "portrait",
+    marginSize: "",
+  });
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchReportConfig = async () => {
+      try {
+        const response = await fetch('/api/user-config/fetch');
+        if (!response.ok) {
+          throw new Error('Failed to fetch report configuration');
+        }
+        const data = await response.json();
+        setReportConfig(data.report_config || {
+          font: "",
+          bulletStyle: "",
+          colorScheme: "",
+          headerStyle: "",
+          pageOrientation: "portrait",
+          marginSize: "",
+        });
+      } catch (error) {
+        setError(error.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchReportConfig();
+  }, []);
+
+  const handleInputChange = (e) => {
+    const { id, value } = e.target;
+    setReportConfig(prev => ({ ...prev, [id]: value }));
+  };
+
+  const handleSelectChange = (key, value) => {
+    setReportConfig(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleRadioChange = (value) => {
+    setReportConfig(prev => ({ ...prev, pageOrientation: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/user-config/save', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ report_config: reportConfig }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update report configuration');
+      }
+
+      console.log('Report configuration updated successfully');
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleReset = () => {
+    setReportConfig({
+      font: "",
+      bulletStyle: "",
+      colorScheme: "",
+      headerStyle: "",
+      pageOrientation: "portrait",
+      marginSize: "",
+    });
+  };
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (error) {
+    return <div>Error: {error}</div>;
+  }
+
   return (
     <Card className="w-full border-none shadow-none dark:bg-transparent">
       <CardHeader className="px-0 pt-0">
@@ -41,10 +136,10 @@ export function ReportsForm() {
         <CardDescription>Customize the styling of your reports.</CardDescription>
       </CardHeader>
       <CardContent className="px-0">
-        <form className="space-y-4">
+        <form className="space-y-4" onSubmit={handleSubmit}>
           <div className="space-y-2">
             <Label htmlFor="font">Font</Label>
-            <Select>
+            <Select onValueChange={(value) => handleSelectChange("font", value)} value={reportConfig.font}>
               <SelectTrigger id="font">
                 <SelectValue placeholder="Select a font" />
               </SelectTrigger>
@@ -59,9 +154,9 @@ export function ReportsForm() {
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="bullet-style">Bullet Style</Label>
-            <Select>
-              <SelectTrigger id="bullet-style">
+            <Label htmlFor="bulletStyle">Bullet Style</Label>
+            <Select onValueChange={(value) => handleSelectChange("bulletStyle", value)} value={reportConfig.bulletStyle}>
+              <SelectTrigger id="bulletStyle">
                 <SelectValue placeholder="Select bullet style" />
               </SelectTrigger>
               <SelectContent>
@@ -75,9 +170,9 @@ export function ReportsForm() {
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="color-scheme">Color Scheme</Label>
-            <Select>
-              <SelectTrigger id="color-scheme">
+            <Label htmlFor="colorScheme">Color Scheme</Label>
+            <Select onValueChange={(value) => handleSelectChange("colorScheme", value)} value={reportConfig.colorScheme}>
+              <SelectTrigger id="colorScheme">
                 <SelectValue placeholder="Select color scheme" />
               </SelectTrigger>
               <SelectContent>
@@ -91,13 +186,18 @@ export function ReportsForm() {
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="header-style">Header Style</Label>
-            <Input id="header-style" placeholder="e.g., Bold 16pt Uppercase" />
+            <Label htmlFor="headerStyle">Header Style</Label>
+            <Input
+              id="headerStyle"
+              placeholder="e.g., Bold 16pt Uppercase"
+              value={reportConfig.headerStyle}
+              onChange={handleInputChange}
+            />
           </div>
           
           <div className="space-y-2">
             <Label>Page Orientation</Label>
-            <RadioGroup defaultValue="portrait">
+            <RadioGroup value={reportConfig.pageOrientation} onValueChange={handleRadioChange}>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="portrait" id="portrait" />
                 <Label htmlFor="portrait">Portrait</Label>
@@ -110,14 +210,24 @@ export function ReportsForm() {
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="margin-size">Margin Size (in inches)</Label>
-            <Input id="margin-size" type="number" placeholder="e.g., 1" min="0" step="0.1" />
+            <Label htmlFor="marginSize">Margin Size (in inches)</Label>
+            <Input
+              id="marginSize"
+              type="number"
+              placeholder="e.g., 1"
+              min="0"
+              step="0.1"
+              value={reportConfig.marginSize}
+              onChange={handleInputChange}
+            />
           </div>
         </form>
       </CardContent>
       <CardFooter className="px-0 pb-0 pt-4 flex justify-end space-x-2">
-        <Button variant="outline">Reset to Default</Button>
-        <Button>Save Configuration</Button>
+        <Button type="button" variant="outline" onClick={handleReset}>Reset to Default</Button>
+        <Button type="submit" onClick={handleSubmit} disabled={isLoading}>
+          {isLoading ? 'Saving...' : 'Save Configuration'}
+        </Button>
       </CardFooter>
     </Card>
   );

@@ -15,14 +15,20 @@ export async function GET(req: NextRequest) {
     const { data, error } = await db
       .from('user_config')
       .select('report_config')
-      .eq('id', userId)
+      .eq('user_id', userId)
       .single()
 
     if (error) {
+      if (error.code === 'PGRST116') {
+        return new NextResponse(JSON.stringify({ report_config: {} }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' }
+        })
+      }
       throw error
     }
 
-    return new NextResponse(JSON.stringify(data), {
+    return new NextResponse(JSON.stringify({ report_config: data.report_config || {} }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     })
