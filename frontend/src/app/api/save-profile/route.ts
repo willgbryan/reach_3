@@ -12,59 +12,29 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { report_config } = await req.json()
+    const { job_title, industry } = await req.json()
 
-    // First, try to fetch the existing user_config
-    let { data: existingConfig, error: fetchError } = await db
+    const { data, error } = await db
       .from('user_config')
-      .select('*')
+      .update({ job_title, industry })
       .eq('user_id', userId)
-      .single()
+      .select()
 
-    if (fetchError && fetchError.code !== 'PGRST116') {
-      throw fetchError
-    }
-
-    let result
-    if (existingConfig) {
-      result = await db
+    if (error || (Array.isArray(data) && data.length === 0)) {
+      const { error: insertError } = await db
         .from('user_config')
-        .update({ report_config })
-        .eq('user_id', userId)
-    } else {
-      const { data: userData, error: userError } = await db
-        .from('users')
-        .select('full_name, avatar_url')
-        .eq('id', userId)
-        .single()
+        .insert({ user_id: userId, job_title, industry })
 
-      if (userError) {
-        throw userError
-      }
-
-      result = await db
-        .from('user_config')
-        .insert({
-          user_id: userId,
-          name: userData.full_name || '',
-          email_address: '',
-          job_title: '',
-          industry: '',
-          report_config
-        })
+      if (insertError) throw insertError
     }
 
-    if (result.error) {
-      throw result.error
-    }
-
-    return new NextResponse(JSON.stringify({ message: 'Report configuration updated successfully' }), {
+    return new NextResponse(JSON.stringify({ message: 'Profile updated successfully' }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     })
   } catch (error) {
-    console.error('Error updating report configuration:', error)
-    return new NextResponse(JSON.stringify({ message: 'Error updating report configuration' }), {
+    console.error('Error updating profile:', error)
+    return new NextResponse(JSON.stringify({ message: 'Error updating profile' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
     })

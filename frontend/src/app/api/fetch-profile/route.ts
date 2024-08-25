@@ -14,11 +14,17 @@ export async function GET(req: NextRequest) {
   try {
     const { data, error } = await db
       .from('user_config')
-      .select('name, email_address, job_title, industry')
-      .eq('id', userId)
+      .select('job_title, industry')
+      .eq('user_id', userId)
       .single()
 
     if (error) {
+      if (error.code === 'PGRST116') {
+        return new NextResponse(JSON.stringify({ job_title: '', industry: '' }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' }
+        })
+      }
       throw error
     }
 

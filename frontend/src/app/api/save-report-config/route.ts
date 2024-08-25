@@ -13,14 +13,19 @@ export async function POST(req: NextRequest) {
 
   try {
     const { report_config } = await req.json()
-    
-    const { error } = await db
+
+    const { data, error } = await db
       .from('user_config')
       .update({ report_config })
-      .eq('id', userId)
+      .eq('user_id', userId)
+      .select()
 
-    if (error) {
-      throw error
+    if (error || (Array.isArray(data) && data.length === 0)) {
+      const { error: insertError } = await db
+        .from('user_config')
+        .insert({ user_id: userId, report_config })
+
+      if (insertError) throw insertError
     }
 
     return new NextResponse(JSON.stringify({ message: 'Report configuration updated successfully' }), {

@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { toast } from "sonner";
 
 const fonts = [
   "Arial", "Helvetica", "Times New Roman", "Calibri", "Cambria", 
@@ -102,7 +103,7 @@ export function ReportsForm() {
         throw new Error('Failed to update report configuration');
       }
 
-      console.log('Report configuration updated successfully');
+      toast.success("Report configuration updated successfully");
     } catch (error) {
       setError(error.message);
     } finally {
