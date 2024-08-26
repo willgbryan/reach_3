@@ -45,6 +45,7 @@ export interface Database {
           job_title: string
           industry: string
           report_config: Json
+          favorite_theme: string
         }
         Insert: {
           id?: string
@@ -55,6 +56,7 @@ export interface Database {
           job_title: string
           industry: string
           report_config: Json
+          favorite_theme: string
         }
         Update: {
           id?: string
@@ -65,6 +67,7 @@ export interface Database {
           job_title?: string
           industry?: string
           report_config?: Json
+          favorite_theme: string
         }
         Relationships: [
           {
