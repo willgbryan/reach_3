@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     }
 
     const fileExt = file.name.split('.').pop();
-    const fileName = `${themeName}_${userId}.${fileExt}`;
+    const fileName = `${userId}/${themeName}.${fileExt}`;
 
     const { data, error } = await db.storage
       .from('slide_themes')

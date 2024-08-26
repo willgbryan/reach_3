@@ -11,20 +11,42 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FileUpload } from "@/components/cult/file-upload";
+import { toast } from "sonner";
 
 export function SlidesForm() {
   const [files, setFiles] = useState<File[]>([]);
   const [themeName, setThemeName] = useState("");
   const [isUploading, setIsUploading] = useState(false);
+  const [themeNameError, setThemeNameError] = useState("");
 
   const handleFileUpload = (uploadedFiles: File[]) => {
     setFiles(uploadedFiles);
+  };
+
+  const validateThemeName = (name: string) => {
+    const regex = /^[a-zA-Z0-9_]+$/;
+    if (!regex.test(name)) {
+      setThemeNameError("Theme name can only contain letters, numbers, and underscores.");
+      return false;
+    }
+    setThemeNameError("");
+    return true;
+  };
+
+  const handleThemeNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newName = e.target.value.replace(/[^a-zA-Z0-9_]/g, '');
+    setThemeName(newName);
+    validateThemeName(newName);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (files.length === 0 || !themeName) {
       alert("Please provide a theme name and upload a file.");
+      return;
+    }
+
+    if (!validateThemeName(themeName)) {
       return;
     }
 
@@ -45,12 +67,11 @@ export function SlidesForm() {
       }
 
       const result = await response.json();
-      console.log("Upload successful:", result);
-      // Reset form or show success message
+      toast.success("Upload successful:", result);
       setFiles([]);
       setThemeName("");
     } catch (error) {
-      console.error("Error uploading file:", error);
+      toast.error("Error uploading file:", error);
       alert("Failed to upload file. Please try again.");
     } finally {
       setIsUploading(false);
@@ -69,11 +90,14 @@ export function SlidesForm() {
             <Label htmlFor="theme-name">Theme Name</Label>
             <Input 
               id="theme-name" 
-              placeholder="Enter theme name" 
+              placeholder="Enter theme name (letters, numbers, underscores only)"
               value={themeName}
-              onChange={(e) => setThemeName(e.target.value)}
+              onChange={handleThemeNameChange}
               required
             />
+            {themeNameError && (
+              <p className="text-sm text-red-500">{themeNameError}</p>
+            )}
           </div>
           <div className="space-y-2">
             <Label>Upload Slides</Label>
@@ -82,8 +106,8 @@ export function SlidesForm() {
             </div>
           </div>
           <CardFooter className="px-0 pb-0 pt-4 flex justify-end space-x-2">
-            <Button type="button" variant="outline" onClick={() => {setFiles([]); setThemeName("");}}>Cancel</Button>
-            <Button type="submit" disabled={isUploading}>
+            <Button type="button" variant="outline" onClick={() => {setFiles([]); setThemeName(""); setThemeNameError("");}}>Cancel</Button>
+            <Button type="submit" disabled={isUploading || !!themeNameError}>
               {isUploading ? "Uploading..." : "Add Theme"}
             </Button>
           </CardFooter>
