@@ -588,7 +588,14 @@ const ChatSection = ({
   const handleCreateStructuredPowerPoint = async (content: string) => {
     try {
       console.log('Generating PowerPoint with content:', content);
-      await generatePowerPoint(content);
+      const filePathResponse = await fetch('/api/fetch-powerpoint?path=default_template.pptx');
+      if (!filePathResponse.ok) {
+        throw new Error('Failed to fetch PowerPoint template path');
+      }
+      const filePath = await filePathResponse.text();
+      const favoriteTheme = filePathResponse.headers.get('X-Favorite-Theme') || '';
+      
+      await generatePowerPoint(content, filePath, favoriteTheme);
     } catch (error) {
       console.error("Error creating PowerPoint:", error);
       toast.error("Error creating PowerPoint");

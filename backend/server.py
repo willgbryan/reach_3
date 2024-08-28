@@ -1,3 +1,4 @@
+from copy import deepcopy
 from http.client import HTTPException
 import traceback
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect, File, UploadFile, Form
@@ -124,6 +125,8 @@ class PresentationStructure(BaseModel):
 
 class PowerPointRequest(BaseModel):
     prompt: str
+    filePath: str
+    favoriteTheme: str
 
 client = OpenAI()
 
@@ -131,9 +134,12 @@ client = OpenAI()
 async def generate_powerpoint(request: PowerPointRequest):
     try:
         print(f"Received request with prompt: {request.prompt}")
-
+        
+        # Read the template PowerPoint
+        template_prs = read_pptx_from_supabase(request.filePath)
+        
         completion = client.chat.completions.create(
-            model="gpt-4o-2024-08-06",
+            model="gpt-4-0314",
             messages=[
                 {"role": "system", "content": "You are a helpful assistant that creates PowerPoint presentations. Generate a presentation structure based on the user's request by calling the create_presentation function."},
                 {"role": "user", "content": f"Create a presentation summarizing the following content. Be sure to include the links in a References slide: {request.prompt}"}
@@ -145,56 +151,58 @@ async def generate_powerpoint(request: PowerPointRequest):
             }],
             function_call={"name": "create_presentation"}
         )
-
         print("OpenAI API response received")
-
+        
         function_call = completion.choices[0].message.function_call
         if not function_call or function_call.name != "create_presentation":
             raise ValueError("Unexpected response from OpenAI API")
-
+        
         presentation_data = json.loads(function_call.arguments)
         print(f"Presentation data: {presentation_data}")
-
-        prs = Presentation()
         
-        # Title slide
-        title_slide_layout = prs.slide_layouts[0]
-        slide = prs.slides.add_slide(title_slide_layout)
-        title = slide.shapes.title
+        prs = template_prs
+        
+        title_slide = prs.slides[0]
+        title = title_slide.shapes.title
         title.text = presentation_data["title"]
-
-        # Content slides
+        
+        template_slide = prs.slides[1]
         for i, slide_data in enumerate(presentation_data["slides"]):
-            content_slide_layout = prs.slide_layouts[1]
-            slide = prs.slides.add_slide(content_slide_layout)
+            new_slide = prs.slides.add_slide(template_slide.slide_layout)
             
-            title = slide.shapes.title
+            for shape in template_slide.shapes:
+                el = shape.element
+                new_el = deepcopy(el)
+                new_slide.shapes._spTree.insert_element_before(new_el, 'p:extLst')
+            
+            title = new_slide.shapes.title
             title.text = slide_data["title"]
-
-            content = slide.placeholders[1]
+            
+            content = new_slide.placeholders[1]
             tf = content.text_frame
+            tf.clear()
             for item in slide_data["content"]:
                 p = tf.add_paragraph()
                 p.text = item
                 p.level = 0
-
-            # Add slide number
-            txBox = slide.shapes.add_textbox(Inches(9), Inches(6.5), Inches(1), Inches(0.5))
+            
+            txBox = new_slide.shapes.add_textbox(Inches(9), Inches(6.5), Inches(1), Inches(0.5))
             tf = txBox.text_frame
-            tf.text = f"Slide {i + 1}"
-
+            tf.text = f"Slide {i + 2}"
+        xml_slides = prs.slides._sldIdLst
+        slides = list(xml_slides)
+        xml_slides.remove(slides[1])
+        
         ppt_bytes = io.BytesIO()
         prs.save(ppt_bytes)
         ppt_bytes.seek(0)
-
         print("Presentation generated successfully")
-
+        
         return Response(
             content=ppt_bytes.getvalue(),
             media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
             headers={"Content-Disposition": "attachment; filename=generated_presentation.pptx"}
         )
-
     except Exception as e:
         print(f"Error in generate_powerpoint: {str(e)}")
         print(traceback.format_exc())
