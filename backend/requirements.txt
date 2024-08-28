@@ -19,7 +19,6 @@ requests
 jinja2
 aiofiles
 newspaper3k
-git+https://github.com/willgbryan/langchain-reach-edition.git#subdirectory=libs/community&egg=langchain_community
 SQLAlchemy
 langchain-openai
 mistune
@@ -34,9 +33,10 @@ aiofiles
 moviepy
 # hubspot-api-client
 setuptools
-simsimd == 3.7.7
+simsimd==3.7.7
 fastapi==0.103.2
 uvicorn==0.23.2
 openai
 python-pptx==0.6.21
 pydantic==2.4.2
+supabase
