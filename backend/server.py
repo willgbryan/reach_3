@@ -1,6 +1,7 @@
 from copy import deepcopy
 from http.client import HTTPException
 import traceback
+from backend.supabase_utils.read_pptx import read_pptx_from_supabase
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect, File, UploadFile, Form
 from fastapi.responses import Response
 from fastapi.staticfiles import StaticFiles
