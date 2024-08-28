@@ -333,7 +333,7 @@ const NewsletterPage: React.FC = () => {
         {report && (
           <div className="mt-4">
             <h3 className="text-xl mb-2 text-stone-900">First Report</h3>
-            <div className="text-stone-900 h-72 overflow-auto bg-brand rounded-md">
+            <div className="text-stone-900 dark:text-stone-100 h-72 overflow-auto bg-brand rounded-md">
               {report}
             </div>
           </div>
