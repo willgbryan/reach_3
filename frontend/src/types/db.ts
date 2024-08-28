@@ -40,8 +40,6 @@ export interface Database {
           id: string
           created_at: string
           user_id: string
-          name: string
-          email_address: string
           job_title: string
           industry: string
           report_config: Json
@@ -51,8 +49,6 @@ export interface Database {
           id?: string
           created_at?: string
           user_id: string
-          name: string
-          email_address: string
           job_title: string
           industry: string
           report_config: Json
@@ -62,8 +58,6 @@ export interface Database {
           id?: string
           created_at?: string
           user_id?: string
-          name?: string
-          email_address?: string
           job_title?: string
           industry?: string
           report_config?: Json
