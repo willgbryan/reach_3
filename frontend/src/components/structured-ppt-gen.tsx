@@ -1,18 +1,20 @@
 import { toast } from "sonner";
 
-export async function generatePowerPoint(userPrompt: string, filePath: string, favoriteTheme: string) {
+export async function generatePowerPoint(userPrompt: string, filePath: string, favoriteTheme: string, signedUrl: string) {
   console.log('generatePowerPoint function called with prompt:', userPrompt, 'and file path:', filePath);
   try {
     console.log('Sending request to generate PowerPoint...');
     toast.success("Creating presentation", {
       description: "Your presentation will automatically download shortly.",
     });
+    console.log('Signed URL before sending request:', signedUrl);
+
     const response = await fetch('/api/generate-presentation', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ prompt: userPrompt, filePath, favoriteTheme }),
+      body: JSON.stringify({ prompt: userPrompt, filePath, favoriteTheme, signedUrl }),
     });
     console.log('Received response from server. Status:', response.status);
     if (!response.ok) {

@@ -19,14 +19,13 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 WORKDIR /usr/src/app
 
 COPY requirements.txt .
-
 ENV LIBCLANG_PATH="/usr/lib/llvm-11/lib"
 
-RUN pip install --upgrade pip && \
+RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir setuptools wheel && \
     pip install --no-cache-dir simsimd==3.7.7 && \
     pip install --no-cache-dir -r requirements.txt && \
-    pip install --no-cache-dir git+https://github.com/willgbryan/langchain-reach-edition.git#subdirectory=libs/community
+    pipdeptree --warn silence | grep -i "CONFLICT" > dependency_conflicts.txt || true
 
 COPY . .
 

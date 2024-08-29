@@ -11,15 +11,7 @@ export async function GET(req: NextRequest) {
     return new NextResponse('Unauthorized', { status: 401 });
   }
 
-  const url = new URL(req.url);
-  const filePath = url.searchParams.get('path');
-
-  if (!filePath) {
-    return new NextResponse('File path is required', { status: 400 });
-  }
-
   try {
-    // Fetch user's favorite theme
     const { data: userConfig, error: userConfigError } = await db
       .from('user_config')
       .select('favorite_theme')
@@ -28,26 +20,35 @@ export async function GET(req: NextRequest) {
 
     if (userConfigError) throw userConfigError;
 
-    const favoriteTheme = userConfig?.favorite_theme || '';
+    const favoriteTheme = userConfig?.favorite_theme || 'default_template.pptx';
 
-    // Fetch the PowerPoint file
-    const { data, error } = await db.storage
+    const filePath = `${favoriteTheme}`;
+
+    const { data: signedUrlData, error: signedUrlError } = await db
+      .storage
       .from('slide_themes')
-      .download(filePath);
+      .createSignedUrl(filePath, 60);
 
-    if (error) throw error;
+    if (signedUrlError) {
+      console.error('Error generating signed URL:', signedUrlError);
+      return createResponse('default_template.pptx', 'default_template.pptx', null);
+    }
+    console.log('Signed URL:', signedUrlData.signedUrl);
 
-    const headers = new Headers();
-    headers.set('Content-Type', 'application/vnd.openxmlformats-officedocument.presentationml.presentation');
-    headers.set('Content-Disposition', `attachment; filename="${filePath.split('/').pop()}"`);
-    headers.set('X-Favorite-Theme', favoriteTheme);
-
-    return new NextResponse(data, {
-      status: 200,
-      headers,
-    });
+    return createResponse(filePath, favoriteTheme, signedUrlData.signedUrl);
   } catch (error) {
     console.error('Error fetching PowerPoint file:', error);
     return new NextResponse('Error fetching file', { status: 500 });
   }
+}
+
+function createResponse(filePath: string, favoriteTheme: string, signedUrl: string | null) {
+  const headers = new Headers();
+  headers.set('Content-Type', 'application/json');
+  headers.set('X-Favorite-Theme', favoriteTheme);
+
+  return new NextResponse(JSON.stringify({ filePath, signedUrl }), {
+    status: 200,
+    headers,
+  });
 }

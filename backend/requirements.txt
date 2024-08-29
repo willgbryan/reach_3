@@ -26,12 +26,9 @@ python-docx
 htmldocx
 lxml_html_clean
 litellm
-# unstructured[all-docs]
 youtube-transcript-api
-# git+https://github.com/openai/whisper.git
-aiofiles 
+aiofiles
 moviepy
-# hubspot-api-client
 setuptools
 simsimd==3.7.7
 fastapi==0.103.2
@@ -40,3 +37,5 @@ openai
 python-pptx==0.6.21
 pydantic==2.4.2
 supabase
+git+https://github.com/willgbryan/langchain-reach-edition.git#subdirectory=libs/community
+pipdeptree
