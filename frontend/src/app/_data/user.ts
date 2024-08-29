@@ -33,7 +33,8 @@ export async function getUserDetails() {
 export async function checkAndInsertUserConfig() {
   const cookieStore = cookies()
   const supabase = createClient(cookieStore)
-  const userId = await getCurrentUserId()
+  const { data: { session } } = await supabase.auth.getSession()
+  const userId = session?.user?.id
 
   if (!userId) {
     console.error('No user ID found')
@@ -68,11 +69,11 @@ export async function checkAndInsertUserConfig() {
       }
 
       console.log('New user config inserted:', insertData)
+
+      await createUserThemeFolder(userId, supabase)
     } else {
       console.log('User config already exists')
     }
-
-    await createUserThemeFolder(userId, supabase)
   } catch (error) {
     console.error('Error checking/inserting user config:', error)
   }
