@@ -13,20 +13,12 @@ export async function POST(req: NextRequest) {
 
   try {
     const { job_title, industry } = await req.json()
-
-    const { data, error } = await db
+    const { error } = await db
       .from('user_config')
       .update({ job_title, industry })
       .eq('user_id', userId)
-      .select()
 
-    if (error || (Array.isArray(data) && data.length === 0)) {
-      const { error: insertError } = await db
-        .from('user_config')
-        .insert({ user_id: userId, job_title, industry })
-
-      if (insertError) throw insertError
-    }
+    if (error) throw error
 
     return new NextResponse(JSON.stringify({ message: 'Profile updated successfully' }), {
       status: 200,

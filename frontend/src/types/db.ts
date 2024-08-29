@@ -61,7 +61,7 @@ export interface Database {
           job_title?: string
           industry?: string
           report_config?: Json
-          favorite_theme: string
+          favorite_theme?: string
         }
         Relationships: [
           {

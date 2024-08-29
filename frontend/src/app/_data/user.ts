@@ -30,6 +30,71 @@ export async function getUserDetails() {
   }
 }
 
+export async function checkAndInsertUserConfig() {
+  const cookieStore = cookies()
+  const supabase = createClient(cookieStore)
+  const userId = await getCurrentUserId()
+
+  if (!userId) {
+    console.error('No user ID found')
+    return
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('user_config')
+      .select('id')
+      .eq('user_id', userId)
+      .single()
+
+    if (error && error.code !== 'PGRST116') {
+      throw error
+    }
+
+    if (!data) {
+      const { data: insertData, error: insertError } = await supabase
+        .from('user_config')
+        .insert({
+          user_id: userId,
+          job_title: 'Not specified',
+          industry: 'Not specified',
+          report_config: {},
+          favorite_theme: 'default'
+        })
+        .single()
+
+      if (insertError) {
+        throw insertError
+      }
+
+      console.log('New user config inserted:', insertData)
+    } else {
+      console.log('User config already exists')
+    }
+
+    await createUserThemeFolder(userId, supabase)
+  } catch (error) {
+    console.error('Error checking/inserting user config:', error)
+  }
+}
+
+async function createUserThemeFolder(userId: string, supabase: any) {
+  try {
+    const { data, error } = await supabase
+      .storage
+      .from('slide_themes')
+      .upload(`${userId}/.folder`, new Uint8Array())
+
+    if (error) {
+      throw error
+    }
+
+    console.log(`Folder created for user ${userId} in slide_themes bucket`)
+  } catch (error) {
+    console.error('Error creating user theme folder:', error)
+  }
+}
+
 // // gotta bring this back in once payment has been implemented
 // export async function getSubscription() {
 //   const cookieStore = cookies()

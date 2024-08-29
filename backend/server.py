@@ -136,7 +136,6 @@ async def generate_powerpoint(request: PowerPointRequest):
     try:
         print(f"Received request with prompt: {request.prompt}")
         
-        # Read the template PowerPoint
         template_prs = read_pptx_from_supabase(request.filePath)
         
         completion = client.chat.completions.create(
