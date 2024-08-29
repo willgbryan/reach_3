@@ -1,9 +1,9 @@
 from copy import deepcopy
 from http.client import HTTPException
 import traceback
-from supabase_utils.pptx_utils import apply_theme_to_slide, extract_theme, read_pptx_from_supabase
+from supabase_utils.pptx_utils import read_pptx_from_supabase
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect, File, UploadFile, Form
-from fastapi.responses import Response
+from fastapi.responses import Response, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
@@ -139,12 +139,10 @@ async def generate_powerpoint(request: PowerPointRequest):
         print(f"File path: {request.filePath}")
         print(f"Favorite theme: {request.favoriteTheme}")
         print(f"Signed URL: {request.signedUrl}")
-        
-        template_prs = read_pptx_from_supabase(request.filePath, request.signedUrl)
-        theme_layout = template_prs.slide_layouts[0]
-        
-        prs = Presentation()
-        
+
+        # Load the template presentation
+        prs = read_pptx_from_supabase(request.filePath, request.signedUrl)
+
         completion = client.chat.completions.create(
             model="gpt-4o-2024-08-06",
             messages=[
@@ -158,42 +156,55 @@ async def generate_powerpoint(request: PowerPointRequest):
             }],
             function_call={"name": "create_presentation"}
         )
-        
         print("OpenAI API response received")
+
         function_call = completion.choices[0].message.function_call
         if not function_call or function_call.name != "create_presentation":
             raise ValueError("Unexpected response from OpenAI API")
-        
+
         presentation_data = json.loads(function_call.arguments)
         print(f"Presentation data: {presentation_data}")
-        
+
         # Create title slide
         title_slide_layout = prs.slide_layouts[0]  # Assuming 0 is the layout for the title slide
         title_slide = prs.slides.add_slide(title_slide_layout)
-        apply_theme_to_slide(title_slide, theme_layout)
         
         title = title_slide.shapes.title
-        subtitle = title_slide.placeholders[1]
-        title.text = presentation_data["title"]
-        subtitle.text = "Generated Presentation"
+        subtitle = next((ph for ph in title_slide.placeholders if ph.placeholder_format.idx != 0), None)
+        
+        if title:
+            title.text = presentation_data["title"]
+        if subtitle:
+            subtitle.text = "Generated Presentation"
         
         # Create content slides
         content_slide_layout = prs.slide_layouts[1]  # Assuming 1 is the layout for content slides
         for slide_data in presentation_data["slides"]:
             new_slide = prs.slides.add_slide(content_slide_layout)
-            apply_theme_to_slide(new_slide, theme_layout)
             
             title = new_slide.shapes.title
-            content = new_slide.placeholders[1]
+            content_placeholder = next((ph for ph in new_slide.placeholders if ph.placeholder_format.idx != 0), None)
             
-            title.text = slide_data["title"]
-            tf = content.text_frame
+            if title:
+                title.text = slide_data["title"]
+            
+            if content_placeholder:
+                tf = content_placeholder.text_frame
+            else:
+                # If no suitable placeholder found, create a new text box
+                left = Inches(0.5)
+                top = Inches(1.5)
+                width = Inches(9)
+                height = Inches(5)
+                txBox = new_slide.shapes.add_textbox(left, top, width, height)
+                tf = txBox.text_frame
+
             tf.clear()
             for item in slide_data["content"]:
                 p = tf.add_paragraph()
                 p.text = item
                 p.level = 0
-        
+
         ppt_bytes = io.BytesIO()
         prs.save(ppt_bytes)
         ppt_bytes.seek(0)
@@ -207,7 +218,7 @@ async def generate_powerpoint(request: PowerPointRequest):
     except Exception as e:
         print(f"Error in generate_powerpoint: {str(e)}")
         print(traceback.format_exc())
-        return Response(status_code=500, content={"detail": str(e)})
+        return JSONResponse(status_code=500, content={"detail": str(e)})
 
 class CondenseRequest(BaseModel):
     task: str
