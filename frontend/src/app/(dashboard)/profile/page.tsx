@@ -65,10 +65,11 @@ const cards = [
     className: "col-span-1",
     title: "Reports",
   },
-//   {
-//     id: 4,
-//     content: <SkeletonFour />,
-//     className: "md:col-span-2",
-//     title: "Metrics",
-//   },
+  {
+    id: 4,
+    content: <SkeletonFour />,
+    className: "md:col-span-2 opacity-75",
+    title: "Metrics Coming Soon",
+    disabled: true
+  },
 ];

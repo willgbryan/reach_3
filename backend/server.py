@@ -141,7 +141,14 @@ async def generate_powerpoint(request: PowerPointRequest):
         print(f"Signed URL: {request.signedUrl}")
 
         # Load the template presentation
-        prs = read_pptx_from_supabase(request.filePath, request.signedUrl)
+        template_prs = read_pptx_from_supabase(request.filePath, request.signedUrl)
+
+        # Create a new presentation
+        prs = Presentation()
+
+        # Copy the slide layouts from the template to the new presentation
+        for layout in template_prs.slide_layouts:
+            prs.slide_layouts.add_slide(layout)
 
         completion = client.chat.completions.create(
             model="gpt-4o-2024-08-06",
