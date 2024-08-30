@@ -11,6 +11,7 @@ import 'jspdf-autotable'
 import Cookies from 'js-cookie'
 import { AnimatePresence } from 'framer-motion'
 import { marked } from 'marked';
+import html2canvas from 'html2canvas';
 
 import { ModeToggle } from '@/components/theme-toggle'
 import { ChatScrollAnchor } from '@/components/chat/chat-scroll-anchor'
@@ -552,34 +553,36 @@ const ChatSection = ({
   const sourcesToUse = allSources.length > 0 ? allSources : localSources;
 
   const createPDF = async (content: string) => {
-    const doc = new jsPDF();
-    
     try {
-      let yOffset = 10;
-      const lineHeight = 7;
-      const pageWidth = doc.internal.pageSize.getWidth();
-      const margin = 10;
-      const maxLineWidth = pageWidth - 2 * margin;
+      const formattedContent = formatContentToHTML(content);
   
-      doc.setFontSize(12);
-      doc.setFont('bold');
-      doc.text('Content', margin, yOffset);
-      yOffset += lineHeight;
-
-      doc.setFontSize(10);
-      doc.setFont('normal');
-      const contentLines = doc.splitTextToSize(content, maxLineWidth);
-      
-      for (const line of contentLines) {
-        if (yOffset > doc.internal.pageSize.getHeight() - margin) {
-          doc.addPage();
-          yOffset = margin;
-        }
-        doc.text(line, margin, yOffset);
-        yOffset += lineHeight;
+      const container = document.createElement('div');
+      container.innerHTML = formattedContent;
+      container.style.width = '700px';
+      document.body.appendChild(container);
+  
+      const canvas = await html2canvas(container, {
+        scale: 2,
+        useCORS: true,
+      });
+  
+      document.body.removeChild(container);
+  
+      const pageHeight = 297;  // A4 height in mm
+      const imgHeight = canvas.height * 297 / canvas.width;
+      const numPages = Math.ceil(imgHeight / pageHeight);
+  
+      const pdf = new jsPDF('p', 'mm', 'a4');
+  
+      for (let i = 0; i < numPages; i++) {
+        if (i > 0) pdf.addPage();
+        
+        const position = -i * pageHeight;
+        pdf.addImage(canvas, 'PNG', 0, position, 210, imgHeight);
       }
   
-      doc.save("exported_content.pdf");
+      pdf.save("exported_content.pdf");
+  
     } catch (error) {
       console.error("Error creating PDF:", error);
       toast.error("Error creating PDF");
@@ -618,6 +621,60 @@ const ChatSection = ({
     doc.querySelectorAll('p').forEach(el => el.classList.add('mb-4'));
     doc.querySelectorAll('ol').forEach(el => el.classList.add('list-decimal', 'list-inside', 'my-2'));
     doc.querySelectorAll('li').forEach(el => el.classList.add('mb-1'));
+  
+    doc.querySelectorAll('table').forEach(el => {
+      el.classList.add('border-collapse', 'my-4', 'w-full', 'rounded-lg', 'overflow-hidden');
+    });
+    doc.querySelectorAll('th, td').forEach(el => {
+      el.classList.add('px-4', 'py-2', 'border', 'border-gray-300', 'dark:border-stone-100');
+    });
+    doc.querySelectorAll('th').forEach(el => {
+      el.classList.add('font-semibold', 'bg-gray-100', 'dark:bg-stone-800');
+    });
+  
+    const style = doc.createElement('style');
+    style.textContent = `
+      table {
+        border: 2px solid #e2e8f0;
+        border-radius: 0.5rem;
+        border-spacing: 0;
+        width: 100%;
+        margin-top: 1rem;
+        margin-bottom: 1rem;
+        overflow: hidden;
+      }
+      th, td {
+        border: 1px solid #e2e8f0;
+        padding: 0.5rem 1rem;
+      }
+      th {
+        background-color: #f7fafc;
+        font-weight: 600;
+      }
+      tr:nth-child(even) {
+        background-color: #f8fafc;
+      }
+      
+      /* Dark mode styles */
+      @media (prefers-color-scheme: dark) {
+        table {
+          border-color: #3f3f46; /* zinc-700 */
+        }
+        th, td {
+          border-color: #3f3f46; /* zinc-700 */
+        }
+        th {
+          background-color: #27272a; /* zinc-800 for header */
+        }
+        tr:nth-child(even) {
+          background-color: #18181b; /* zinc-900 for even rows */
+        }
+        tr:nth-child(odd) {
+          background-color: #27272a; /* zinc-800 for odd rows */
+        }
+      }
+    `;
+    doc.head.appendChild(style);
   
     return doc.body.innerHTML;
   };
