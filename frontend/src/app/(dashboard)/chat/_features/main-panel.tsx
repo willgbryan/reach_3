@@ -10,6 +10,7 @@ import jsPDF from 'jspdf'
 import 'jspdf-autotable'
 import Cookies from 'js-cookie'
 import { AnimatePresence } from 'framer-motion'
+import { marked } from 'marked';
 
 import { ModeToggle } from '@/components/theme-toggle'
 import { ChatScrollAnchor } from '@/components/chat/chat-scroll-anchor'
@@ -606,44 +607,19 @@ const ChatSection = ({
   };
 
   const formatContentToHTML = (content: string): string => {
-    const lines = content.split('\n');
-    let html = '';
-    let inList = false;
-    let listItemNumber = 1;
+    const rawHtml = marked.parse(content, { async: false }) as string;
+    const sanitizedHtml = DOMPurify.sanitize(rawHtml);
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(sanitizedHtml, 'text/html');
   
-    lines.forEach((line, index) => {
-      if (line.startsWith('# ')) {
-        html += `<h1 class="text-3xl font-bold mt-6 mb-4">${line.slice(2)}</h1>`;
-      } else if (line.startsWith('## ')) {
-        html += `<h2 class="text-2xl font-semibold mt-5 mb-3">${line.slice(3)}</h2>`;
-      } else if (line.startsWith('### ')) {
-        html += `<h3 class="text-xl font-medium mt-4 mb-2">${line.slice(4)}</h3>`;
-      } else if (line.match(/^\d+\.\s/) || (inList && line.trim().startsWith('**'))) {
-        if (!inList) {
-          html += '<ol class="list-decimal list-inside my-2">';
-          inList = true;
-          listItemNumber = 1;
-        }
-        const content = line.replace(/^\d+\.\s/, '').replace(/^\*\*/, '');
-        html += `<li class="mb-1">${content}</li>`;
-        listItemNumber++;
-      } else if (line.trim() === '' && inList) {
-        html += '</ol>';
-        inList = false;
-      } else {
-        if (inList) {
-          html += '</ol>';
-          inList = false;
-        }
-        html += `<p class="mb-4">${line}</p>`;
-      }
-    });
+    doc.querySelectorAll('h1').forEach(el => el.classList.add('text-3xl', 'font-bold', 'mt-6', 'mb-4'));
+    doc.querySelectorAll('h2').forEach(el => el.classList.add('text-2xl', 'font-semibold', 'mt-5', 'mb-3'));
+    doc.querySelectorAll('h3').forEach(el => el.classList.add('text-xl', 'font-medium', 'mt-4', 'mb-2'));
+    doc.querySelectorAll('p').forEach(el => el.classList.add('mb-4'));
+    doc.querySelectorAll('ol').forEach(el => el.classList.add('list-decimal', 'list-inside', 'my-2'));
+    doc.querySelectorAll('li').forEach(el => el.classList.add('mb-1'));
   
-    if (inList) {
-      html += '</ol>';
-    }
-  
-    return html;
+    return doc.body.innerHTML;
   };
 
   const createCard = (item: any, index: number): JSX.Element | null => {
@@ -689,12 +665,11 @@ const ChatSection = ({
       
       rawContent = item.content;
       const formattedContent = formatContentToHTML(item.content);
-      // critical for xss mitigation using dangerouslySetInnerHTML (we should still find an alternative)
-      const sanitizedContent = DOMPurify.sanitize(formattedContent);
+      // formattedContent is sanitized in formatContentToHTML
       content = (
         <div 
           className="text-stone-900 dark:text-stone-100 text-base md:text-lg font-sans prose prose-stone dark:prose-invert max-w-none"
-          dangerouslySetInnerHTML={{ __html: sanitizedContent }}
+          dangerouslySetInnerHTML={{ __html: formattedContent }}
         />
       );
     } else if (item.role === 'user') {
