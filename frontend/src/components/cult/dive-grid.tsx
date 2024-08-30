@@ -52,14 +52,14 @@ export const GridLayout = ({ items }: { items: JSX.Element[] }) => {
 type CardProps = {
   card: Card;
   index: number;
-  onCreatePDF: (content: string) => void;
+  onCreateDoc: (content: string) => void;
   onCreatePowerPoint?: (content: string) => void;
 };
 
 export const Card: React.FC<CardProps> = ({
   card,
   index,
-  onCreatePDF,
+  onCreateDoc,
   onCreatePowerPoint,
 }) => {
   const [open, setOpen] = useState(false);
@@ -92,7 +92,7 @@ export const Card: React.FC<CardProps> = ({
   };
 
   const handleCreatePDF = () => {
-    onCreatePDF(card.rawContent);
+    onCreateDoc(card.rawContent);
   };
 
   const handleCreatePowerPoint = () => {
@@ -123,10 +123,10 @@ export const Card: React.FC<CardProps> = ({
                 <button
                   className="flex items-center justify-center px-3 py-2 hover:text-stone-900 bg-stone-900 dark:bg-stone-100 rounded-full text-sm font-medium text-stone-100 dark:hover:text-stone-100 dark:text-stone-900 hover:bg-stone-300 dark:hover:bg-stone-600 transition-colors"
                   onClick={handleCreatePDF}
-                  title="Download as PDF"
+                  title="Download as Word Document"
                 >
                   <IconFileText className="h-5 w-5 mr-2" />
-                  Download as PDF
+                  Download as Word Document
                 </button>
                 {card.type !== 'sources' && onCreatePowerPoint && (
                   <button
