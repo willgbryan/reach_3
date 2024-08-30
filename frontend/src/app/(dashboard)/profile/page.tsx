@@ -59,12 +59,13 @@ const cards = [
     className: "col-span-1",
     title: "Slides",
   },
-  {
-    id: 3,
-    content: <SkeletonThree />,
-    className: "col-span-1",
-    title: "Reports",
-  },
+  // {
+  //   id: 3,
+  //   content: <SkeletonThree />,
+  //   className: "col-span-1 opacity-75",
+  //   title: "Reports",
+  //   disabled: true
+  // },
   {
     id: 4,
     content: <SkeletonFour />,

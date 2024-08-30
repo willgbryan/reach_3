@@ -141,14 +141,7 @@ async def generate_powerpoint(request: PowerPointRequest):
         print(f"Signed URL: {request.signedUrl}")
 
         # Load the template presentation
-        template_prs = read_pptx_from_supabase(request.filePath, request.signedUrl)
-
-        # Create a new presentation
-        prs = Presentation()
-
-        # Copy the slide layouts from the template to the new presentation
-        for layout in template_prs.slide_layouts:
-            prs.slide_layouts.add_slide(layout)
+        prs = read_pptx_from_supabase(request.filePath, request.signedUrl)
 
         completion = client.chat.completions.create(
             model="gpt-4o-2024-08-06",
@@ -171,6 +164,8 @@ async def generate_powerpoint(request: PowerPointRequest):
 
         presentation_data = json.loads(function_call.arguments)
         print(f"Presentation data: {presentation_data}")
+
+        trim_count = len(prs.slides)
 
         # Create title slide
         title_slide_layout = prs.slide_layouts[0]  # Assuming 0 is the layout for the title slide
@@ -212,11 +207,16 @@ async def generate_powerpoint(request: PowerPointRequest):
                 p.text = item
                 p.level = 0
 
+        for _ in range(trim_count):
+            rId = prs.slides._sldIdLst[0].rId
+            prs.part.drop_rel(rId)
+            del prs.slides._sldIdLst[0]
+
         ppt_bytes = io.BytesIO()
         prs.save(ppt_bytes)
         ppt_bytes.seek(0)
         print("Presentation generated successfully")
-        
+
         return Response(
             content=ppt_bytes.getvalue(),
             media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
