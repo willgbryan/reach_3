@@ -10,8 +10,20 @@ import jsPDF from 'jspdf'
 import 'jspdf-autotable'
 import Cookies from 'js-cookie'
 import { AnimatePresence } from 'framer-motion'
+import {
+  Document,
+  Paragraph,
+  Table,
+  TableRow,
+  TableCell,
+  HeadingLevel,
+  TextRun,
+  AlignmentType,
+  BorderStyle,
+  UnderlineType,
+  Packer,
+} from 'docx';
 import { marked } from 'marked';
-import html2canvas from 'html2canvas';
 
 import { ModeToggle } from '@/components/theme-toggle'
 import { ChatScrollAnchor } from '@/components/chat/chat-scroll-anchor'
@@ -552,43 +564,153 @@ const ChatSection = ({
 
   const sourcesToUse = allSources.length > 0 ? allSources : localSources;
 
-  const createPDF = async (content: string) => {
+  const createEditableDocument = async (content: string): Promise<void> => {
     try {
-      const formattedContent = formatContentToHTML(content);
-  
-      const container = document.createElement('div');
-      container.innerHTML = formattedContent;
-      container.style.width = '700px';
-      document.body.appendChild(container);
-  
-      const canvas = await html2canvas(container, {
-        scale: 2,
-        useCORS: true,
-      });
-  
-      document.body.removeChild(container);
-  
-      const pageHeight = 297;  // A4 height in mm
-      const imgHeight = canvas.height * 297 / canvas.width;
-      const numPages = Math.ceil(imgHeight / pageHeight);
-  
-      const pdf = new jsPDF('p', 'mm', 'a4');
-  
-      for (let i = 0; i < numPages; i++) {
-        if (i > 0) pdf.addPage();
-        
-        const position = -i * pageHeight;
-        pdf.addImage(canvas, 'PNG', 0, position, 210, imgHeight);
+      if (!content || typeof content !== 'string') {
+        throw new Error('Invalid content provided');
       }
   
-      pdf.save("exported_content.pdf");
+      const rawHtml = marked.parse(content, { async: false }) as string;
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(rawHtml, 'text/html');
   
+      const children: (Paragraph | Table)[] = [];
+  
+      const processNode = (node: Node): (Paragraph | Table)[] => {
+        if (node.nodeType === Node.ELEMENT_NODE) {
+          const element = node as HTMLElement;
+          switch (element.tagName) {
+            case 'H1':
+            case 'H2':
+            case 'H3':
+            case 'H4':
+            case 'H5':
+            case 'H6':
+              return [new Paragraph({
+                text: element.textContent || '',
+                heading: HeadingLevel[`HEADING_${element.tagName.charAt(1)}` as keyof typeof HeadingLevel],
+                spacing: { before: 200, after: 100 },
+              })];
+            case 'P':
+              return [new Paragraph({
+                children: processTextContent(element),
+                spacing: { before: 100, after: 100 },
+              })];
+            case 'UL':
+            case 'OL':
+              return Array.from(element.children).flatMap((li) => {
+                if (li.tagName === 'LI') {
+                  return [new Paragraph({
+                    children: processTextContent(li),
+                    bullet: { level: 0 },
+                    spacing: { before: 50, after: 50 },
+                  })];
+                }
+                return [];
+              });
+            case 'PRE':
+              const codeElement = element.querySelector('code');
+              return [new Paragraph({
+                text: codeElement ? codeElement.textContent || '' : '',
+                style: 'Code',
+                spacing: { before: 100, after: 100 },
+                shading: { type: 'solid', color: 'F0F0F0' },
+              })];
+            case 'TABLE':
+              const rows = Array.from(element.querySelectorAll('tr')).map((tr) => {
+                const cells = Array.from(tr.querySelectorAll('th, td')).map((cell) => {
+                  return new TableCell({
+                    children: [new Paragraph({ children: processTextContent(cell) })],
+                  });
+                });
+                return new TableRow({ children: cells });
+              });
+              return [new Table({
+                rows: rows,
+                width: { size: 100, type: 'pct' },
+                borders: {
+                  top: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
+                  bottom: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
+                  left: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
+                  right: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
+                  insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
+                  insideVertical: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
+                },
+              })];
+            default:
+              return Array.from(element.childNodes).flatMap(processNode);
+          }
+        }
+        return [];
+      };
+  
+      const processTextContent = (node: Node): TextRun[] => {
+        return Array.from(node.childNodes).flatMap((child) => {
+          if (child.nodeType === Node.ELEMENT_NODE) {
+            const element = child as HTMLElement;
+            switch (element.tagName) {
+              case 'STRONG':
+              case 'B':
+                return [new TextRun({ text: element.textContent || '', bold: true })];
+              case 'EM':
+              case 'I':
+                return [new TextRun({ text: element.textContent || '', italics: true })];
+              case 'A':
+                const link = element as HTMLAnchorElement;
+                return [new TextRun({ 
+                  text: link.textContent || '',
+                  underline: { color: '0000FF', type: UnderlineType.SINGLE }, 
+                  color: '0000FF' 
+                })];
+              default:
+                return processTextContent(element);
+            }
+          } else if (child.nodeType === Node.TEXT_NODE) {
+            return [new TextRun(child.textContent || '')];
+          }
+          return [];
+        });
+      };
+  
+      children.push(...Array.from(doc.body.childNodes).flatMap(processNode));
+  
+      const docx = new Document({
+        styles: {
+          paragraphStyles: [
+            {
+              id: 'Code',
+              name: 'Code',
+              basedOn: 'Normal',
+              run: {
+                font: 'Courier New',
+              },
+            },
+          ],
+        },
+        sections: [{
+          children: children
+        }]
+      });
+  
+      const buffer = await Packer.toBuffer(docx);
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'exported_content.docx';
+      link.click();
+      URL.revokeObjectURL(link.href);
+  
+      console.log("Word document created successfully");
     } catch (error) {
-      console.error("Error creating PDF:", error);
-      toast.error("Error creating PDF");
+      console.error("Error creating Word document:", error);
+      if (error instanceof Error) {
+        console.error(`Error creating Word document: ${error.message}`);
+      } else {
+        console.error('An unknown error occurred');
+      }
     }
   };
-
+  
   const handleCreateStructuredPowerPoint = async (content: string) => {
     try {
       console.log('Generating PowerPoint with content:', content);
@@ -748,7 +870,7 @@ const ChatSection = ({
             type,
           }}
           index={index}
-          onCreatePDF={createPDF}
+          onCreateDoc={createEditableDocument}
           onCreatePowerPoint={handleCreateStructuredPowerPoint}
         />
       );
