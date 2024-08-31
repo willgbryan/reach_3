@@ -26,7 +26,8 @@
     "strictNullChecks": true,
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
-    "baseUrl": "."
+    "baseUrl": ".",
+    "types": ["node"]
   },
   "include": [
     ".eslintrc.cjs",

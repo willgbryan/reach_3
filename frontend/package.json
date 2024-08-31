@@ -52,7 +52,7 @@
     "langchain": "^0.1.2",
     "lucide-react": "^0.294.0",
     "mammoth": "^1.6.0",
-    "marked": "^13.0.3",
+    "marked": "^14.1.0",
     "md5": "^2.3.0",
     "nanoid": "^5.0.4",
     "next": "14.0.5-canary.65",
