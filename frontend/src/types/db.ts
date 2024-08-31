@@ -35,6 +35,44 @@ export interface Database {
           },
         ]
       }
+      user_config: {
+        Row: {
+          id: string
+          created_at: string
+          user_id: string
+          job_title: string
+          industry: string
+          report_config: Json
+          favorite_theme: string
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          user_id: string
+          job_title: string
+          industry: string
+          report_config: Json
+          favorite_theme: string
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          user_id?: string
+          job_title?: string
+          industry?: string
+          report_config?: Json
+          favorite_theme?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'user_config_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: true
+            referencedRelation: 'users'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       web_source_content_raw: {
         Row: {
           id: string

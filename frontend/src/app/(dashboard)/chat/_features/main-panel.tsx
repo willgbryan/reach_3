@@ -10,6 +10,7 @@ import jsPDF from 'jspdf'
 import 'jspdf-autotable'
 import Cookies from 'js-cookie'
 import { AnimatePresence } from 'framer-motion'
+import { marked } from 'marked';
 
 import { ModeToggle } from '@/components/theme-toggle'
 import { ChatScrollAnchor } from '@/components/chat/chat-scroll-anchor'
@@ -26,6 +27,7 @@ import { GridLayout, Card } from '@/components/cult/dive-grid'
 import { TutorialOverlay } from '@/components/tutorial/tutorial-overlay'
 import { TutorialStep } from '@/components/tutorial/tutorial-step'
 import InfoButton from '@/components/tutorial/info-button'
+import createEditableDocument from '@/components/word-doc-functions'
 
 interface MainVectorPanelProps {
   id?: string | undefined
@@ -549,46 +551,21 @@ const ChatSection = ({
   }, [chatId, allSources]);
 
   const sourcesToUse = allSources.length > 0 ? allSources : localSources;
-
-  const createPDF = async (content: string) => {
-    const doc = new jsPDF();
-    
-    try {
-      let yOffset = 10;
-      const lineHeight = 7;
-      const pageWidth = doc.internal.pageSize.getWidth();
-      const margin = 10;
-      const maxLineWidth = pageWidth - 2 * margin;
   
-      doc.setFontSize(12);
-      doc.setFont('bold');
-      doc.text('Content', margin, yOffset);
-      yOffset += lineHeight;
-
-      doc.setFontSize(10);
-      doc.setFont('normal');
-      const contentLines = doc.splitTextToSize(content, maxLineWidth);
-      
-      for (const line of contentLines) {
-        if (yOffset > doc.internal.pageSize.getHeight() - margin) {
-          doc.addPage();
-          yOffset = margin;
-        }
-        doc.text(line, margin, yOffset);
-        yOffset += lineHeight;
-      }
-  
-      doc.save("exported_content.pdf");
-    } catch (error) {
-      console.error("Error creating PDF:", error);
-      toast.error("Error creating PDF");
-    }
-  };
-
   const handleCreateStructuredPowerPoint = async (content: string) => {
     try {
       console.log('Generating PowerPoint with content:', content);
-      await generatePowerPoint(content);
+      const response = await fetch('/api/fetch-powerpoint');
+      if (!response.ok) {
+        throw new Error('Failed to fetch PowerPoint template');
+      }
+      const { filePath, signedUrl } = await response.json();
+      if (!signedUrl) {
+        throw new Error('No signed URL provided for the PowerPoint template');
+      }
+      console.log('Signed URL before calling generatePowerPoint:', signedUrl);
+      const favoriteTheme = response.headers.get('X-Favorite-Theme') || 'default_template.pptx';
+      await generatePowerPoint(content, filePath, favoriteTheme, signedUrl);
     } catch (error) {
       console.error("Error creating PowerPoint:", error);
       toast.error("Error creating PowerPoint");
@@ -596,44 +573,73 @@ const ChatSection = ({
   };
 
   const formatContentToHTML = (content: string): string => {
-    const lines = content.split('\n');
-    let html = '';
-    let inList = false;
-    let listItemNumber = 1;
+    const rawHtml = marked.parse(content, { async: false }) as string;
+    const sanitizedHtml = DOMPurify.sanitize(rawHtml);
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(sanitizedHtml, 'text/html');
   
-    lines.forEach((line, index) => {
-      if (line.startsWith('# ')) {
-        html += `<h1 class="text-3xl font-bold mt-6 mb-4">${line.slice(2)}</h1>`;
-      } else if (line.startsWith('## ')) {
-        html += `<h2 class="text-2xl font-semibold mt-5 mb-3">${line.slice(3)}</h2>`;
-      } else if (line.startsWith('### ')) {
-        html += `<h3 class="text-xl font-medium mt-4 mb-2">${line.slice(4)}</h3>`;
-      } else if (line.match(/^\d+\.\s/) || (inList && line.trim().startsWith('**'))) {
-        if (!inList) {
-          html += '<ol class="list-decimal list-inside my-2">';
-          inList = true;
-          listItemNumber = 1;
-        }
-        const content = line.replace(/^\d+\.\s/, '').replace(/^\*\*/, '');
-        html += `<li class="mb-1">${content}</li>`;
-        listItemNumber++;
-      } else if (line.trim() === '' && inList) {
-        html += '</ol>';
-        inList = false;
-      } else {
-        if (inList) {
-          html += '</ol>';
-          inList = false;
-        }
-        html += `<p class="mb-4">${line}</p>`;
-      }
+    doc.querySelectorAll('h1').forEach(el => el.classList.add('text-3xl', 'font-bold', 'mt-6', 'mb-4'));
+    doc.querySelectorAll('h2').forEach(el => el.classList.add('text-2xl', 'font-semibold', 'mt-5', 'mb-3'));
+    doc.querySelectorAll('h3').forEach(el => el.classList.add('text-xl', 'font-medium', 'mt-4', 'mb-2'));
+    doc.querySelectorAll('p').forEach(el => el.classList.add('mb-4'));
+    doc.querySelectorAll('ol').forEach(el => el.classList.add('list-decimal', 'list-inside', 'my-2'));
+    doc.querySelectorAll('li').forEach(el => el.classList.add('mb-1'));
+  
+    doc.querySelectorAll('table').forEach(el => {
+      el.classList.add('border-collapse', 'my-4', 'w-full', 'rounded-lg', 'overflow-hidden');
+    });
+    doc.querySelectorAll('th, td').forEach(el => {
+      el.classList.add('px-4', 'py-2', 'border', 'border-gray-300', 'dark:border-stone-100');
+    });
+    doc.querySelectorAll('th').forEach(el => {
+      el.classList.add('font-semibold', 'bg-gray-100', 'dark:bg-stone-800');
     });
   
-    if (inList) {
-      html += '</ol>';
-    }
+    const style = doc.createElement('style');
+    style.textContent = `
+      table {
+        border: 2px solid #e2e8f0;
+        border-radius: 0.5rem;
+        border-spacing: 0;
+        width: 100%;
+        margin-top: 1rem;
+        margin-bottom: 1rem;
+        overflow: hidden;
+      }
+      th, td {
+        border: 1px solid #e2e8f0;
+        padding: 0.5rem 1rem;
+      }
+      th {
+        background-color: #f7fafc;
+        font-weight: 600;
+      }
+      tr:nth-child(even) {
+        background-color: #f8fafc;
+      }
+      
+      /* Dark mode styles */
+      @media (prefers-color-scheme: dark) {
+        table {
+          border-color: #3f3f46; /* zinc-700 */
+        }
+        th, td {
+          border-color: #3f3f46; /* zinc-700 */
+        }
+        th {
+          background-color: #27272a; /* zinc-800 for header */
+        }
+        tr:nth-child(even) {
+          background-color: #18181b; /* zinc-900 for even rows */
+        }
+        tr:nth-child(odd) {
+          background-color: #27272a; /* zinc-800 for odd rows */
+        }
+      }
+    `;
+    doc.head.appendChild(style);
   
-    return html;
+    return doc.body.innerHTML;
   };
 
   const createCard = (item: any, index: number): JSX.Element | null => {
@@ -679,12 +685,11 @@ const ChatSection = ({
       
       rawContent = item.content;
       const formattedContent = formatContentToHTML(item.content);
-      // critical for xss mitigation using dangerouslySetInnerHTML (we should still find an alternative)
-      const sanitizedContent = DOMPurify.sanitize(formattedContent);
+      // formattedContent is sanitized in formatContentToHTML
       content = (
         <div 
           className="text-stone-900 dark:text-stone-100 text-base md:text-lg font-sans prose prose-stone dark:prose-invert max-w-none"
-          dangerouslySetInnerHTML={{ __html: sanitizedContent }}
+          dangerouslySetInnerHTML={{ __html: formattedContent }}
         />
       );
     } else if (item.role === 'user') {
@@ -706,7 +711,7 @@ const ChatSection = ({
             type,
           }}
           index={index}
-          onCreatePDF={createPDF}
+          onCreateDoc={createEditableDocument}
           onCreatePowerPoint={handleCreateStructuredPowerPoint}
         />
       );

@@ -1,7 +1,9 @@
+from copy import deepcopy
 from http.client import HTTPException
 import traceback
+from supabase_utils.pptx_utils import read_pptx_from_supabase
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect, File, UploadFile, Form
-from fastapi.responses import Response
+from fastapi.responses import Response, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
@@ -114,6 +116,8 @@ async def websocket_endpoint(websocket: WebSocket):
     except WebSocketDisconnect:
         await manager.disconnect(websocket)
 
+client = OpenAI()
+
 class SlideContent(BaseModel):
     title: str
     content: List[str]
@@ -124,13 +128,20 @@ class PresentationStructure(BaseModel):
 
 class PowerPointRequest(BaseModel):
     prompt: str
-
-client = OpenAI()
+    filePath: str
+    favoriteTheme: str
+    signedUrl: str
 
 @app.post("/generate-powerpoint")
 async def generate_powerpoint(request: PowerPointRequest):
     try:
         print(f"Received request with prompt: {request.prompt}")
+        print(f"File path: {request.filePath}")
+        print(f"Favorite theme: {request.favoriteTheme}")
+        print(f"Signed URL: {request.signedUrl}")
+
+        # Load the template presentation
+        prs = read_pptx_from_supabase(request.filePath, request.signedUrl)
 
         completion = client.chat.completions.create(
             model="gpt-4o-2024-08-06",
@@ -145,7 +156,6 @@ async def generate_powerpoint(request: PowerPointRequest):
             }],
             function_call={"name": "create_presentation"}
         )
-
         print("OpenAI API response received")
 
         function_call = completion.choices[0].message.function_call
@@ -155,38 +165,56 @@ async def generate_powerpoint(request: PowerPointRequest):
         presentation_data = json.loads(function_call.arguments)
         print(f"Presentation data: {presentation_data}")
 
-        prs = Presentation()
+        trim_count = len(prs.slides)
+
+        # Create title slide
+        title_slide_layout = prs.slide_layouts[0]  # Assuming 0 is the layout for the title slide
+        title_slide = prs.slides.add_slide(title_slide_layout)
         
-        # Title slide
-        title_slide_layout = prs.slide_layouts[0]
-        slide = prs.slides.add_slide(title_slide_layout)
-        title = slide.shapes.title
-        title.text = presentation_data["title"]
-
-        # Content slides
-        for i, slide_data in enumerate(presentation_data["slides"]):
-            content_slide_layout = prs.slide_layouts[1]
-            slide = prs.slides.add_slide(content_slide_layout)
+        title = title_slide.shapes.title
+        subtitle = next((ph for ph in title_slide.placeholders if ph.placeholder_format.idx != 0), None)
+        
+        if title:
+            title.text = presentation_data["title"]
+        if subtitle:
+            subtitle.text = "Generated Presentation"
+        
+        # Create content slides
+        content_slide_layout = prs.slide_layouts[1]  # Assuming 1 is the layout for content slides
+        for slide_data in presentation_data["slides"]:
+            new_slide = prs.slides.add_slide(content_slide_layout)
             
-            title = slide.shapes.title
-            title.text = slide_data["title"]
+            title = new_slide.shapes.title
+            content_placeholder = next((ph for ph in new_slide.placeholders if ph.placeholder_format.idx != 0), None)
+            
+            if title:
+                title.text = slide_data["title"]
+            
+            if content_placeholder:
+                tf = content_placeholder.text_frame
+            else:
+                # If no suitable placeholder found, create a new text box
+                left = Inches(0.5)
+                top = Inches(1.5)
+                width = Inches(9)
+                height = Inches(5)
+                txBox = new_slide.shapes.add_textbox(left, top, width, height)
+                tf = txBox.text_frame
 
-            content = slide.placeholders[1]
-            tf = content.text_frame
+            tf.clear()
             for item in slide_data["content"]:
                 p = tf.add_paragraph()
                 p.text = item
                 p.level = 0
 
-            # Add slide number
-            txBox = slide.shapes.add_textbox(Inches(9), Inches(6.5), Inches(1), Inches(0.5))
-            tf = txBox.text_frame
-            tf.text = f"Slide {i + 1}"
+        for _ in range(trim_count):
+            rId = prs.slides._sldIdLst[0].rId
+            prs.part.drop_rel(rId)
+            del prs.slides._sldIdLst[0]
 
         ppt_bytes = io.BytesIO()
         prs.save(ppt_bytes)
         ppt_bytes.seek(0)
-
         print("Presentation generated successfully")
 
         return Response(
@@ -194,11 +222,10 @@ async def generate_powerpoint(request: PowerPointRequest):
             media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
             headers={"Content-Disposition": "attachment; filename=generated_presentation.pptx"}
         )
-
     except Exception as e:
         print(f"Error in generate_powerpoint: {str(e)}")
         print(traceback.format_exc())
-        raise HTTPException(status_code=500)
+        return JSONResponse(status_code=500, content={"detail": str(e)})
 
 class CondenseRequest(BaseModel):
     task: str

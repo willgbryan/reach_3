@@ -9,6 +9,7 @@ type Card = {
   content: JSX.Element | React.ReactNode | string;
   className: string;
   title: string;
+  disabled?: boolean;
 };
 
 export const LayoutGrid = ({ cards }: { cards: Card[] }) => {
@@ -16,8 +17,10 @@ export const LayoutGrid = ({ cards }: { cards: Card[] }) => {
   const [lastSelected, setLastSelected] = useState<Card | null>(null);
 
   const handleClick = (card: Card) => {
-    setLastSelected(selected);
-    setSelected(card);
+    if (!card.disabled) {
+      setLastSelected(selected);
+      setSelected(card);
+    }
   };
 
   const handleOutsideClick = () => {
@@ -35,7 +38,8 @@ export const LayoutGrid = ({ cards }: { cards: Card[] }) => {
               "relative overflow-hidden rounded-lg h-full",
               selected?.id === card.id
                 ? "cursor-pointer absolute inset-0 w-full md:w-3/4 lg:w-2/3 xl:w-1/2 m-auto z-50 flex justify-center items-center"
-                : "bg-white dark:bg-stone-800"
+                : "bg-white dark:bg-stone-800",
+              card.disabled && "cursor-not-allowed opacity-75"
             )}
             layoutId={`card-${card.id}`}
           >
@@ -70,9 +74,6 @@ export const LayoutGrid = ({ cards }: { cards: Card[] }) => {
 const SelectedCard = ({ selected }: { selected: Card | null }) => {
   return (
     <div className="bg-white dark:bg-stone-800 h-full w-full flex flex-col justify-start rounded-lg shadow-2xl relative z-[60] overflow-y-auto p-6">
-      {/* <Heading weight="base" size="xl" className="mb-4">
-        {selected?.title}
-      </Heading> */}
       <div className="flex-grow">
         {selected?.content}
       </div>

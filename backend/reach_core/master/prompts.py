@@ -152,7 +152,7 @@ def generate_report_prompt(question, context, report_format="apa", total_words=2
            " The report should focus on the answer to the query, should be well structured, informative," \
            f" in depth and comprehensive, with facts and numbers if available and a minimum of {total_words} words.\n" \
            "You should strive to write the report as long as you can using all relevant and necessary information provided.\n"\
-           "You must write the report with markdown syntax. Using headings, bulleted lists, and other markdown formatted features when appropriate.\n " \
+           "You must write the report with markdown syntax. Using headings, bulleted lists, tables, block quotes, and other markdown formatted features when appropriate.\n " \
            f"Use an unbiased and journalistic tone. \n" \
            "You MUST determine your own concrete and valid opinion based on the given information. Do NOT deter to general and meaningless conclusions.\n" \
            f"You MUST write all used source urls at the end of the report as references, and make sure to not add duplicated sources, but only one reference for each.\n" \
