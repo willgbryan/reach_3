@@ -22,6 +22,11 @@ import {
   BorderStyle,
   UnderlineType,
   Packer,
+  WidthType,
+  ExternalHyperlink,
+  TableLayoutType,
+  ITableRowOptions,
+  VerticalAlign,
 } from 'docx';
 import { marked } from 'marked';
 
@@ -617,25 +622,44 @@ const ChatSection = ({
                 shading: { type: 'solid', color: 'F0F0F0' },
               })];
             case 'TABLE':
-              const rows = Array.from(element.querySelectorAll('tr')).map((tr) => {
-                const cells = Array.from(tr.querySelectorAll('th, td')).map((cell) => {
+              const rows = Array.from(element.querySelectorAll('tr')).map((tr, rowIndex) => {
+                const tableCells = Array.from(tr.querySelectorAll('th, td')).map((cell, cellIndex) => {
+                  const cellContent = new Paragraph({ 
+                    children: processTextContent(cell),
+                    spacing: { before: 60, after: 60 },
+                    alignment: AlignmentType.LEFT,
+                  });
+
                   return new TableCell({
-                    children: [new Paragraph({ children: processTextContent(cell) })],
+                    children: [cellContent],
+                    verticalAlign: VerticalAlign.CENTER,
+                    width: { size: 100 / tr.cells.length, type: WidthType.PERCENTAGE },
+                    margins: { top: 60, bottom: 60, left: 100, right: 100 },
                   });
                 });
-                return new TableRow({ children: cells });
+
+                return new TableRow({
+                  tableHeader: rowIndex === 0,
+                  height: { value: 0, rule: 'auto' },
+                  children: tableCells,
+                });
               });
+
+              const columnCount = rows[0]?.cells.length || 0;
+
               return [new Table({
                 rows: rows,
-                width: { size: 100, type: 'pct' },
+                width: { size: 100, type: WidthType.PERCENTAGE },
+                layout: TableLayoutType.FIXED,
                 borders: {
-                  top: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
-                  bottom: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
-                  left: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
-                  right: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
-                  insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
-                  insideVertical: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
+                  top: { style: BorderStyle.SINGLE, size: 1, color: 'AAAAAA' },
+                  bottom: { style: BorderStyle.SINGLE, size: 1, color: 'AAAAAA' },
+                  left: { style: BorderStyle.SINGLE, size: 1, color: 'AAAAAA' },
+                  right: { style: BorderStyle.SINGLE, size: 1, color: 'AAAAAA' },
+                  insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: 'AAAAAA' },
+                  insideVertical: { style: BorderStyle.SINGLE, size: 1, color: 'AAAAAA' },
                 },
+                columnWidths: Array(columnCount).fill(100 / columnCount),
               })];
             default:
               return Array.from(element.childNodes).flatMap(processNode);
@@ -644,7 +668,7 @@ const ChatSection = ({
         return [];
       };
   
-      const processTextContent = (node: Node): TextRun[] => {
+      const processTextContent = (node: Node): (TextRun | ExternalHyperlink)[] => {
         return Array.from(node.childNodes).flatMap((child) => {
           if (child.nodeType === Node.ELEMENT_NODE) {
             const element = child as HTMLElement;
@@ -657,10 +681,14 @@ const ChatSection = ({
                 return [new TextRun({ text: element.textContent || '', italics: true })];
               case 'A':
                 const link = element as HTMLAnchorElement;
-                return [new TextRun({ 
-                  text: link.textContent || '',
-                  underline: { color: '0000FF', type: UnderlineType.SINGLE }, 
-                  color: '0000FF' 
+                return [new ExternalHyperlink({
+                  children: [
+                    new TextRun({
+                      text: link.textContent || '',
+                      style: "Hyperlink",
+                    }),
+                  ],
+                  link: link.href,
                 })];
               default:
                 return processTextContent(element);
@@ -683,6 +711,19 @@ const ChatSection = ({
               basedOn: 'Normal',
               run: {
                 font: 'Courier New',
+              },
+            },
+          ],
+          characterStyles: [
+            {
+              id: 'Hyperlink',
+              name: 'Hyperlink',
+              basedOn: 'Normal',
+              run: {
+                color: '0000FF',
+                underline: {
+                  type: UnderlineType.SINGLE,
+                },
               },
             },
           ],
