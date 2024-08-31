@@ -74,48 +74,43 @@ const createEditableDocument = async (content: string): Promise<void> => {
                 spacing: { before: 100, after: 100 },
                 shading: { type: 'solid', color: 'F0F0F0' },
               })];
-              case 'TABLE':
+            case 'TABLE':
                 const rows = Array.from(element.querySelectorAll('tr')).map((tr, rowIndex) => {
-                  const tableCells = Array.from(tr.querySelectorAll('th, td')).map((cell, cellIndex) => {
-                    const cellChildren = processTextContent(cell);
-                    const cellContent = cellChildren.length > 0
-                      ? new Paragraph({ 
-                          children: cellChildren,
-                          spacing: { before: 60, after: 60 },
-                          alignment: AlignmentType.LEFT,
-                        })
-                      : new Paragraph({ text: '' });
-    
+                    const tableCells = Array.from(tr.querySelectorAll('th, td')).map((cell) => {
+                    const cellContent = processTextContent(cell); // This is an array of TextRun or ExternalHyperlink
                     return new TableCell({
-                      children: [cellContent],
-                      verticalAlign: VerticalAlign.CENTER,
-                      width: { size: 100 / tr.cells.length, type: WidthType.PERCENTAGE },
-                      margins: { top: 60, bottom: 60, left: 100, right: 100 },
+                        children: [new Paragraph({
+                        children: cellContent, // Properly assign the array of TextRun or ExternalHyperlink
+                        alignment: AlignmentType.CENTER, // Align content to the center within the Paragraph
+                        })],
+                        verticalAlign: VerticalAlign.CENTER,
+                        width: { size: 2000, type: WidthType.DXA },
+                        margins: { top: 100, bottom: 100, left: 100, right: 100 },
                     });
-                  });
-    
-                  return new TableRow({
+                    });
+
+                    return new TableRow({
                     tableHeader: rowIndex === 0,
-                    height: { value: 0, rule: 'auto' },
+                    height: { value: 300, rule: 'auto' },
                     children: tableCells,
-                  });
+                    });
                 });
-    
-                const columnCount = rows[0]?.cells.length || 0;
-    
+
+                const columnCount = rows[0]?.cells.length || 1;
+
                 return [new Table({
-                  rows: rows,
-                  width: { size: 100, type: WidthType.PERCENTAGE },
-                  layout: TableLayoutType.FIXED,
-                  borders: {
-                    top: { style: BorderStyle.SINGLE, size: 1, color: 'AAAAAA' },
-                    bottom: { style: BorderStyle.SINGLE, size: 1, color: 'AAAAAA' },
-                    left: { style: BorderStyle.SINGLE, size: 1, color: 'AAAAAA' },
-                    right: { style: BorderStyle.SINGLE, size: 1, color: 'AAAAAA' },
-                    insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: 'AAAAAA' },
-                    insideVertical: { style: BorderStyle.SINGLE, size: 1, color: 'AAAAAA' },
-                  },
-                  columnWidths: Array(columnCount).fill(100 / columnCount),
+                    rows: rows,
+                    width: { size: 9000, type: WidthType.DXA },
+                    layout: TableLayoutType.FIXED,
+                    borders: {
+                    top: { style: BorderStyle.SINGLE, size: 2, color: '000000' },
+                    bottom: { style: BorderStyle.SINGLE, size: 2, color: '000000' },
+                    left: { style: BorderStyle.SINGLE, size: 2, color: '000000' },
+                    right: { style: BorderStyle.SINGLE, size: 2, color: '000000' },
+                    insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
+                    insideVertical: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
+                    },
+                    columnWidths: Array(columnCount).fill(9000 / columnCount),
                 })];
             default:
               return Array.from(element.childNodes).flatMap(processNode);
