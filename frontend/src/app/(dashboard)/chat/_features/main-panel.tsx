@@ -594,6 +594,11 @@ const ChatSection = ({
     doc.querySelectorAll('th').forEach(el => {
       el.classList.add('font-semibold', 'bg-gray-100', 'dark:bg-stone-800');
     });
+    doc.querySelectorAll('a').forEach(el => {
+      el.classList.add('text-blue-600', 'hover:text-blue-800', 'underline');
+      el.setAttribute('target', '_blank');
+      el.setAttribute('rel', 'noopener noreferrer');
+    });
   
     const style = doc.createElement('style');
     style.textContent = `
@@ -617,6 +622,13 @@ const ChatSection = ({
       tr:nth-child(even) {
         background-color: #f8fafc;
       }
+      a {
+        color: #2563eb; /* blue-600 */
+        text-decoration: underline;
+      }
+      a:hover {
+        color: #1d4ed8; /* blue-800 */
+      }
       
       /* Dark mode styles */
       @media (prefers-color-scheme: dark) {
@@ -634,6 +646,12 @@ const ChatSection = ({
         }
         tr:nth-child(odd) {
           background-color: #27272a; /* zinc-800 for odd rows */
+        }
+        a {
+          color: #60a5fa; /* blue-400 */
+        }
+        a:hover {
+          color: #93c5fd; /* blue-300 */
         }
       }
     `;
