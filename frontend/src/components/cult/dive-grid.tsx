@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { useOutsideClick } from "@/hooks/use-outside-click";
 import ReactMarkdown from 'react-markdown';
 import { Meteors } from './meteors';
+import WindowedBrowser from '../windowed-browser';
 
 type Card = {
   title: string;
@@ -63,6 +64,7 @@ export const Card: React.FC<CardProps> = ({
   onCreatePowerPoint,
 }) => {
   const [open, setOpen] = useState(false);
+  const [browserUrl, setBrowserUrl] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const { onCardClose } = useContext(CarouselContext);
 
@@ -101,6 +103,29 @@ export const Card: React.FC<CardProps> = ({
     }
   };
 
+  const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    const url = e.currentTarget.href;
+    setBrowserUrl(url);
+  };
+
+  const closeBrowser = () => {
+    setBrowserUrl(null);
+  };
+
+  useEffect(() => {
+    const links = containerRef.current?.querySelectorAll('a');
+    links?.forEach(link => {
+      link.addEventListener('click', handleLinkClick as any);
+    });
+
+    return () => {
+      links?.forEach(link => {
+        link.removeEventListener('click', handleLinkClick as any);
+      });
+    };
+  }, [open]);
+
   return (
     <>
       <AnimatePresence>
@@ -119,6 +144,7 @@ export const Card: React.FC<CardProps> = ({
               ref={containerRef}
               className="max-w-5xl mx-auto bg-white dark:bg-neutral-900 h-fit z-[110] my-10 p-4 md:p-10 rounded-lg font-sans relative"
             >
+              
               <div className="sticky top-4 right-0 ml-auto flex flex-col md:flex-row justify-end space-y-2 md:space-y-0 md:space-x-2">
                 <button
                   className="flex items-center justify-center px-3 py-2 hover:text-stone-900 bg-stone-900 dark:bg-stone-100 rounded-full text-sm font-medium text-stone-100 dark:hover:text-stone-100 dark:text-stone-900 hover:bg-stone-300 dark:hover:bg-stone-600 transition-colors"
@@ -151,11 +177,24 @@ export const Card: React.FC<CardProps> = ({
               <p className="text-2xl md:text-5xl font-semibold text-neutral-700 mt-4 dark:text-white">
                 {card.title}
               </p>
-              <div className="py-10">{card.content}</div>
+              <div className="py-10">
+                {React.isValidElement(card.content) 
+                  ? React.cloneElement(card.content as React.ReactElement, { 
+                      components: {
+                        a: (props: any) => <a {...props} onClick={handleLinkClick} />
+                      }
+                    })
+                  : card.content
+                }
+              </div>
             </motion.div>
           </div>
         )}
-       </AnimatePresence>
+      </AnimatePresence>
+      
+      <AnimatePresence>
+        {browserUrl && <WindowedBrowser url={browserUrl} onClose={closeBrowser} />}
+      </AnimatePresence>
       <motion.button
         onClick={handleOpen}
         className={cn(

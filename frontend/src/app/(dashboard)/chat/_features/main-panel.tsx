@@ -677,7 +677,7 @@ const ChatSection = ({
           ))}
         </ol>
       );
-      rawContent = JSON.stringify(uniqueSources, null, 2);  // Format sources as JSON string
+      rawContent = JSON.stringify(uniqueSources, null, 2);
     } else if (item.type === 'condensed' || item.type === 'iteration') {
       title = item.type === 'condensed' ? 'Findings' : `Dive ${index + 1}`;
       category = item.type === 'condensed' ? 'Navigation Summary' : 'Outbound Navigation';
