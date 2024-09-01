@@ -81,7 +81,8 @@ export const Card: React.FC<CardProps> = ({
 }) => {
   const [open, setOpen] = useState(false);
   const [browserUrl, setBrowserUrl] = useState<string | null>(null);
-  const [showCSPAlert, setShowCSPAlert] = useState(false);
+  const [showAlert, setShowAlert] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
   const browserRef = useRef<HTMLDivElement>(null);
   const { onCardClose } = useContext(CarouselContext);
@@ -130,27 +131,46 @@ export const Card: React.FC<CardProps> = ({
     e.preventDefault();
     const url = e.currentTarget.href;
     
-    fetch(url, { mode: 'no-cors' })
-      .then(() => {
-        setBrowserUrl(url);
-        setShowCSPAlert(false);
-      })
-      .catch(() => {
-        setBrowserUrl(url);
-        setShowCSPAlert(true);
-      });
+    setBrowserUrl(url);
+    
+    const timeoutId = setTimeout(() => {
+      setAlertMessage('The content could not be loaded due to security restrictions or other issues.');
+      setShowAlert(true);
+    }, 5000);
+
+    const iframe = browserRef.current?.querySelector('iframe');
+    if (iframe) {
+      iframe.onload = () => {
+        clearTimeout(timeoutId);
+        try {
+          const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+          if (!iframeDoc) {
+            throw new Error('Cannot access iframe content');
+          }
+        } catch (error) {
+          setAlertMessage('The content loaded, but cannot be accessed due to security restrictions.');
+          setShowAlert(true);
+        }
+      };
+      
+      iframe.onerror = () => {
+        clearTimeout(timeoutId);
+        setAlertMessage('An error occurred while loading the content.');
+        setShowAlert(true);
+      };
+    }
   };
 
   const handleAlertContinue = () => {
     if (browserUrl) {
       window.open(browserUrl, '_blank', 'noopener,noreferrer');
     }
-    setShowCSPAlert(false);
+    setShowAlert(false);
     setBrowserUrl(null);
   };
 
   const handleAlertCancel = () => {
-    setShowCSPAlert(false);
+    setShowAlert(false);
     setBrowserUrl(null);
   };
 
@@ -169,12 +189,12 @@ export const Card: React.FC<CardProps> = ({
 
   return (
     <>
-      <AlertDialog open={showCSPAlert} onOpenChange={setShowCSPAlert}>
+      <AlertDialog open={showAlert} onOpenChange={setShowAlert}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Content Cannot Be Displayed</AlertDialogTitle>
+            <AlertDialogTitle>Content Loading Issue</AlertDialogTitle>
             <AlertDialogDescription>
-              Due to security restrictions, this content cannot be displayed within the application. 
+              {alertMessage}
               Would you like to open it in a new tab?
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -205,7 +225,7 @@ export const Card: React.FC<CardProps> = ({
                 ref={containerRef}
                 className={cn(
                   "h-full overflow-auto z-[110] p-4 md:p-6 lg:p-8 font-sans relative",
-                  browserUrl && !showCSPAlert ? "w-full sm:w-1/2" : "w-full"
+                  browserUrl && !showAlert ? "w-full sm:w-1/2" : "w-full"
                 )}
               >
                 {/* Card content */}
@@ -253,7 +273,7 @@ export const Card: React.FC<CardProps> = ({
                 </div>
               </div>
               <AnimatePresence>
-                {browserUrl && !showCSPAlert && (
+                {browserUrl && !showAlert && (
                   <motion.div
                     initial={{ opacity: 0, width: 0 }}
                     animate={{ opacity: 1, width: '50%' }}
