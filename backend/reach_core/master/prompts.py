@@ -139,7 +139,7 @@ def generate_detailed_json_prompt(question, context, report_format="apa", total_
            f"Assume that the current date is {datetime.now().strftime('%B %d, %Y')}"
 
 
-def generate_report_prompt(question, context, report_format="apa", total_words=2000, retained_text="", deleted_text="", cadence=""):
+def generate_report_prompt(question, context, report_format="apa", total_words=4000, retained_text="", deleted_text="", cadence=""):
     """ Generates the report prompt for the given question and research summary.
     Args: question (str): The question to generate the report prompt for
             research_summary (str): The research summary to generate the report prompt for

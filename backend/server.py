@@ -237,11 +237,18 @@ async def generate_powerpoint(request: CondenseRequest):
         question=request.task,
         context=request.accumulatedOutput
     )
+
+    prompt = f"""
+    You are a seasoned analyst. \n
+    Your primary goal is to compose comprehensive, astute, impartial, and methodically arranged reports of the provided research.\n
+    Aggregate key thematic points, quantitative findings, and tables from the provided research.
+    """
+
     try:
         completion = client.chat.completions.create(
             model="gpt-4o-2024-08-06",
             messages=[
-                {"role": "system", "content": "You are a seasoned analyst. Your primary goal is to compose comprehensive, astute, impartial, and methodically arranged reports of the provided research."},
+                {"role": "system", "content": prompt},
                 {"role": "user", "content": user_prompt}
             ],
         )
