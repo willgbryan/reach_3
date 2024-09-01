@@ -6,6 +6,16 @@ import { useOutsideClick } from "@/hooks/use-outside-click";
 import ReactMarkdown from 'react-markdown';
 import { Meteors } from './meteors';
 import WindowedBrowser from '../windowed-browser';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 type Card = {
   title: string;
@@ -71,6 +81,7 @@ export const Card: React.FC<CardProps> = ({
 }) => {
   const [open, setOpen] = useState(false);
   const [browserUrl, setBrowserUrl] = useState<string | null>(null);
+  const [showCSPAlert, setShowCSPAlert] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const browserRef = useRef<HTMLDivElement>(null);
   const { onCardClose } = useContext(CarouselContext);
@@ -118,10 +129,28 @@ export const Card: React.FC<CardProps> = ({
   const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
     const url = e.currentTarget.href;
-    setBrowserUrl(url);
+    
+    fetch(url, { mode: 'no-cors' })
+      .then(() => {
+        setBrowserUrl(url);
+        setShowCSPAlert(false);
+      })
+      .catch(() => {
+        setBrowserUrl(url);
+        setShowCSPAlert(true);
+      });
   };
 
-  const closeBrowser = () => {
+  const handleAlertContinue = () => {
+    if (browserUrl) {
+      window.open(browserUrl, '_blank', 'noopener,noreferrer');
+    }
+    setShowCSPAlert(false);
+    setBrowserUrl(null);
+  };
+
+  const handleAlertCancel = () => {
+    setShowCSPAlert(false);
     setBrowserUrl(null);
   };
 
@@ -140,27 +169,43 @@ export const Card: React.FC<CardProps> = ({
 
   return (
     <>
+      <AlertDialog open={showCSPAlert} onOpenChange={setShowCSPAlert}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Content Cannot Be Displayed</AlertDialogTitle>
+            <AlertDialogDescription>
+              Due to security restrictions, this content cannot be displayed within the application. 
+              Would you like to open it in a new tab?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleAlertCancel}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleAlertContinue}>Continue in New Tab</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <AnimatePresence>
         {open && (
-          <div className="fixed inset-0 h-screen z-[100] overflow-hidden flex items-center justify-center p-4 sm:p-6 md:p-8">
+          <div className="fixed inset-0 h-screen z-[100] overflow-hidden flex items-center justify-center pl-6 sm:pl-8 md:pl-10">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="bg-black/80 backdrop-blur-lg h-full w-full fixed inset-0"
+              className="backdrop-blur-lg h-full w-full fixed inset-0"
             />
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              className="rounded-lg shadow-2xl overflow-hidden w-full h-full max-w-7xl max-h-[90vh] flex flex-col sm:flex-row"
+              className="rounded-lg shadow-2xl overflow-hidden w-full h-full flex flex-col sm:flex-row"
             >
               <div 
                 ref={containerRef}
                 className={cn(
                   "h-full overflow-auto z-[110] p-4 md:p-6 lg:p-8 font-sans relative",
-                  browserUrl ? "w-full sm:w-1/2" : "w-full"
+                  browserUrl && !showCSPAlert ? "w-full sm:w-1/2" : "w-full"
                 )}
               >
                 {/* Card content */}
@@ -208,13 +253,13 @@ export const Card: React.FC<CardProps> = ({
                 </div>
               </div>
               <AnimatePresence>
-                {browserUrl && (
+                {browserUrl && !showCSPAlert && (
                   <motion.div
                     initial={{ opacity: 0, width: 0 }}
                     animate={{ opacity: 1, width: '50%' }}
                     exit={{ opacity: 0, width: 0 }}
                     transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                    className="h-full z-[120] w-full sm:w-1/2"
+                    className="h-full z-[120] w-full sm:w-1/2 flex flex-col"
                     ref={browserRef}
                   >
                     <WindowedBrowser url={browserUrl} onClose={() => setBrowserUrl(null)} />
