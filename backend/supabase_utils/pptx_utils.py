@@ -16,8 +16,8 @@ from pptx.enum.dml import MSO_THEME_COLOR
 load_dotenv()
 
 supabase: Client = create_client(
-    supabase_url=os.getenv("SUPABASE_URL"),
-    supabase_key=os.getenv("SUPABASE_KEY")
+    supabase_url=os.getenv("NEXT_PUBLIC_SUPABASE_URL"),
+    supabase_key=os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
     )
 
 def read_pptx_from_supabase(file_path: str, signed_url: str) -> Presentation:
