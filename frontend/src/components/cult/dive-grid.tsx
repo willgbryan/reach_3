@@ -51,7 +51,13 @@ export const GridLayout = ({ items }: { items: JSX.Element[] }) => {
 };
 
 type CardProps = {
-  card: Card;
+  card: {
+    title: string;
+    category: string;
+    content: React.ReactNode;
+    rawContent: string;
+    type: 'iteration' | 'condensed' | 'sources';
+  };
   index: number;
   onCreateDoc: (content: string) => void;
   onCreatePowerPoint?: (content: string) => void;
@@ -66,6 +72,7 @@ export const Card: React.FC<CardProps> = ({
   const [open, setOpen] = useState(false);
   const [browserUrl, setBrowserUrl] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const browserRef = useRef<HTMLDivElement>(null);
   const { onCardClose } = useContext(CarouselContext);
 
   useEffect(() => {
@@ -85,11 +92,16 @@ export const Card: React.FC<CardProps> = ({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [open]);
 
-  useOutsideClick(containerRef, () => handleClose());
+  useOutsideClick(containerRef, (event: MouseEvent) => {
+    if (browserRef.current && !browserRef.current.contains(event.target as Node)) {
+      handleClose();
+    }
+  });
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => {
     setOpen(false);
+    setBrowserUrl(null);
     onCardClose(index);
   };
 
@@ -130,7 +142,7 @@ export const Card: React.FC<CardProps> = ({
     <>
       <AnimatePresence>
         {open && (
-          <div className="fixed inset-0 h-screen z-[100] overflow-auto">
+          <div className="fixed inset-0 h-screen z-[100] overflow-hidden flex items-center justify-center p-4 sm:p-6 md:p-8">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -138,63 +150,82 @@ export const Card: React.FC<CardProps> = ({
               className="bg-black/80 backdrop-blur-lg h-full w-full fixed inset-0"
             />
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              ref={containerRef}
-              className="max-w-5xl mx-auto bg-white dark:bg-neutral-900 h-fit z-[110] my-10 p-4 md:p-10 rounded-lg font-sans relative"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              className="rounded-lg shadow-2xl overflow-hidden w-full h-full max-w-7xl max-h-[90vh] flex flex-col sm:flex-row"
             >
-              
-              <div className="sticky top-4 right-0 ml-auto flex flex-col md:flex-row justify-end space-y-2 md:space-y-0 md:space-x-2">
-                <button
-                  className="flex items-center justify-center px-3 py-2 hover:text-stone-900 bg-stone-900 dark:bg-stone-100 rounded-full text-sm font-medium text-stone-100 dark:hover:text-stone-100 dark:text-stone-900 hover:bg-stone-300 dark:hover:bg-stone-600 transition-colors"
-                  onClick={handleCreatePDF}
-                  title="Download as Word Document"
-                >
-                  <IconFileText className="h-5 w-5 mr-2" />
-                  Download as Word Document
-                </button>
-                {card.type !== 'sources' && onCreatePowerPoint && (
+              <div 
+                ref={containerRef}
+                className={cn(
+                  "h-full overflow-auto z-[110] p-4 md:p-6 lg:p-8 font-sans relative",
+                  browserUrl ? "w-full sm:w-1/2" : "w-full"
+                )}
+              >
+                {/* Card content */}
+                <div className="sticky top-4 right-0 ml-auto flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2 mb-4">
                   <button
                     className="flex items-center justify-center px-3 py-2 hover:text-stone-900 bg-stone-900 dark:bg-stone-100 rounded-full text-sm font-medium text-stone-100 dark:hover:text-stone-100 dark:text-stone-900 hover:bg-stone-300 dark:hover:bg-stone-600 transition-colors"
-                    onClick={handleCreatePowerPoint}
-                    title="Download as PowerPoint"
+                    onClick={handleCreatePDF}
+                    title="Download as Word Document"
                   >
-                    <IconPresentation className="h-5 w-5 mr-2" />
-                    Download as PowerPoint
+                    <IconFileText className="h-5 w-5 mr-2" />
+                    Download as Word Document
                   </button>
+                  {card.type !== 'sources' && onCreatePowerPoint && (
+                    <button
+                      className="flex items-center justify-center px-3 py-2 hover:text-stone-900 bg-stone-900 dark:bg-stone-100 rounded-full text-sm font-medium text-stone-100 dark:hover:text-stone-100 dark:text-stone-900 hover:bg-stone-300 dark:hover:bg-stone-600 transition-colors"
+                      onClick={handleCreatePowerPoint}
+                      title="Download as PowerPoint"
+                    >
+                      <IconPresentation className="h-5 w-5 mr-2" />
+                      Download as PowerPoint
+                    </button>
+                  )}
+                  <button
+                    className="flex items-center justify-center w-10 h-10 bg-black rounded-full hover:text-stone-900 text-stone-100 dark:bg-white dark:text-stone-900 hover:bg-stone-300 dark:hover:bg-stone-600 dark:text-neutral-900 dark:hover:text-stone-100"
+                    onClick={handleClose}
+                  >
+                    <IconX className="h-6 w-6" />
+                  </button>
+                </div>
+                <p className="text-base font-medium text-black dark:text-white">
+                  {card.category}
+                </p>
+                <p className="text-2xl md:text-4xl lg:text-5xl font-semibold text-neutral-700 mt-4 dark:text-white">
+                  {card.title}
+                </p>
+                <div className="py-6">
+                  {React.isValidElement(card.content) 
+                    ? React.cloneElement(card.content as React.ReactElement, { 
+                        components: {
+                          a: (props: any) => <a {...props} onClick={handleLinkClick} />
+                        }
+                      })
+                    : card.content
+                  }
+                </div>
+              </div>
+              <AnimatePresence>
+                {browserUrl && (
+                  <motion.div
+                    initial={{ opacity: 0, width: 0 }}
+                    animate={{ opacity: 1, width: '50%' }}
+                    exit={{ opacity: 0, width: 0 }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                    className="h-full z-[120] w-full sm:w-1/2"
+                    ref={browserRef}
+                  >
+                    <WindowedBrowser url={browserUrl} onClose={() => setBrowserUrl(null)} />
+                  </motion.div>
                 )}
-                <button
-                  className="flex items-center justify-center w-10 h-10 bg-black rounded-full hover:text-stone-900 text-stone-100 dark:bg-white dark:text-stone-900 hover:bg-stone-300 dark:hover:bg-stone-600 dark:text-neutral-900 dark:hover:text-stone-100"
-                  onClick={handleClose}
-                >
-                  <IconX className="h-6 w-6" />
-                </button>
-              </div>
-              <p className="text-base font-medium text-black dark:text-white">
-                {card.category}
-              </p>
-              <p className="text-2xl md:text-5xl font-semibold text-neutral-700 mt-4 dark:text-white">
-                {card.title}
-              </p>
-              <div className="py-10">
-                {React.isValidElement(card.content) 
-                  ? React.cloneElement(card.content as React.ReactElement, { 
-                      components: {
-                        a: (props: any) => <a {...props} onClick={handleLinkClick} />
-                      }
-                    })
-                  : card.content
-                }
-              </div>
+              </AnimatePresence>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
       
-      <AnimatePresence>
-        {browserUrl && <WindowedBrowser url={browserUrl} onClose={closeBrowser} />}
-      </AnimatePresence>
       <motion.button
         onClick={handleOpen}
         className={cn(
