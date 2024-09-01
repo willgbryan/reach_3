@@ -1,21 +1,11 @@
 import React, { useContext, useState, useRef, useEffect, createContext } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { IconFileText, IconPresentation, IconX } from "@tabler/icons-react";
+import { IconExternalLink, IconFileText, IconPresentation, IconX } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import { useOutsideClick } from "@/hooks/use-outside-click";
 import ReactMarkdown from 'react-markdown';
 import { Meteors } from './meteors';
 import WindowedBrowser from '../windowed-browser';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 
 type Card = {
   title: string;
@@ -81,8 +71,6 @@ export const Card: React.FC<CardProps> = ({
 }) => {
   const [open, setOpen] = useState(false);
   const [browserUrl, setBrowserUrl] = useState<string | null>(null);
-  const [showAlert, setShowAlert] = useState(false);
-  const [alertMessage, setAlertMessage] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
   const browserRef = useRef<HTMLDivElement>(null);
   const { onCardClose } = useContext(CarouselContext);
@@ -130,48 +118,14 @@ export const Card: React.FC<CardProps> = ({
   const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
     const url = e.currentTarget.href;
-    
+    console.log('Link clicked:', url);
     setBrowserUrl(url);
-    
-    const timeoutId = setTimeout(() => {
-      setAlertMessage('The content could not be loaded due to security restrictions or other issues.');
-      setShowAlert(true);
-    }, 5000);
-
-    const iframe = browserRef.current?.querySelector('iframe');
-    if (iframe) {
-      iframe.onload = () => {
-        clearTimeout(timeoutId);
-        try {
-          const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
-          if (!iframeDoc) {
-            throw new Error('Cannot access iframe content');
-          }
-        } catch (error) {
-          setAlertMessage('The content loaded, but cannot be accessed due to security restrictions.');
-          setShowAlert(true);
-        }
-      };
-      
-      iframe.onerror = () => {
-        clearTimeout(timeoutId);
-        setAlertMessage('An error occurred while loading the content.');
-        setShowAlert(true);
-      };
-    }
   };
 
-  const handleAlertContinue = () => {
+  const handleOpenInNewTab = () => {
     if (browserUrl) {
       window.open(browserUrl, '_blank', 'noopener,noreferrer');
     }
-    setShowAlert(false);
-    setBrowserUrl(null);
-  };
-
-  const handleAlertCancel = () => {
-    setShowAlert(false);
-    setBrowserUrl(null);
   };
 
   useEffect(() => {
@@ -189,22 +143,6 @@ export const Card: React.FC<CardProps> = ({
 
   return (
     <>
-      <AlertDialog open={showAlert} onOpenChange={setShowAlert}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Content Loading Issue</AlertDialogTitle>
-            <AlertDialogDescription>
-              {alertMessage}
-              Would you like to open it in a new tab?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleAlertCancel}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleAlertContinue}>Continue in New Tab</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
       <AnimatePresence>
         {open && (
           <div className="fixed inset-0 h-screen z-[100] overflow-hidden flex items-center justify-center pl-6 sm:pl-8 md:pl-10">
@@ -225,7 +163,7 @@ export const Card: React.FC<CardProps> = ({
                 ref={containerRef}
                 className={cn(
                   "h-full overflow-auto z-[110] p-4 md:p-6 lg:p-8 font-sans relative",
-                  browserUrl && !showAlert ? "w-full sm:w-1/2" : "w-full"
+                  browserUrl ? "w-full sm:w-1/2" : "w-full"
                 )}
               >
                 {/* Card content */}
@@ -273,7 +211,7 @@ export const Card: React.FC<CardProps> = ({
                 </div>
               </div>
               <AnimatePresence>
-                {browserUrl && !showAlert && (
+                {browserUrl && (
                   <motion.div
                     initial={{ opacity: 0, width: 0 }}
                     animate={{ opacity: 1, width: '50%' }}
@@ -282,7 +220,10 @@ export const Card: React.FC<CardProps> = ({
                     className="h-full z-[120] w-full sm:w-1/2 flex flex-col"
                     ref={browserRef}
                   >
-                    <WindowedBrowser url={browserUrl} onClose={() => setBrowserUrl(null)} />
+                    <WindowedBrowser 
+                      url={browserUrl} 
+                      onClose={() => setBrowserUrl(null)}
+                    />
                   </motion.div>
                 )}
               </AnimatePresence>
