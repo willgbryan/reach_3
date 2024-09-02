@@ -1,23 +1,20 @@
-from copy import deepcopy
+import markdown2
+from bs4 import BeautifulSoup
 from http.client import HTTPException
 import traceback
-from supabase_utils.pptx_utils import read_pptx_from_supabase
-from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect, File, UploadFile, Form
+from supabase_utils.pptx_utils import read_pptx_from_supabase, render_html_to_slide
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import Response, JSONResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 import json
 import os
 import io
 import logging
-import aiofiles
 from typing import List
 from reach_core.utils.websocket_manager import WebSocketManager
 from reach_core.master.prompts import generate_report_prompt
 from fastapi.middleware.cors import CORSMiddleware
-from pptx import Presentation
-from pptx.util import Inches, Pt
 from openai import OpenAI
 
 # from reach_core.utils.unstructured_functions import *
@@ -140,14 +137,13 @@ async def generate_powerpoint(request: PowerPointRequest):
         print(f"Favorite theme: {request.favoriteTheme}")
         print(f"Signed URL: {request.signedUrl}")
 
-        # Load the template presentation
         prs = read_pptx_from_supabase(request.filePath, request.signedUrl)
 
         completion = client.chat.completions.create(
             model="gpt-4o-2024-08-06",
             messages=[
                 {"role": "system", "content": "You are a helpful assistant that creates PowerPoint presentations. Generate a presentation structure based on the user's request by calling the create_presentation function."},
-                {"role": "user", "content": f"Create a presentation summarizing the following content. Be sure to include the links in a References slide: {request.prompt}"}
+                {"role": "user", "content": f"Create a presentation summarizing the following content. Be sure to include the links in a References slide, and preserve tables: {request.prompt}"}
             ],
             functions=[{
                 "name": "create_presentation",
@@ -167,8 +163,7 @@ async def generate_powerpoint(request: PowerPointRequest):
 
         trim_count = len(prs.slides)
 
-        # Create title slide
-        title_slide_layout = prs.slide_layouts[0]  # Assuming 0 is the layout for the title slide
+        title_slide_layout = prs.slide_layouts[0]
         title_slide = prs.slides.add_slide(title_slide_layout)
         
         title = title_slide.shapes.title
@@ -179,33 +174,19 @@ async def generate_powerpoint(request: PowerPointRequest):
         if subtitle:
             subtitle.text = "Generated Presentation"
         
-        # Create content slides
-        content_slide_layout = prs.slide_layouts[1]  # Assuming 1 is the layout for content slides
+        content_slide_layout = prs.slide_layouts[1]
         for slide_data in presentation_data["slides"]:
             new_slide = prs.slides.add_slide(content_slide_layout)
             
             title = new_slide.shapes.title
-            content_placeholder = next((ph for ph in new_slide.placeholders if ph.placeholder_format.idx != 0), None)
-            
             if title:
                 title.text = slide_data["title"]
             
-            if content_placeholder:
-                tf = content_placeholder.text_frame
-            else:
-                # If no suitable placeholder found, create a new text box
-                left = Inches(0.5)
-                top = Inches(1.5)
-                width = Inches(9)
-                height = Inches(5)
-                txBox = new_slide.shapes.add_textbox(left, top, width, height)
-                tf = txBox.text_frame
-
-            tf.clear()
             for item in slide_data["content"]:
-                p = tf.add_paragraph()
-                p.text = item
-                p.level = 0
+                html_content = markdown2.markdown(item)
+                soup = BeautifulSoup(html_content, 'html.parser')
+
+                render_html_to_slide(new_slide, soup)
 
         for _ in range(trim_count):
             rId = prs.slides._sldIdLst[0].rId

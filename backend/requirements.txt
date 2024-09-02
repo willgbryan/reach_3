@@ -39,3 +39,4 @@ pydantic==2.4.2
 supabase
 git+https://github.com/willgbryan/langchain-reach-edition.git#subdirectory=libs/community
 pipdeptree
+markdown2
