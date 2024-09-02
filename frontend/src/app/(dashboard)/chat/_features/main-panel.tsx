@@ -11,6 +11,7 @@ import 'jspdf-autotable'
 import Cookies from 'js-cookie'
 import { AnimatePresence } from 'framer-motion'
 import { marked } from 'marked';
+import { renderToString } from 'react-dom/server';
 
 import { ModeToggle } from '@/components/theme-toggle'
 import { ChatScrollAnchor } from '@/components/chat/chat-scroll-anchor'
@@ -28,6 +29,7 @@ import { TutorialOverlay } from '@/components/tutorial/tutorial-overlay'
 import { TutorialStep } from '@/components/tutorial/tutorial-step'
 import InfoButton from '@/components/tutorial/info-button'
 import createEditableDocument from '@/components/word-doc-functions'
+import TableDownloader from '@/components/table-downloader'
 
 interface MainVectorPanelProps {
   id?: string | undefined
@@ -586,6 +588,8 @@ const ChatSection = ({
     doc.querySelectorAll('li').forEach(el => el.classList.add('mb-1'));
   
     doc.querySelectorAll('table').forEach((table, index) => {
+      const tableId = `table-${index}`;
+      table.id = tableId;
       table.classList.add('border-collapse', 'my-4', 'w-full', 'rounded-lg', 'overflow-hidden');
       
       const tableWrapper = doc.createElement('div');
@@ -596,28 +600,21 @@ const ChatSection = ({
       const iconContainer = doc.createElement('div');
       iconContainer.className = 'absolute -top-10 right-0 flex space-x-2 mb-2';
       
-      const downloadButton = doc.createElement('button');
-      downloadButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-file-download" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" /><path d="M12 17v-6" /><path d="M9.5 14.5l2.5 2.5l2.5 -2.5" /></svg>`;
-      downloadButton.className = 'p-1 rounded transition-colors hover:bg-gray-200 dark:hover:bg-zinc-700';
-      downloadButton.onclick = (e) => {
-        e.preventDefault();
-        console.log(`Download table ${index}`);
-        // Future functionality: Implement table download
-      };
+      const downloadButtonString = renderToString(<TableDownloader tableId={tableId} />);
+      iconContainer.innerHTML = downloadButtonString;
   
       const chartButton = doc.createElement('button');
       chartButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-chart-bar" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 12m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" /><path d="M9 8m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v10a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" /><path d="M15 4m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v14a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" /><path d="M4 20l14 0" /></svg>`;
-      chartButton.className = 'p-1 rounded transition-colors hover:bg-gray-200 dark:hover:bg-zinc-700';
+      chartButton.className = 'p-1 rounded transition-colors hover:bg-gray-200 dark:hover:bg-stone-900';
       chartButton.onclick = (e) => {
         e.preventDefault();
         console.log(`Chart table ${index}`);
         // Future functionality: Implement chart generation
       };
   
-      iconContainer.appendChild(downloadButton);
       iconContainer.appendChild(chartButton);
       tableWrapper.appendChild(iconContainer);
-    });  
+    });
     doc.querySelectorAll('th, td').forEach(el => {
       el.classList.add('px-4', 'py-2', 'border', 'border-gray-300', 'dark:border-stone-100');
     });
