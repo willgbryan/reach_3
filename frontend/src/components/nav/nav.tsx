@@ -39,12 +39,12 @@ export function Nav({ links, isCollapsed }: NavProps) {
                   href={link.disabled ? '#' : link.href}
                   className={cn(
                     'w-full text-lg font-semibold',
-                    'focus:outline-none focus:ring-2 focus:ring-inset focus:ring-stone-100 dark:focus:ring-brand-900 ',
+                    'focus:outline-none focus:ring-2 focus:ring-inset focus:ring-stone-100 ',
                     'disabled:cursor-not-allowed disabled:opacity-50 sm:leading-6 ',
                     // 'dark:border dark:border-black/40 ',
                     // 'button-shadow rounded-[9988px] !outline-none',
                     'relative p-3 shadow-black/5 focus:bg-white ',
-                    ' text-stone-800 dark:text-primary-foreground dark:shadow-black/10 ',
+                    ' text-zinc-800 dark:text-primary-foreground dark:shadow-black/10 ',
                     // 'dark:focus:bg-neutral-900',
                     link.disabled && 'pointer-events-none'
                   )}
@@ -66,7 +66,7 @@ export function Nav({ links, isCollapsed }: NavProps) {
               className={cn(
                 buttonVariants({ variant: link.variant, size: 'sm' }),
                 link.variant === 'default' && '',
-                'dark:hover:text-stone-100 hover:text-stone-900 dark:hover:border-neutral-100/10',
+                'dark:hover:text-stone-100 hover:text-stone-900 dark:hover:bg-transparent',
                 'justify-start text-lg tracking-tight text-muted-foreground',
                 link.disabled && 'opacity-50 cursor-not-allowed pointer-events-none'
               )}

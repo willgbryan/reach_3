@@ -159,17 +159,17 @@ export const Card: React.FC<CardProps> = ({
       <motion.button
         onClick={handleOpen}
         className={cn(
-          "rounded-lg bg-gray-100 dark:bg-stone-800 h-full w-full overflow-hidden flex flex-col items-start justify-start relative z-10",
-          "lg:border-r lg:border-b dark:border-stone-800",
+          "rounded-lg bg-gray-100 dark:bg-zinc-800 h-full w-full overflow-hidden flex flex-col items-start justify-start relative z-10",
+          "lg:border-r lg:border-b dark:border-zinc-800",
           index % 4 === 0 && "lg:border-l",
           "group/feature transition-all duration-300"
         )}
       >
-        <div className="absolute inset-0 bg-gray-100 dark:bg-neutral-900 group-hover/feature:opacity-0 transition-opacity duration-300" />
+        <div className="absolute inset-0 bg-gray-100 dark:bg-zinc-800 group-hover/feature:opacity-0 transition-opacity duration-300" />
         
         <div className="absolute inset-0 opacity-0 group-hover/feature:opacity-100 transition-opacity duration-300">
           <div className="absolute inset-0 h-full w-full bg-gradient-to-r from-blue-500 to-teal-500 transform scale-[0.80] rounded-full blur-3xl" />
-          <div className="absolute inset-0 bg-gray-900 dark:bg-stone-800" />
+          <div className="absolute inset-0 bg-gray-900 dark:bg-zinc-800" />
         </div>
 
         <div className="relative z-40 p-8 h-full w-full flex flex-col justify-start group-hover/feature:justify-end transition-all duration-300">

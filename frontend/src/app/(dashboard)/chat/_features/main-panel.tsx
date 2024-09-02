@@ -585,9 +585,39 @@ const ChatSection = ({
     doc.querySelectorAll('ol').forEach(el => el.classList.add('list-decimal', 'list-inside', 'my-2'));
     doc.querySelectorAll('li').forEach(el => el.classList.add('mb-1'));
   
-    doc.querySelectorAll('table').forEach(el => {
-      el.classList.add('border-collapse', 'my-4', 'w-full', 'rounded-lg', 'overflow-hidden');
-    });
+    doc.querySelectorAll('table').forEach((table, index) => {
+      table.classList.add('border-collapse', 'my-4', 'w-full', 'rounded-lg', 'overflow-hidden');
+      
+      const tableWrapper = doc.createElement('div');
+      tableWrapper.className = 'relative';
+      table.parentNode?.insertBefore(tableWrapper, table);
+      tableWrapper.appendChild(table);
+      
+      const iconContainer = doc.createElement('div');
+      iconContainer.className = 'absolute -top-10 right-0 flex space-x-2 mb-2';
+      
+      const downloadButton = doc.createElement('button');
+      downloadButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-file-download" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" /><path d="M12 17v-6" /><path d="M9.5 14.5l2.5 2.5l2.5 -2.5" /></svg>`;
+      downloadButton.className = 'p-1 rounded transition-colors hover:bg-gray-200 dark:hover:bg-zinc-700';
+      downloadButton.onclick = (e) => {
+        e.preventDefault();
+        console.log(`Download table ${index}`);
+        // Future functionality: Implement table download
+      };
+  
+      const chartButton = doc.createElement('button');
+      chartButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-chart-bar" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 12m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" /><path d="M9 8m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v10a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" /><path d="M15 4m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v14a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" /><path d="M4 20l14 0" /></svg>`;
+      chartButton.className = 'p-1 rounded transition-colors hover:bg-gray-200 dark:hover:bg-zinc-700';
+      chartButton.onclick = (e) => {
+        e.preventDefault();
+        console.log(`Chart table ${index}`);
+        // Future functionality: Implement chart generation
+      };
+  
+      iconContainer.appendChild(downloadButton);
+      iconContainer.appendChild(chartButton);
+      tableWrapper.appendChild(iconContainer);
+    });  
     doc.querySelectorAll('th, td').forEach(el => {
       el.classList.add('px-4', 'py-2', 'border', 'border-gray-300', 'dark:border-stone-100');
     });
@@ -629,9 +659,35 @@ const ChatSection = ({
       a:hover {
         color: #1d4ed8; /* blue-800 */
       }
-      
-      /* Dark mode styles */
+      .table-wrapper {
+        position: relative;
+        margin-top: 2.5rem; /* Increased margin-top to accommodate buttons and spacing */
+      }
+
+      .table-icon-container {
+        position: absolute;
+        top: -2.5rem; /* Adjusted top position */
+        right: 0;
+        display: flex;
+        gap: 0.5rem;
+        z-index: 10;
+        margin-bottom: 0.5rem; /* Added margin-bottom for spacing */
+      }
+
+      .table-icon {
+        padding: 0.25rem;
+        border-radius: 0.25rem;
+        transition: background-color 0.2s;
+      }
+
+      .table-icon:hover {
+        background-color: #e2e8f0;
+      }
+
       @media (prefers-color-scheme: dark) {
+        .table-icon:hover {
+          background-color: #18181b;
+        }
         table {
           border-color: #3f3f46; /* zinc-700 */
         }

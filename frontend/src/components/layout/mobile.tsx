@@ -19,7 +19,7 @@ export function MobileLayout({ historyChildren, children, user }) {
   const { isMobileNavOpen, setIsMobileNavOpen } = useToggleMobileNav()
 
   return (
-    <div className="flex flex-col h-screen dark:bg-stone-800 bg-stone-100">
+    <div className="flex flex-col h-screen dark:bg-zinc-800 bg-stone-100">
       <div className="flex-grow flex overflow-hidden">
         <Sidebar open={isMobileNavOpen} setOpen={setIsMobileNavOpen}>
           <SidebarBody className="justify-between gap-10 h-full bg-white dark:bg-stone-900">
