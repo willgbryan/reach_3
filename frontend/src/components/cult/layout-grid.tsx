@@ -38,7 +38,7 @@ export const LayoutGrid = ({ cards }: { cards: Card[] }) => {
               "relative overflow-hidden rounded-lg h-full",
               selected?.id === card.id
                 ? "cursor-pointer absolute inset-0 w-full md:w-3/4 lg:w-2/3 xl:w-1/2 m-auto z-50 flex justify-center items-center"
-                : "bg-white dark:bg-stone-800",
+                : "bg-white dark:bg-zinc-800",
               card.disabled && "cursor-not-allowed opacity-75"
             )}
             layoutId={`card-${card.id}`}
@@ -73,7 +73,7 @@ export const LayoutGrid = ({ cards }: { cards: Card[] }) => {
 
 const SelectedCard = ({ selected }: { selected: Card | null }) => {
   return (
-    <div className="bg-white dark:bg-stone-800 h-full w-full flex flex-col justify-start rounded-lg shadow-2xl relative z-[60] overflow-y-auto p-6">
+    <div className="bg-white dark:bg-zinc-800 h-full w-full flex flex-col justify-start rounded-lg shadow-2xl relative z-[60] overflow-y-auto p-6">
       <div className="flex-grow">
         {selected?.content}
       </div>
