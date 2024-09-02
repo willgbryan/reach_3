@@ -3,8 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { IconFileText, IconPresentation, IconX } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import { useOutsideClick } from "@/hooks/use-outside-click";
-import ReactMarkdown from 'react-markdown';
 import { Meteors } from './meteors';
+import * as XLSX from 'xlsx';
 
 type Card = {
   title: string;
@@ -54,6 +54,7 @@ type CardProps = {
   index: number;
   onCreateDoc: (content: string) => void;
   onCreatePowerPoint?: (content: string) => void;
+  onCreateChart: (tableId: string) => void;
 };
 
 export const Card: React.FC<CardProps> = ({
@@ -61,6 +62,7 @@ export const Card: React.FC<CardProps> = ({
   index,
   onCreateDoc,
   onCreatePowerPoint,
+  onCreateChart,
 }) => {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -100,6 +102,75 @@ export const Card: React.FC<CardProps> = ({
       onCreatePowerPoint(card.rawContent);
     }
   };
+
+  const handleDownloadTable = (tableId: string) => {
+    console.log('Download initiated for table:', tableId);
+    const table = document.getElementById(tableId) as HTMLTableElement;
+    if (!table) {
+      console.error(`Table with id ${tableId} not found`);
+      return;
+    }
+    const ws = XLSX.utils.table_to_sheet(table);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Table Data');
+    XLSX.writeFile(wb, `table_${tableId}.xlsx`);
+  };
+
+  useEffect(() => {
+    if (open) {
+      const tables = containerRef.current?.querySelectorAll('table');
+      tables?.forEach((table, index) => {
+        const tableId = `table-${index}`;
+        table.id = tableId;
+
+        const iconContainer = document.createElement('div');
+        iconContainer.className = 'absolute -top-10 right-0 flex space-x-2 mb-2';
+        
+        const downloadButton = document.createElement('button');
+        downloadButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-file-download" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" /><path d="M12 17v-6" /><path d="M9.5 14.5l2.5 2.5l2.5 -2.5" /></svg>`;
+        downloadButton.className = 'p-1 rounded transition-colors hover:bg-gray-200 dark:hover:bg-stone-900';
+        downloadButton.setAttribute('data-table-id', tableId);
+        iconContainer.appendChild(downloadButton);
+
+        const chartButton = document.createElement('button');
+        chartButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-chart-bar" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 12m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" /><path d="M9 8m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v10a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" /><path d="M15 4m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v14a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" /><path d="M4 20l14 0" /></svg>`;
+        chartButton.className = 'p-1 rounded transition-colors hover:bg-gray-200 dark:hover:bg-stone-900';
+        chartButton.setAttribute('data-table-id', tableId);
+        iconContainer.appendChild(chartButton);
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'relative';
+        table.parentNode?.insertBefore(wrapper, table);
+        wrapper.appendChild(table);
+        wrapper.appendChild(iconContainer);
+      });
+
+      const handleClick = (e: MouseEvent) => {
+        const target = e.target as HTMLElement;
+        const button = target.closest('button');
+        if (button) {
+          e.preventDefault();
+          e.stopPropagation();
+          const tableId = button.getAttribute('data-table-id');
+          if (tableId) {
+            if (button.innerHTML.includes('icon-tabler-file-download')) {
+              console.log('Download button clicked for table:', tableId);
+              handleDownloadTable(tableId);
+            } else if (button.innerHTML.includes('icon-tabler-chart-bar')) {
+              console.log('Chart button clicked for table:', tableId);
+              onCreateChart(tableId);
+            }
+          }
+        }
+      };
+
+      containerRef.current?.addEventListener('click', handleClick);
+
+      return () => {
+        containerRef.current?.removeEventListener('click', handleClick);
+      };
+    }
+  }, [open, onCreateChart]);
 
   return (
     <>
@@ -152,10 +223,10 @@ export const Card: React.FC<CardProps> = ({
                 {card.title}
               </p>
               <div className="py-10">{card.content}</div>
-            </motion.div>
+              </motion.div>
           </div>
         )}
-       </AnimatePresence>
+      </AnimatePresence>
       <motion.button
         onClick={handleOpen}
         className={cn(

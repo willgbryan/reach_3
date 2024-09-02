@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import { Message } from 'ai'
 import { nanoid } from 'nanoid'
 import DOMPurify from 'dompurify'
-import 'react-quill/dist/quill.snow.css'
 import jsPDF from 'jspdf'
 import 'jspdf-autotable'
 import Cookies from 'js-cookie'
@@ -599,21 +598,6 @@ const ChatSection = ({
       
       const iconContainer = doc.createElement('div');
       iconContainer.className = 'absolute -top-10 right-0 flex space-x-2 mb-2';
-      
-      const downloadButtonString = renderToString(<TableDownloader tableId={tableId} />);
-      iconContainer.innerHTML = downloadButtonString;
-  
-      const chartButton = doc.createElement('button');
-      chartButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-chart-bar" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 12m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" /><path d="M9 8m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v10a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" /><path d="M15 4m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v14a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" /><path d="M4 20l14 0" /></svg>`;
-      chartButton.className = 'p-1 rounded transition-colors hover:bg-gray-200 dark:hover:bg-stone-900';
-      chartButton.onclick = (e) => {
-        e.preventDefault();
-        console.log(`Chart table ${index}`);
-        // Future functionality: Implement chart generation
-      };
-  
-      iconContainer.appendChild(chartButton);
-      tableWrapper.appendChild(iconContainer);
     });
     doc.querySelectorAll('th, td').forEach(el => {
       el.classList.add('px-4', 'py-2', 'border', 'border-gray-300', 'dark:border-stone-100');
@@ -784,6 +768,10 @@ const ChatSection = ({
           index={index}
           onCreateDoc={createEditableDocument}
           onCreatePowerPoint={handleCreateStructuredPowerPoint}
+          onCreateChart={(tableId: string) => {
+            console.log(`Create chart for table ${tableId}`);
+            // Implement chart creation logic here
+          }}
         />
       );
     }
