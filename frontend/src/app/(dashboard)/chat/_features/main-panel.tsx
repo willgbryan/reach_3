@@ -591,11 +591,6 @@ const ChatSection = ({
       table.id = tableId;
       table.classList.add('border-collapse', 'my-4', 'w-full', 'rounded-lg', 'overflow-hidden');
       
-      const tableWrapper = doc.createElement('div');
-      tableWrapper.className = 'relative';
-      table.parentNode?.insertBefore(tableWrapper, table);
-      tableWrapper.appendChild(table);
-      
       const iconContainer = doc.createElement('div');
       iconContainer.className = 'absolute -top-10 right-0 flex space-x-2 mb-2';
     });
@@ -697,12 +692,18 @@ const ChatSection = ({
     return doc.body.innerHTML;
   };
 
+  type TableInfo = {
+    id: string;
+    content: string;
+  };
+
   const createCard = (item: any, index: number): JSX.Element | null => {
     let title: string | undefined;
     let category: string | undefined;
     let content: React.ReactNode;
     let rawContent: string;
     let type: 'iteration' | 'condensed' | 'sources';
+    let tables: TableInfo[] = [];
   
     if (item.type === 'sources') {
       title = 'Sources';
@@ -740,13 +741,25 @@ const ChatSection = ({
       
       rawContent = item.content;
       const formattedContent = formatContentToHTML(item.content);
-      // formattedContent is sanitized in formatContentToHTML
-      content = (
-        <div 
-          className="text-stone-900 dark:text-stone-100 text-base md:text-lg font-sans prose prose-stone dark:prose-invert max-w-none"
-          dangerouslySetInnerHTML={{ __html: formattedContent }}
-        />
-      );
+      
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(formattedContent, 'text/html');
+      const tableTags = doc.querySelectorAll('table');
+      
+      tableTags.forEach((table, tableIndex) => {
+        const tableId = `table-${index}-${tableIndex}`;
+        table.id = tableId;
+        tables.push({
+          id: tableId,
+          content: table.outerHTML,
+        });
+        const placeholder = doc.createElement('div');
+        placeholder.id = `table-placeholder-${tableId}`;
+        placeholder.dataset.tableId = tableId;
+        table.parentNode?.replaceChild(placeholder, table);
+      });
+  
+      content = doc.body.innerHTML;
     } else if (item.role === 'user') {
       return null;
     } else {
@@ -757,13 +770,14 @@ const ChatSection = ({
     if (title && category && type) {
       return (
         <Card
-          key={`item-${index}`}
+          key={`item-${type}-${index}`}
           card={{
             category,
             title,
             content,
             rawContent,
             type,
+            tables,
           }}
           index={index}
           onCreateDoc={createEditableDocument}

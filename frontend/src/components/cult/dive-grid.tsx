@@ -1,6 +1,6 @@
 import React, { useContext, useState, useRef, useEffect, createContext } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { IconFileText, IconPresentation, IconX } from "@tabler/icons-react";
+import { IconChartBar, IconDownload, IconFileText, IconPresentation, IconX } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import { useOutsideClick } from "@/hooks/use-outside-click";
 import { Meteors } from './meteors';
@@ -26,8 +26,13 @@ export const GridLayout = ({ items }: { items: JSX.Element[] }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const handleCardClose = (index: number) => {
+    console.log(`Card at index ${index} closed in GridLayout`);
     setCurrentIndex(index);
   };
+
+  useEffect(() => {
+    console.log('GridLayout rendered with', items.length, 'items');
+  }, [items]);
 
   return (
     <CarouselContext.Provider
@@ -36,7 +41,7 @@ export const GridLayout = ({ items }: { items: JSX.Element[] }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 relative z-10 py-10 max-w-7xl mx-auto">
         {items.map((item, index) => (
           <motion.div
-            key={`card-${index}`}
+            key={`card-wrapper-${index}`}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 * index }}
@@ -49,8 +54,20 @@ export const GridLayout = ({ items }: { items: JSX.Element[] }) => {
   );
 };
 
+type TableInfo = {
+  id: string;
+  content: string;
+};
+
 type CardProps = {
-  card: Card;
+  card: {
+    title: string;
+    category: string;
+    content: React.ReactNode;
+    rawContent: string;
+    type: 'iteration' | 'condensed' | 'sources';
+    tables: TableInfo[];
+  };
   index: number;
   onCreateDoc: (content: string) => void;
   onCreatePowerPoint?: (content: string) => void;
@@ -89,16 +106,21 @@ export const Card: React.FC<CardProps> = ({
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => {
+    console.log('Closing card', index);
     setOpen(false);
     onCardClose(index);
   };
 
-  const handleCreatePDF = () => {
+  const handleCreatePDF = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    console.log('Creating PDF for card', index);
     onCreateDoc(card.rawContent);
   };
 
-  const handleCreatePowerPoint = () => {
+  const handleCreatePowerPoint = (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (onCreatePowerPoint) {
+      console.log('Creating PowerPoint for card', index);
       onCreatePowerPoint(card.rawContent);
     }
   };
@@ -116,61 +138,93 @@ export const Card: React.FC<CardProps> = ({
     XLSX.writeFile(wb, `table_${tableId}.xlsx`);
   };
 
-  useEffect(() => {
-    if (open) {
-      const tables = containerRef.current?.querySelectorAll('table');
-      tables?.forEach((table, index) => {
-        const tableId = `table-${index}`;
-        table.id = tableId;
+  const renderContent = () => {
+    if (typeof card.content === 'string') {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(card.content, 'text/html');
+      const placeholders = doc.querySelectorAll('[id^="table-placeholder-"]');
 
-        const iconContainer = document.createElement('div');
-        iconContainer.className = 'absolute -top-10 right-0 flex space-x-2 mb-2';
-        
-        const downloadButton = document.createElement('button');
-        downloadButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-file-download" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" /><path d="M12 17v-6" /><path d="M9.5 14.5l2.5 2.5l2.5 -2.5" /></svg>`;
-        downloadButton.className = 'p-1 rounded transition-colors hover:bg-gray-200 dark:hover:bg-stone-900';
-        downloadButton.setAttribute('data-table-id', tableId);
-        iconContainer.appendChild(downloadButton);
-
-        const chartButton = document.createElement('button');
-        chartButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-chart-bar" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 12m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" /><path d="M9 8m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v10a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" /><path d="M15 4m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v14a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" /><path d="M4 20l14 0" /></svg>`;
-        chartButton.className = 'p-1 rounded transition-colors hover:bg-gray-200 dark:hover:bg-stone-900';
-        chartButton.setAttribute('data-table-id', tableId);
-        iconContainer.appendChild(chartButton);
-
-        const wrapper = document.createElement('div');
-        wrapper.className = 'relative';
-        table.parentNode?.insertBefore(wrapper, table);
-        wrapper.appendChild(table);
-        wrapper.appendChild(iconContainer);
+      placeholders.forEach((placeholder) => {
+        const tableId = placeholder.getAttribute('data-table-id');
+        const table = card.tables.find(t => t.id === tableId);
+        if (table) {
+          const tableWrapper = document.createElement('div');
+          tableWrapper.className = 'relative mt-8';
+          tableWrapper.innerHTML = `
+            <div class="absolute -top-8 right-0 flex space-x-2">
+              <button
+                class="p-1 rounded transition-colors hover:bg-gray-200 dark:hover:bg-stone-900 download-table-btn"
+                data-table-id="${tableId}"
+                title="Download as Excel"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                  <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                  <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2"></path>
+                  <path d="M7 11l5 5l5 -5"></path>
+                  <path d="M12 4l0 12"></path>
+                </svg>
+              </button>
+              <button
+                class="p-1 rounded transition-colors hover:bg-gray-200 dark:hover:bg-stone-900 create-chart-btn"
+                data-table-id="${tableId}"
+                title="Create Chart"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                  <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                  <path d="M3 3v18h18"></path>
+                  <path d="M20 18v3"></path>
+                  <path d="M16 16v5"></path>
+                  <path d="M12 13v8"></path>
+                  <path d="M8 16v5"></path>
+                  <path d="M3 11c6 0 5 -5 9 -5s3 5 9 5"></path>
+                </svg>
+              </button>
+            </div>
+            ${table.content}
+          `;
+          placeholder.parentNode?.replaceChild(tableWrapper, placeholder);
+        }
       });
 
-      const handleClick = (e: MouseEvent) => {
-        const target = e.target as HTMLElement;
-        const button = target.closest('button');
-        if (button) {
-          e.preventDefault();
-          e.stopPropagation();
-          const tableId = button.getAttribute('data-table-id');
-          if (tableId) {
-            if (button.innerHTML.includes('icon-tabler-file-download')) {
-              console.log('Download button clicked for table:', tableId);
-              handleDownloadTable(tableId);
-            } else if (button.innerHTML.includes('icon-tabler-chart-bar')) {
-              console.log('Chart button clicked for table:', tableId);
-              onCreateChart(tableId);
-            }
-          }
-        }
-      };
-
-      containerRef.current?.addEventListener('click', handleClick);
-
-      return () => {
-        containerRef.current?.removeEventListener('click', handleClick);
-      };
+      return doc.body.innerHTML;
     }
-  }, [open, onCreateChart]);
+    return '';
+  };
+
+  useEffect(() => {
+    if (open) {
+      const container = containerRef.current;
+      if (container) {
+        const downloadButtons = container.querySelectorAll('.download-table-btn');
+        const chartButtons = container.querySelectorAll('.create-chart-btn');
+
+        downloadButtons.forEach(button => {
+          button.addEventListener('click', (e) => {
+            e.preventDefault();
+            const tableId = (e.currentTarget as HTMLButtonElement).getAttribute('data-table-id');
+            if (tableId) handleDownloadTable(tableId);
+          });
+        });
+
+        chartButtons.forEach(button => {
+          button.addEventListener('click', (e) => {
+            e.preventDefault();
+            const tableId = (e.currentTarget as HTMLButtonElement).getAttribute('data-table-id');
+            if (tableId) onCreateChart(tableId);
+          });
+        });
+
+        return () => {
+          downloadButtons.forEach(button => {
+            button.removeEventListener('click', () => {});
+          });
+          chartButtons.forEach(button => {
+            button.removeEventListener('click', () => {});
+          });
+        };
+      }
+    }
+  }, [open, handleDownloadTable, onCreateChart]);
 
   return (
     <>
@@ -211,7 +265,10 @@ export const Card: React.FC<CardProps> = ({
                 )}
                 <button
                   className="flex items-center justify-center w-10 h-10 bg-black rounded-full hover:text-stone-900 text-stone-100 dark:bg-white dark:text-stone-900 hover:bg-stone-300 dark:hover:bg-stone-600 dark:text-neutral-900 dark:hover:text-stone-100"
-                  onClick={handleClose}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleClose();
+                  }}
                 >
                   <IconX className="h-6 w-6" />
                 </button>
@@ -222,8 +279,11 @@ export const Card: React.FC<CardProps> = ({
               <p className="text-2xl md:text-5xl font-semibold text-neutral-700 mt-4 dark:text-white">
                 {card.title}
               </p>
-              <div className="py-10">{card.content}</div>
-              </motion.div>
+              <div 
+                className="py-10 text-stone-900 dark:text-stone-100 text-base md:text-lg font-sans prose prose-stone dark:prose-invert max-w-none"
+                dangerouslySetInnerHTML={{ __html: renderContent() }}
+              />
+            </motion.div>
           </div>
         )}
       </AnimatePresence>
