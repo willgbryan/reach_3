@@ -6,6 +6,7 @@ import { useOutsideClick } from "@/hooks/use-outside-click";
 import { Meteors } from './meteors';
 import * as XLSX from 'xlsx';
 import DOMPurify from 'dompurify';
+import { toast } from 'sonner';
 
 type Card = {
   title: string;
@@ -55,6 +56,35 @@ export const GridLayout = ({ items }: { items: JSX.Element[] }) => {
   );
 };
 
+const ChartCard: React.FC<{ d3Code: string; onClose: () => void }> = ({ d3Code, onClose }) => {
+  const chartRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (chartRef.current) {
+      chartRef.current.innerHTML = '';
+      
+      const script = document.createElement('script');
+      script.textContent = d3Code;
+      
+      chartRef.current.appendChild(script);
+    }
+  }, [d3Code]);
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white p-6 rounded-lg max-w-3xl w-full max-h-[90vh] overflow-auto">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-bold">Generated Chart</h2>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+            <IconX className="h-6 w-6" />
+          </button>
+        </div>
+        <div ref={chartRef} className="w-full h-[500px]"></div>
+      </div>
+    </div>
+  );
+};
+
 type TableInfo = {
   id: string;
   content: string;
@@ -83,6 +113,7 @@ export const Card: React.FC<CardProps> = ({
   onCreateChart,
 }) => {
   const [open, setOpen] = useState(false);
+  const [chartData, setChartData] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const { onCardClose } = useContext(CarouselContext);
 
@@ -197,6 +228,43 @@ export const Card: React.FC<CardProps> = ({
     return '';
   };
 
+  const sendCreateChartRequest = async (tableId: string, tableContent: string) => {
+    try {
+      const response = await fetch('/api/create-chart', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ tableId, tableContent }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('Chart created successfully:', result);
+      setChartData(result.d3_code);
+    } catch (error) {
+      console.error('Error creating chart:', error);
+      toast.error("We're having some trouble processing your request. Please try again in a moment.")
+    }
+  };
+
+  const handleCreateChart = (tableId: string) => {
+    console.log('Creating chart for table:', tableId);
+    const table = card.tables.find(t => t.id === tableId);
+    if (table) {
+      sendCreateChartRequest(tableId, table.content);
+    } else {
+      console.error(`Table with id ${tableId} not found`);
+    }
+  };
+
+  const handleCloseChart = () => {
+    setChartData(null);
+  };
+
   useEffect(() => {
     if (open) {
       const container = containerRef.current;
@@ -216,7 +284,7 @@ export const Card: React.FC<CardProps> = ({
           button.addEventListener('click', (e) => {
             e.preventDefault();
             const tableId = (e.currentTarget as HTMLButtonElement).getAttribute('data-table-id');
-            if (tableId) onCreateChart(tableId);
+            if (tableId) handleCreateChart(tableId);
           });
         });
 
@@ -230,7 +298,7 @@ export const Card: React.FC<CardProps> = ({
         };
       }
     }
-  }, [open, handleDownloadTable, onCreateChart]);
+  }, [open, handleDownloadTable, handleCreateChart]);
 
   return (
     <>
@@ -289,6 +357,8 @@ export const Card: React.FC<CardProps> = ({
                 className="py-10 text-stone-900 dark:text-stone-100 text-base md:text-lg font-sans prose prose-stone dark:prose-invert max-w-none"
                 dangerouslySetInnerHTML={{ __html: renderContent() }}
               />
+              {chartData && <ChartCard d3Code={chartData} onClose={handleCloseChart} />}
+
             </motion.div>
           </div>
         )}

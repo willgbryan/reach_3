@@ -219,6 +219,46 @@ async def generate_powerpoint(request: PowerPointRequest):
         print(traceback.format_exc())
         return JSONResponse(status_code=500, content={"detail": str(e)})
 
+class ChartRequest(BaseModel):
+    tableId: str
+    tableContent: str
+
+@app.post("/create-chart")
+async def create_chart(request: ChartRequest):
+    user_prompt = f"""
+    Create a D3.js chart based on the following table data:
+
+    Table ID: {request.tableId}
+    Table Content:
+    {request.tableContent}
+
+    Please generate only the D3.js code to create an appropriate chart for this data.
+    The code should be a complete, self-contained D3.js script that can be directly embedded in an HTML page.
+    Do not include any explanations or comments outside of the code itself.
+    """
+
+    prompt = """
+    You are an expert D3.js developer.
+    Your task is to create D3.js code for a chart based on the provided table data.
+    Generate only the D3.js code, without any additional explanations or HTML structure.
+    The code should be complete and ready to be embedded in an HTML page.
+    """
+
+    try:
+        completion = client.chat.completions.create(
+            model="gpt-4o-2024-08-06",
+            messages=[
+                {"role": "system", "content": prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+        )
+        d3_code = completion.choices[0].message.content
+        return {"d3_code": d3_code}
+    except Exception as e:
+        print(f"Error in create-chart: {str(e)}")
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail="Error generating chart code")
+
 class CondenseRequest(BaseModel):
     task: str
     accumulatedOutput: str
