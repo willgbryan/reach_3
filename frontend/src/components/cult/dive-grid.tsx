@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { useOutsideClick } from "@/hooks/use-outside-click";
 import { Meteors } from './meteors';
 import * as XLSX from 'xlsx';
+import DOMPurify from 'dompurify';
 
 type Card = {
   title: string;
@@ -186,7 +187,12 @@ export const Card: React.FC<CardProps> = ({
         }
       });
 
-      return doc.body.innerHTML;
+      const sanitizedHtml = DOMPurify.sanitize(doc.body.innerHTML, {
+        ADD_TAGS: ['button'],
+        ADD_ATTR: ['data-table-id'],
+      });
+
+      return sanitizedHtml;
     }
     return '';
   };
