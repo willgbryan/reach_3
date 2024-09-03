@@ -7,6 +7,7 @@ import { Meteors } from './meteors';
 import * as XLSX from 'xlsx';
 import DOMPurify from 'dompurify';
 import { toast } from 'sonner';
+import ChartCard from '../chart-card';
 
 type Card = {
   title: string;
@@ -56,35 +57,6 @@ export const GridLayout = ({ items }: { items: JSX.Element[] }) => {
   );
 };
 
-const ChartCard: React.FC<{ d3Code: string; onClose: () => void }> = ({ d3Code, onClose }) => {
-  const chartRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (chartRef.current) {
-      chartRef.current.innerHTML = '';
-      
-      const script = document.createElement('script');
-      script.textContent = d3Code;
-      
-      chartRef.current.appendChild(script);
-    }
-  }, [d3Code]);
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white p-6 rounded-lg max-w-3xl w-full max-h-[90vh] overflow-auto">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold">Generated Chart</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
-            <IconX className="h-6 w-6" />
-          </button>
-        </div>
-        <div ref={chartRef} className="w-full h-[500px]"></div>
-      </div>
-    </div>
-  );
-};
-
 type TableInfo = {
   id: string;
   content: string;
@@ -114,6 +86,7 @@ export const Card: React.FC<CardProps> = ({
 }) => {
   const [open, setOpen] = useState(false);
   const [chartData, setChartData] = useState<string | null>(null);
+  const [chartError, setChartError] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const { onCardClose } = useContext(CarouselContext);
 
@@ -245,9 +218,11 @@ export const Card: React.FC<CardProps> = ({
       const result = await response.json();
       console.log('Chart created successfully:', result);
       setChartData(result.d3_code);
+      setChartError(null);
     } catch (error) {
       console.error('Error creating chart:', error);
-      toast.error("We're having some trouble processing your request. Please try again in a moment.")
+      setChartError('Failed to create chart. Please try again.');
+      toast.error("We're having some trouble processing your request. Please try again in a moment.");
     }
   };
 
@@ -258,11 +233,13 @@ export const Card: React.FC<CardProps> = ({
       sendCreateChartRequest(tableId, table.content);
     } else {
       console.error(`Table with id ${tableId} not found`);
+      setChartError('Table not found. Please try again.');
     }
   };
 
   const handleCloseChart = () => {
     setChartData(null);
+    setChartError(null);
   };
 
   useEffect(() => {
@@ -357,8 +334,26 @@ export const Card: React.FC<CardProps> = ({
                 className="py-10 text-stone-900 dark:text-stone-100 text-base md:text-lg font-sans prose prose-stone dark:prose-invert max-w-none"
                 dangerouslySetInnerHTML={{ __html: renderContent() }}
               />
-              {chartData && <ChartCard d3Code={chartData} onClose={handleCloseChart} />}
-
+              <AnimatePresence>
+              {(chartData || chartError) && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="col-span-2"
+                >
+                  {chartError ? (
+                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
+                      <strong className="font-bold">Error: </strong>
+                      <span className="block sm:inline">{chartError}</span>
+                    </div>
+                  ) : (
+                    <ChartCard d3Code={chartData!} onClose={handleCloseChart} />
+                  )}
+          </motion.div>
+        )}
+      </AnimatePresence>
             </motion.div>
           </div>
         )}

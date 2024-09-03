@@ -27,7 +27,7 @@
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
-    "types": ["node"]
+    "types": ["node", "d3"]
   },
   "include": [
     ".eslintrc.cjs",
