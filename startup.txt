@@ -1,0 +1,35 @@
+.env.local in /frontend and /backend. Hard code supabase_url and key into pptx.utils.py. and root level .env
+
+2 dockerfiles, dont need to touch the backend one, frontend has a dev prod split. retain top set of commands and comment out bottom set.
+
+root level docker compose handles the full build and also has a dev prod split. comment out bottom one for dev.
+
+build commands:
+    docker compose build
+    docker compose up -d
+
+    to tear down
+
+    docker compose down
+    docker system prune (and then y)
+
+    note
+
+    check volumes in docker desktop and clear every so often
+
+for debugging there are 2 places to look.
+
+    1. container logs (frontend and backend container)
+    2. 'inspect element' console logs (you'll see api errors here)
+
+in /frontend/src/utils/websocket.ts comment out prod uri and comment in devuri
+
+package installation
+
+    /backend - add to requirements.txt
+    /frontend - cd into frontend and run npm install <package> --legacy-peer-deps
+
+another note
+
+    frontend changes are tailed
+    backend changes are not tailed, so any change to the backend will require a rebuild
