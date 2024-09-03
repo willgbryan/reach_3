@@ -598,7 +598,7 @@ const ChatSection = ({
       el.classList.add('px-4', 'py-2', 'border', 'border-gray-300', 'dark:border-stone-100');
     });
     doc.querySelectorAll('th').forEach(el => {
-      el.classList.add('font-semibold', 'bg-gray-100', 'dark:bg-stone-800');
+      el.classList.add('font-semibold', 'bg-gray-100', 'dark:bg-zinc-800');
     });
     doc.querySelectorAll('a').forEach(el => {
       el.classList.add('text-blue-600', 'hover:text-blue-800', 'underline');
