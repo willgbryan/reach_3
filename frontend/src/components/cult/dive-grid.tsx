@@ -228,6 +228,7 @@ export const Card: React.FC<CardProps> = ({
 
   const handleCreateChart = (tableId: string) => {
     console.log('Creating chart for table:', tableId);
+    toast.success('Creating your chart, one moment please.')
     const table = card.tables.find(t => t.id === tableId);
     if (table) {
       sendCreateChartRequest(tableId, table.content);
