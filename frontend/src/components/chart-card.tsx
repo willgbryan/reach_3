@@ -33,13 +33,6 @@ const ChartCard: React.FC<ChartCardProps> = ({ d3Code, onClose }) => {
           console.log("Executing D3 code...");
           setDebugInfo((prev) => prev + "Executing D3 code...\n");
 
-          let svg = d3.select(chartRef.current)
-            .append('svg')
-            .attr('width', '100%')
-            .attr('height', '100%')
-            .attr('preserveAspectRatio', 'xMidYMid meet')
-            .attr('viewBox', '0 0 600 400');
-
           const wrappedCode = `
             (function() {
               try {
@@ -57,6 +50,10 @@ const ChartCard: React.FC<ChartCardProps> = ({ d3Code, onClose }) => {
                 // Execute the provided D3 code
                 ${cleanedCode}
                 console.log('D3 code executed successfully');
+
+                // Ensure the chart fills the container
+                const chartBBox = svg.node().getBBox();
+                svg.attr('viewBox', \`\${chartBBox.x} \${chartBBox.y} \${chartBBox.width} \${chartBBox.height}\`);
               } catch (error) {
                 console.error('Error in D3 code:', error);
                 throw error;
@@ -84,6 +81,17 @@ const ChartCard: React.FC<ChartCardProps> = ({ d3Code, onClose }) => {
     };
 
     renderChart();
+
+    // Add resize event listener
+    const handleResize = () => {
+      renderChart();
+    };
+    window.addEventListener('resize', handleResize);
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
   }, [d3Code]);
 
   const handleDownload = () => {
@@ -112,7 +120,7 @@ const ChartCard: React.FC<ChartCardProps> = ({ d3Code, onClose }) => {
   };
 
   return (
-    <div className="chart-container relative bg-transparent dark:bg-zinc-800 rounded-lg p-4 mt-4">
+    <div className="chart-container relative bg-transparent dark:bg-zinc-800 rounded-lg p-4 mt-4 w-full h-full">
       <div className="absolute top-2 right-2 flex space-x-2 z-10">
         <button
           onClick={handleDownload}
@@ -129,7 +137,7 @@ const ChartCard: React.FC<ChartCardProps> = ({ d3Code, onClose }) => {
           <IconX className="h-5 w-5" />
         </button>
       </div>
-      <div ref={chartRef} className="chart-content w-full" style={{ aspectRatio: '3 / 2' }}>
+      <div ref={chartRef} className="chart-content w-full h-full">
       </div>
       {error && <div className="error-message mt-2 text-red-500">{"This one's on us, please try pressing the chart button again."}</div>}
     </div>

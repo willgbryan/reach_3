@@ -233,7 +233,11 @@ async def create_chart(request: ChartRequest):
     Data:
     {request.tableContent}
 
-    Avoid the use of `translate`, and `selectAll`.
+    Avoid the use of `translate`, `width`, and `selectAll`.
+
+    If the x-axis contains time indices, ensure time increases to the right.
+
+    The charts should be visually appealing. Lean into earth toned colors like stone-400 and stone-500 as well as zinc-600 and zinc-500.
 
     Do not redeclare the variable `svg` or any other variables if they have already been declared in the environment.
     Assume that a D3.js environment is already available and that an `svg` element has been appended to the DOM.
