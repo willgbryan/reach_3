@@ -228,16 +228,16 @@ async def create_chart(request: ChartRequest):
     user_prompt = f"""
     You are an expert D3.js developer.
 
-    Create only the necessary D3.js code to generate a chart based on the following data:
+    Create only the necessary D3.js code to generate a chart based on the following data and include labels:
 
     Data:
     {request.tableContent}
 
-    Avoid the use of `translate`.
+    Avoid the use of `translate`, and `selectAll`.
 
     Do not redeclare the variable `svg` or any other variables if they have already been declared in the environment.
     Assume that a D3.js environment is already available and that an `svg` element has been appended to the DOM.
-    Do not include any HTML tags, <script> tags, or references to external libraries. 
+    Do not include any HTML tags, <script> tags, or references to external libraries.
     """
 
     prompt = """

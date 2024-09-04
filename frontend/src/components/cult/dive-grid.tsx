@@ -8,6 +8,7 @@ import * as XLSX from 'xlsx';
 import DOMPurify from 'dompurify';
 import { toast } from 'sonner';
 import ChartCard from '../chart-card';
+import ReactDOM from 'react-dom';
 
 type Card = {
   title: string;
@@ -85,8 +86,8 @@ export const Card: React.FC<CardProps> = ({
   onCreateChart,
 }) => {
   const [open, setOpen] = useState(false);
-  const [chartData, setChartData] = useState<string | null>(null);
-  const [chartError, setChartError] = useState<string | null>(null);
+  const [chartData, setChartData] = useState<{ [key: string]: string | null }>({});
+  const [chartError, setChartError] = useState<{ [key: string]: string | null }>({});
   const containerRef = useRef<HTMLDivElement>(null);
   const { onCardClose } = useContext(CarouselContext);
 
@@ -143,6 +144,48 @@ export const Card: React.FC<CardProps> = ({
     XLSX.writeFile(wb, `table_${tableId}.xlsx`);
   };
 
+  const sendCreateChartRequest = async (tableId: string, tableContent: string) => {
+    try {
+      const response = await fetch('/api/create-chart', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ tableId, tableContent }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('Chart created successfully:', result);
+      setChartData(prevState => ({ ...prevState, [tableId]: result.d3_code }));
+      setChartError(prevState => ({ ...prevState, [tableId]: null }));
+    } catch (error) {
+      console.error('Error creating chart:', error);
+      setChartError(prevState => ({ ...prevState, [tableId]: 'Failed to create chart. Please try again.' }));
+      toast.error("We're having some trouble processing your request. Please try again in a moment.");
+    }
+  };
+
+  const handleCreateChart = (tableId: string) => {
+    console.log('Creating chart for table:', tableId);
+    toast.success('Creating your chart, one moment please.')
+    const table = card.tables.find(t => t.id === tableId);
+    if (table) {
+      sendCreateChartRequest(tableId, table.content);
+    } else {
+      console.error(`Table with id ${tableId} not found`);
+      setChartError(prevState => ({ ...prevState, [tableId]: 'Table not found. Please try again.' }));
+    }
+  };
+
+  const handleCloseChart = (tableId: string) => {
+    setChartData(prevState => ({ ...prevState, [tableId]: null }));
+    setChartError(prevState => ({ ...prevState, [tableId]: null }));
+  };
+
   const renderContent = () => {
     if (typeof card.content === 'string') {
       const parser = new DOMParser();
@@ -188,6 +231,12 @@ export const Card: React.FC<CardProps> = ({
             ${table.content}
           `;
           placeholder.parentNode?.replaceChild(tableWrapper, placeholder);
+
+          // Add chart container after the table
+          const chartContainer = document.createElement('div');
+          chartContainer.id = `chart-container-${tableId}`;
+          chartContainer.className = 'mt-4';
+          tableWrapper.appendChild(chartContainer);
         }
       });
 
@@ -199,48 +248,6 @@ export const Card: React.FC<CardProps> = ({
       return sanitizedHtml;
     }
     return '';
-  };
-
-  const sendCreateChartRequest = async (tableId: string, tableContent: string) => {
-    try {
-      const response = await fetch('/api/create-chart', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ tableId, tableContent }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Error: ${response.status}`);
-      }
-
-      const result = await response.json();
-      console.log('Chart created successfully:', result);
-      setChartData(result.d3_code);
-      setChartError(null);
-    } catch (error) {
-      console.error('Error creating chart:', error);
-      setChartError('Failed to create chart. Please try again.');
-      toast.error("We're having some trouble processing your request. Please try again in a moment.");
-    }
-  };
-
-  const handleCreateChart = (tableId: string) => {
-    console.log('Creating chart for table:', tableId);
-    toast.success('Creating your chart, one moment please.')
-    const table = card.tables.find(t => t.id === tableId);
-    if (table) {
-      sendCreateChartRequest(tableId, table.content);
-    } else {
-      console.error(`Table with id ${tableId} not found`);
-      setChartError('Table not found. Please try again.');
-    }
-  };
-
-  const handleCloseChart = () => {
-    setChartData(null);
-    setChartError(null);
   };
 
   useEffect(() => {
@@ -277,6 +284,25 @@ export const Card: React.FC<CardProps> = ({
       }
     }
   }, [open, handleDownloadTable, handleCreateChart]);
+
+  useEffect(() => {
+    if (open) {
+      Object.entries(chartData).forEach(([tableId, d3Code]) => {
+        if (d3Code) {
+          const chartContainer = document.getElementById(`chart-container-${tableId}`);
+          if (chartContainer) {
+            ReactDOM.render(
+              <ChartCard 
+                d3Code={d3Code} 
+                onClose={() => handleCloseChart(tableId)}
+              />,
+              chartContainer
+            );
+          }
+        }
+      });
+    }
+  }, [open, chartData]);
 
   return (
     <>
@@ -335,26 +361,6 @@ export const Card: React.FC<CardProps> = ({
                 className="py-10 text-stone-900 dark:text-stone-100 text-base md:text-lg font-sans prose prose-stone dark:prose-invert max-w-none"
                 dangerouslySetInnerHTML={{ __html: renderContent() }}
               />
-              <AnimatePresence>
-              {(chartData || chartError) && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="col-span-2"
-                >
-                  {chartError ? (
-                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
-                      <strong className="font-bold">Error: </strong>
-                      <span className="block sm:inline">{chartError}</span>
-                    </div>
-                  ) : (
-                    <ChartCard d3Code={chartData!} onClose={handleCloseChart} />
-                  )}
-          </motion.div>
-        )}
-      </AnimatePresence>
             </motion.div>
           </div>
         )}
