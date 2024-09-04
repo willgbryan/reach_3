@@ -226,22 +226,23 @@ class ChartRequest(BaseModel):
 @app.post("/create-chart")
 async def create_chart(request: ChartRequest):
     user_prompt = f"""
-    Create a D3.js chart based on the following table data:
+    You are an expert D3.js developer.
 
-    Table ID: {request.tableId}
-    Table Content:
+    Create only the necessary D3.js code to generate a chart based on the following data:
+
+    Data:
     {request.tableContent}
 
-    Please generate only the D3.js code to create an appropriate chart for this data.
-    The code should be a complete, self-contained D3.js script that can be directly embedded in an HTML page.
-    Do not include any explanations or comments outside of the code itself.
+    Avoid the use of `translate`.
+
+    Do not redeclare the variable `svg` or any other variables if they have already been declared in the environment.
+    Assume that a D3.js environment is already available and that an `svg` element has been appended to the DOM.
+    Do not include any HTML tags, <script> tags, or references to external libraries. 
     """
 
     prompt = """
     You are an expert D3.js developer.
     Your task is to create D3.js code for a chart based on the provided table data.
-    Generate only the D3.js code, without any additional explanations or HTML structure.
-    The code should be complete and ready to be embedded in an HTML page.
     """
 
     try:
@@ -264,7 +265,7 @@ class CondenseRequest(BaseModel):
     accumulatedOutput: str
     
 @app.post("/condense-findings")
-async def generate_powerpoint(request: CondenseRequest):
+async def condense_findings(request: CondenseRequest):
     user_prompt = generate_report_prompt(
         question=request.task,
         context=request.accumulatedOutput
