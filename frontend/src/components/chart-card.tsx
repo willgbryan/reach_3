@@ -37,6 +37,7 @@ const ChartCard: React.FC<ChartCardProps> = ({ d3Code, onClose }) => {
             .append('svg')
             .attr('width', '100%')
             .attr('height', '100%')
+            .attr('preserveAspectRatio', 'xMidYMid meet')
             .attr('viewBox', '0 0 600 400');
 
           const wrappedCode = `
@@ -50,6 +51,7 @@ const ChartCard: React.FC<ChartCardProps> = ({ d3Code, onClose }) => {
                     .append('svg')
                     .attr('width', '100%')
                     .attr('height', '100%')
+                    .attr('preserveAspectRatio', 'xMidYMid meet')
                     .attr('viewBox', '0 0 600 400');
                 }
                 // Execute the provided D3 code
@@ -127,10 +129,9 @@ const ChartCard: React.FC<ChartCardProps> = ({ d3Code, onClose }) => {
           <IconX className="h-5 w-5" />
         </button>
       </div>
-      <div ref={chartRef} className="chart-content" style={{ width: '100%', height: '400px' }}>
-        {/* Chart will be rendered here */}
+      <div ref={chartRef} className="chart-content w-full" style={{ aspectRatio: '3 / 2' }}>
       </div>
-      {error && <div className="error-message mt-2 text-red-500">{error}</div>}
+      {error && <div className="error-message mt-2 text-red-500">{"This one's on us, please try pressing the chart button again."}</div>}
     </div>
   );
 };

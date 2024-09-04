@@ -322,7 +322,7 @@ export const Card: React.FC<CardProps> = ({
               ref={containerRef}
               className="max-w-5xl mx-auto backdrop-blur-lg h-fit z-[110] my-10 p-4 md:p-10 rounded-lg font-sans relative"
             >
-              <div className="sticky top-4 right-0 ml-auto flex flex-col md:flex-row justify-end space-y-2 md:space-y-0 md:space-x-2">
+              <div className="sticky top-0 right-0 left-0 z-20 bg-transparent dark:bg-zinc-800 py-4 px-4 md:px-0 flex flex-col md:flex-row justify-end space-y-2 md:space-y-0 md:space-x-2">
                 <button
                   className="flex items-center justify-center px-3 py-2 hover:text-stone-900 bg-stone-900 dark:bg-stone-100 rounded-full text-sm font-medium text-stone-100 dark:hover:text-stone-100 dark:text-stone-900 hover:bg-stone-300 dark:hover:bg-stone-600 transition-colors"
                   onClick={handleCreatePDF}
@@ -351,16 +351,18 @@ export const Card: React.FC<CardProps> = ({
                   <IconX className="h-6 w-6" />
                 </button>
               </div>
-              <p className="text-base font-medium text-black dark:text-white">
-                {card.category}
-              </p>
-              <p className="text-2xl md:text-5xl font-semibold text-neutral-700 mt-4 dark:text-white">
-                {card.title}
-              </p>
-              <div 
-                className="py-10 text-stone-900 dark:text-stone-100 text-base md:text-lg font-sans prose prose-stone dark:prose-invert max-w-none"
-                dangerouslySetInnerHTML={{ __html: renderContent() }}
-              />
+              <div className="mt-4">
+                <p className="text-base font-medium text-black dark:text-white">
+                  {card.category}
+                </p>
+                <p className="text-2xl md:text-5xl font-semibold text-neutral-700 mt-4 dark:text-white">
+                  {card.title}
+                </p>
+                <div 
+                  className="py-10 text-stone-900 dark:text-stone-100 text-base md:text-lg font-sans prose prose-stone dark:prose-invert max-w-none"
+                  dangerouslySetInnerHTML={{ __html: renderContent() }}
+                />
+              </div>
             </motion.div>
           </div>
         )}
