@@ -140,8 +140,13 @@ async def generate_powerpoint(request: PowerPointRequest):
         print(f"Favorite theme: {request.favoriteTheme}")
         print(f"Signed URL: {request.signedUrl}")
 
-        # Load the template presentation
-        prs = read_pptx_from_supabase(request.filePath, request.signedUrl)
+        try:
+            prs = read_pptx_from_supabase(request.filePath, request.signedUrl)
+            print("PowerPoint read from Supabase successfully")
+        except Exception as e:
+            print(f"Failed to read PowerPoint from Supabase: {str(e)}")
+            print("Falling back to base presentation")
+            prs = Presentation()
 
         completion = client.chat.completions.create(
             model="gpt-4o-2024-08-06",
@@ -166,9 +171,8 @@ async def generate_powerpoint(request: PowerPointRequest):
         print(f"Presentation data: {presentation_data}")
 
         trim_count = len(prs.slides)
-
-        # Create title slide
-        title_slide_layout = prs.slide_layouts[0]  # Assuming 0 is the layout for the title slide
+        
+        title_slide_layout = prs.slide_layouts[0]
         title_slide = prs.slides.add_slide(title_slide_layout)
         
         title = title_slide.shapes.title
@@ -179,8 +183,7 @@ async def generate_powerpoint(request: PowerPointRequest):
         if subtitle:
             subtitle.text = "Generated Presentation"
         
-        # Create content slides
-        content_slide_layout = prs.slide_layouts[1]  # Assuming 1 is the layout for content slides
+        content_slide_layout = prs.slide_layouts[1]
         for slide_data in presentation_data["slides"]:
             new_slide = prs.slides.add_slide(content_slide_layout)
             
@@ -193,7 +196,6 @@ async def generate_powerpoint(request: PowerPointRequest):
             if content_placeholder:
                 tf = content_placeholder.text_frame
             else:
-                # If no suitable placeholder found, create a new text box
                 left = Inches(0.5)
                 top = Inches(1.5)
                 width = Inches(9)
