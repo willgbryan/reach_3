@@ -596,7 +596,7 @@ const ChatSection = ({
             <IconPresentation className="h-5 w-5 text-green-500" />
             <div className="text-center">
               <div className="font-semibold">PowerPoint Created Successfully</div>
-              <div className="text-sm text-gray-500">Your presentation is ready to download.</div>
+              <div className="text-sm text-gray-500">Your presentation is available in your downloads.</div>
             </div>
           </div>
         </div>
