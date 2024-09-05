@@ -187,6 +187,11 @@ export const Card: React.FC<CardProps> = ({
   };
 
   const renderContent = () => {
+    if (React.isValidElement(card.content) || Array.isArray(card.content)) {
+      // If content is a React element or an array of React elements, return it directly
+      return card.content;
+    }
+
     if (typeof card.content === 'string') {
       const parser = new DOMParser();
       const doc = parser.parseFromString(card.content, 'text/html');
@@ -245,9 +250,10 @@ export const Card: React.FC<CardProps> = ({
         ADD_ATTR: ['data-table-id'],
       });
 
-      return sanitizedHtml;
+      return <div dangerouslySetInnerHTML={{ __html: sanitizedHtml }} />;
     }
-    return '';
+
+    return null;
   };
 
   useEffect(() => {
@@ -350,7 +356,7 @@ export const Card: React.FC<CardProps> = ({
                 >
                   <IconX className="h-6 w-6" />
                 </button>
-              </div>
+                </div>
               <div className="mt-4">
                 <p className="text-base font-medium text-black dark:text-white">
                   {card.category}
@@ -358,10 +364,9 @@ export const Card: React.FC<CardProps> = ({
                 <p className="text-2xl md:text-5xl font-semibold text-neutral-700 mt-4 dark:text-white">
                   {card.title}
                 </p>
-                <div 
-                  className="py-10 text-stone-900 dark:text-stone-100 text-base md:text-lg font-sans prose prose-stone dark:prose-invert max-w-none"
-                  dangerouslySetInnerHTML={{ __html: renderContent() }}
-                />
+                <div className="py-10 text-stone-900 dark:text-stone-100 text-base md:text-lg font-sans prose prose-stone dark:prose-invert max-w-none">
+                  {renderContent()}
+                </div>
               </div>
             </motion.div>
           </div>
