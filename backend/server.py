@@ -11,7 +11,7 @@ import io
 import logging
 from typing import List
 from reach_core.utils.websocket_manager import WebSocketManager
-from reach_core.master.prompts import generate_report_prompt
+from reach_core.master.prompts import component_injection, generate_report_prompt
 from fastapi.middleware.cors import CORSMiddleware
 from pptx.util import Inches, Pt
 from openai import OpenAI
@@ -225,6 +225,7 @@ class ChartRequest(BaseModel):
 
 @app.post("/create-chart")
 async def create_chart(request: ChartRequest):
+    component_code = component_injection()
     user_prompt = f"""
     You are an expert D3.js developer.
 
@@ -242,6 +243,10 @@ async def create_chart(request: ChartRequest):
     Do not redeclare the variable `svg` or any other variables if they have already been declared in the environment.
     Assume that a D3.js environment is already available and that an `svg` element has been appended to the DOM.
     Do not include any HTML tags, <script> tags, or references to external libraries.
+
+    The D3.js code will be executed in the following component: {component_code}.
+    
+    The D3 code's compatability with the provided component is mission critical. My job depends on it.
     """
 
     prompt = """

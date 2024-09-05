@@ -82,13 +82,11 @@ const ChartCard: React.FC<ChartCardProps> = ({ d3Code, onClose }) => {
 
     renderChart();
 
-    // Add resize event listener
     const handleResize = () => {
       renderChart();
     };
     window.addEventListener('resize', handleResize);
 
-    // Cleanup
     return () => {
       window.removeEventListener('resize', handleResize);
     };
