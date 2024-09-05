@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils'
 import SupabaseProvider from './supabase-provider'
 import { headers } from 'next/headers'
 import { Logo } from '@/components/layout/sidebar-panel'
+import Script from 'next/script'
 
 export const metadata: Metadata = {
   title: {
@@ -39,7 +40,9 @@ export default async function RootLayout({ children }: RootLayoutProps) {
 
   return (
     <html lang="en">
-      <head />
+      <head>
+        <Script src="https://d3js.org/d3.v7.min.js" strategy="beforeInteractive" />
+      </head>
       <body
         className={cn(
           'bg-background dark:bg-offBlack-950 font-sans antialiased',

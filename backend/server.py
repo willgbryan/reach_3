@@ -1,22 +1,18 @@
-from copy import deepcopy
 from http.client import HTTPException
 import traceback
 from supabase_utils.pptx_utils import read_pptx_from_supabase
-from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect, File, UploadFile, Form
+from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import Response, JSONResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 import json
 import os
 import io
 import logging
-import aiofiles
 from typing import List
 from reach_core.utils.websocket_manager import WebSocketManager
-from reach_core.master.prompts import generate_report_prompt
+from reach_core.master.prompts import component_injection, generate_report_prompt
 from fastapi.middleware.cors import CORSMiddleware
-from pptx import Presentation
 from pptx.util import Inches, Pt
 from openai import OpenAI
 
@@ -139,7 +135,7 @@ async def generate_powerpoint(request: PowerPointRequest):
         print(f"File path: {request.filePath}")
         print(f"Favorite theme: {request.favoriteTheme}")
         print(f"Signed URL: {request.signedUrl}")
-
+        
         try:
             prs = read_pptx_from_supabase(request.filePath, request.signedUrl)
             print("PowerPoint read from Supabase successfully")
@@ -171,7 +167,6 @@ async def generate_powerpoint(request: PowerPointRequest):
         print(f"Presentation data: {presentation_data}")
 
         trim_count = len(prs.slides)
-        
         title_slide_layout = prs.slide_layouts[0]
         title_slide = prs.slides.add_slide(title_slide_layout)
         
@@ -229,21 +224,78 @@ async def generate_powerpoint(request: PowerPointRequest):
         print(traceback.format_exc())
         return JSONResponse(status_code=500, content={"detail": str(e)})
 
+class ChartRequest(BaseModel):
+    tableId: str
+    tableContent: str
+
+@app.post("/create-chart")
+async def create_chart(request: ChartRequest):
+    component_code = component_injection()
+    user_prompt = f"""
+    You are an expert D3.js developer.
+
+    Create only the necessary D3.js code to generate a chart based on the following data and include labels:
+
+    Data:
+    {request.tableContent}
+
+    Avoid the use of `translate`, `width`, and `selectAll`.
+
+    If the x-axis contains time indices, ensure time increases to the right.
+
+    The charts should be visually appealing. Lean into earth toned colors like stone-400 and stone-500 as well as zinc-600 and zinc-500.
+
+    Do not redeclare the variable `svg` or any other variables if they have already been declared in the environment.
+    Assume that a D3.js environment is already available and that an `svg` element has been appended to the DOM.
+    Do not include any HTML tags, <script> tags, or references to external libraries.
+
+    The D3.js code will be executed in the following component: {component_code}.
+    
+    The D3 code's compatability with the provided component is mission critical. My job depends on it.
+    """
+
+    prompt = """
+    You are an expert D3.js developer.
+    Your task is to create D3.js code for a chart based on the provided table data.
+    """
+
+    try:
+        completion = client.chat.completions.create(
+            model="gpt-4o-2024-08-06",
+            messages=[
+                {"role": "system", "content": prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+        )
+        d3_code = completion.choices[0].message.content
+        return {"d3_code": d3_code}
+    except Exception as e:
+        print(f"Error in create-chart: {str(e)}")
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail="Error generating chart code")
+
 class CondenseRequest(BaseModel):
     task: str
     accumulatedOutput: str
     
 @app.post("/condense-findings")
-async def generate_powerpoint(request: CondenseRequest):
+async def condense_findings(request: CondenseRequest):
     user_prompt = generate_report_prompt(
         question=request.task,
         context=request.accumulatedOutput
     )
+
+    prompt = f"""
+    You are a seasoned analyst. \n
+    Your primary goal is to compose comprehensive, astute, impartial, and methodically arranged reports of the provided research.\n
+    Aggregate key thematic points, quantitative findings, and tables from the provided research.
+    """
+
     try:
         completion = client.chat.completions.create(
             model="gpt-4o-2024-08-06",
             messages=[
-                {"role": "system", "content": "You are a seasoned analyst. Your primary goal is to compose comprehensive, astute, impartial, and methodically arranged reports of the provided research."},
+                {"role": "system", "content": prompt},
                 {"role": "user", "content": user_prompt}
             ],
         )

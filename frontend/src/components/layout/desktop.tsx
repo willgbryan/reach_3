@@ -8,7 +8,7 @@ export function DesktopLayout({ historyChildren, children, user }) {
 // export function DesktopLayout({ children, user }) {
 
   return (
-    <div className="flex h-full items-stretch dark:bg-stone-800 bg-stone-100">
+    <div className="flex h-full items-stretch dark:bg-zinc-800 bg-stone-100">
       <SidebarPanel user={user?.id}>
         <div className="pr-4">
           <Separator className="my-2 dark:bg-white" />

@@ -130,7 +130,7 @@ export function ProfileForm() {
             </Select>
           </div>
           <CardFooter className="px-0 pb-0 pt-4 flex justify-end space-x-2">
-            <Button type="button" variant="outline">Cancel</Button>
+            <Button type="button">Cancel</Button>
             <Button type="submit" disabled={isLoading}>
               {isLoading ? 'Saving...' : 'Save Changes'}
             </Button>

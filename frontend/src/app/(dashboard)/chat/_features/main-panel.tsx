@@ -5,12 +5,12 @@ import { useRouter } from 'next/navigation'
 import { Message } from 'ai'
 import { nanoid } from 'nanoid'
 import DOMPurify from 'dompurify'
-import 'react-quill/dist/quill.snow.css'
 import jsPDF from 'jspdf'
 import 'jspdf-autotable'
 import Cookies from 'js-cookie'
 import { AnimatePresence } from 'framer-motion'
 import { marked } from 'marked';
+import { renderToString } from 'react-dom/server';
 
 import { ModeToggle } from '@/components/theme-toggle'
 import { ChatScrollAnchor } from '@/components/chat/chat-scroll-anchor'
@@ -28,6 +28,8 @@ import { TutorialOverlay } from '@/components/tutorial/tutorial-overlay'
 import { TutorialStep } from '@/components/tutorial/tutorial-step'
 import InfoButton from '@/components/tutorial/info-button'
 import createEditableDocument from '@/components/word-doc-functions'
+import TableDownloader from '@/components/table-downloader'
+import { IconLoader2, IconPresentation } from '@tabler/icons-react'
 
 interface MainVectorPanelProps {
   id?: string | undefined
@@ -553,22 +555,64 @@ const ChatSection = ({
   const sourcesToUse = allSources.length > 0 ? allSources : localSources;
   
   const handleCreateStructuredPowerPoint = async (content: string) => {
+    const toastId = toast.custom((t) => (
+      <div className="flex items-center justify-center w-full">
+        <div className="flex items-center space-x-2">
+          <IconLoader2 className="animate-spin h-5 w-5" />
+          <div className="text-center">
+            <div className="font-semibold">Creating PowerPoint</div>
+            <div className="text-sm text-gray-500">One moment please...</div>
+          </div>
+        </div>
+      </div>
+    ), {
+      duration: Infinity,
+      className: 'w-full max-w-md',
+    });
+  
     try {
       console.log('Generating PowerPoint with content:', content);
+      
       const response = await fetch('/api/fetch-powerpoint');
       if (!response.ok) {
         throw new Error('Failed to fetch PowerPoint template');
       }
+      
       const { filePath, signedUrl } = await response.json();
       if (!signedUrl) {
         throw new Error('No signed URL provided for the PowerPoint template');
       }
+      
       console.log('Signed URL before calling generatePowerPoint:', signedUrl);
       const favoriteTheme = response.headers.get('X-Favorite-Theme') || 'default_template.pptx';
+      
       await generatePowerPoint(content, filePath, favoriteTheme, signedUrl);
+  
+      toast.dismiss(toastId);
+  
+      toast.custom((t) => (
+        <div className="flex items-center justify-center w-full">
+          <div className="flex items-center space-x-2">
+            <IconPresentation className="h-5 w-5 text-green-500" />
+            <div className="text-center">
+              <div className="font-semibold">PowerPoint Created Successfully</div>
+              <div className="text-sm text-gray-500">Your presentation is available in your downloads.</div>
+            </div>
+          </div>
+        </div>
+      ), {
+        duration: 3000,
+        className: 'w-full max-w-md',
+      });
+  
     } catch (error) {
       console.error("Error creating PowerPoint:", error);
-      toast.error("Error creating PowerPoint");
+      
+      toast.dismiss(toastId);
+  
+      toast.error("Failed to create PowerPoint", {
+        description: "We encountered an error while generating your presentation. Please try again.",
+      });
     }
   };
 
@@ -585,14 +629,24 @@ const ChatSection = ({
     doc.querySelectorAll('ol').forEach(el => el.classList.add('list-decimal', 'list-inside', 'my-2'));
     doc.querySelectorAll('li').forEach(el => el.classList.add('mb-1'));
   
-    doc.querySelectorAll('table').forEach(el => {
-      el.classList.add('border-collapse', 'my-4', 'w-full', 'rounded-lg', 'overflow-hidden');
+    doc.querySelectorAll('table').forEach((table, index) => {
+      const tableId = `table-${index}`;
+      table.id = tableId;
+      table.classList.add('border-collapse', 'my-4', 'w-full', 'rounded-lg', 'overflow-hidden');
+      
+      const iconContainer = doc.createElement('div');
+      iconContainer.className = 'absolute -top-10 right-0 flex space-x-2 mb-2';
     });
     doc.querySelectorAll('th, td').forEach(el => {
       el.classList.add('px-4', 'py-2', 'border', 'border-gray-300', 'dark:border-stone-100');
     });
     doc.querySelectorAll('th').forEach(el => {
-      el.classList.add('font-semibold', 'bg-gray-100', 'dark:bg-stone-800');
+      el.classList.add('font-semibold', 'bg-gray-100', 'dark:bg-zinc-800');
+    });
+    doc.querySelectorAll('a').forEach(el => {
+      el.classList.add('text-blue-600', 'hover:text-blue-800', 'underline');
+      el.setAttribute('target', '_blank');
+      el.setAttribute('rel', 'noopener noreferrer');
     });
   
     const style = doc.createElement('style');
@@ -617,9 +671,42 @@ const ChatSection = ({
       tr:nth-child(even) {
         background-color: #f8fafc;
       }
-      
-      /* Dark mode styles */
+      a {
+        color: #2563eb; /* blue-600 */
+        text-decoration: underline;
+      }
+      a:hover {
+        color: #1d4ed8; /* blue-800 */
+      }
+      .table-wrapper {
+        position: relative;
+        margin-top: 2.5rem; /* Increased margin-top to accommodate buttons and spacing */
+      }
+
+      .table-icon-container {
+        position: absolute;
+        top: -2.5rem; /* Adjusted top position */
+        right: 0;
+        display: flex;
+        gap: 0.5rem;
+        z-index: 10;
+        margin-bottom: 0.5rem; /* Added margin-bottom for spacing */
+      }
+
+      .table-icon {
+        padding: 0.25rem;
+        border-radius: 0.25rem;
+        transition: background-color 0.2s;
+      }
+
+      .table-icon:hover {
+        background-color: #e2e8f0;
+      }
+
       @media (prefers-color-scheme: dark) {
+        .table-icon:hover {
+          background-color: #18181b;
+        }
         table {
           border-color: #3f3f46; /* zinc-700 */
         }
@@ -635,11 +722,22 @@ const ChatSection = ({
         tr:nth-child(odd) {
           background-color: #27272a; /* zinc-800 for odd rows */
         }
+        a {
+          color: #60a5fa; /* blue-400 */
+        }
+        a:hover {
+          color: #93c5fd; /* blue-300 */
+        }
       }
     `;
     doc.head.appendChild(style);
   
     return doc.body.innerHTML;
+  };
+
+  type TableInfo = {
+    id: string;
+    content: string;
   };
 
   const createCard = (item: any, index: number): JSX.Element | null => {
@@ -648,6 +746,7 @@ const ChatSection = ({
     let content: React.ReactNode;
     let rawContent: string;
     let type: 'iteration' | 'condensed' | 'sources';
+    let tables: TableInfo[] = [];
   
     if (item.type === 'sources') {
       title = 'Sources';
@@ -677,7 +776,7 @@ const ChatSection = ({
           ))}
         </ol>
       );
-      rawContent = JSON.stringify(uniqueSources, null, 2);  // Format sources as JSON string
+      rawContent = JSON.stringify(uniqueSources, null, 2);
     } else if (item.type === 'condensed' || item.type === 'iteration') {
       title = item.type === 'condensed' ? 'Findings' : `Dive ${index + 1}`;
       category = item.type === 'condensed' ? 'Navigation Summary' : 'Outbound Navigation';
@@ -685,13 +784,25 @@ const ChatSection = ({
       
       rawContent = item.content;
       const formattedContent = formatContentToHTML(item.content);
-      // formattedContent is sanitized in formatContentToHTML
-      content = (
-        <div 
-          className="text-stone-900 dark:text-stone-100 text-base md:text-lg font-sans prose prose-stone dark:prose-invert max-w-none"
-          dangerouslySetInnerHTML={{ __html: formattedContent }}
-        />
-      );
+      
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(formattedContent, 'text/html');
+      const tableTags = doc.querySelectorAll('table');
+      
+      tableTags.forEach((table, tableIndex) => {
+        const tableId = `table-${index}-${tableIndex}`;
+        table.id = tableId;
+        tables.push({
+          id: tableId,
+          content: table.outerHTML,
+        });
+        const placeholder = doc.createElement('div');
+        placeholder.id = `table-placeholder-${tableId}`;
+        placeholder.dataset.tableId = tableId;
+        table.parentNode?.replaceChild(placeholder, table);
+      });
+  
+      content = doc.body.innerHTML;
     } else if (item.role === 'user') {
       return null;
     } else {
@@ -702,17 +813,22 @@ const ChatSection = ({
     if (title && category && type) {
       return (
         <Card
-          key={`item-${index}`}
+          key={`item-${type}-${index}`}
           card={{
             category,
             title,
             content,
             rawContent,
             type,
+            tables,
           }}
           index={index}
           onCreateDoc={createEditableDocument}
           onCreatePowerPoint={handleCreateStructuredPowerPoint}
+          onCreateChart={(tableId: string) => {
+            console.log(`Create chart for table ${tableId}`);
+            // Implement chart creation logic here
+          }}
         />
       );
     }
