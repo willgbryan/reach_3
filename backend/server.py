@@ -135,8 +135,14 @@ async def generate_powerpoint(request: PowerPointRequest):
         print(f"File path: {request.filePath}")
         print(f"Favorite theme: {request.favoriteTheme}")
         print(f"Signed URL: {request.signedUrl}")
-
-        prs = read_pptx_from_supabase(request.filePath, request.signedUrl)
+        
+        try:
+            prs = read_pptx_from_supabase(request.filePath, request.signedUrl)
+            print("PowerPoint read from Supabase successfully")
+        except Exception as e:
+            print(f"Failed to read PowerPoint from Supabase: {str(e)}")
+            print("Falling back to base presentation")
+            prs = Presentation()
 
         completion = client.chat.completions.create(
             model="gpt-4o-2024-08-06",
@@ -161,7 +167,6 @@ async def generate_powerpoint(request: PowerPointRequest):
         print(f"Presentation data: {presentation_data}")
 
         trim_count = len(prs.slides)
-
         title_slide_layout = prs.slide_layouts[0]
         title_slide = prs.slides.add_slide(title_slide_layout)
         
