@@ -120,7 +120,7 @@ const ChartCard: React.FC<ChartCardProps> = ({ d3Code, onClose }) => {
   };
 
   return (
-    <div className="chart-container relative bg-transparent dark:bg-zinc-800 rounded-lg p-4 mt-4 w-full h-full">
+    <div className="chart-container relative bg-transparent rounded-lg p-4 mt-4 w-full h-full">
       <div className="absolute top-2 right-2 flex space-x-2 z-10">
         <button
           onClick={handleDownload}
