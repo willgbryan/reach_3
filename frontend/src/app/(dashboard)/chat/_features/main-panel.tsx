@@ -29,6 +29,7 @@ import { TutorialStep } from '@/components/tutorial/tutorial-step'
 import InfoButton from '@/components/tutorial/info-button'
 import createEditableDocument from '@/components/word-doc-functions'
 import TableDownloader from '@/components/table-downloader'
+import { IconLoader2, IconPresentation } from '@tabler/icons-react'
 
 interface MainVectorPanelProps {
   id?: string | undefined
@@ -554,22 +555,64 @@ const ChatSection = ({
   const sourcesToUse = allSources.length > 0 ? allSources : localSources;
   
   const handleCreateStructuredPowerPoint = async (content: string) => {
+    const toastId = toast.custom((t) => (
+      <div className="flex items-center justify-center w-full">
+        <div className="flex items-center space-x-2">
+          <IconLoader2 className="animate-spin h-5 w-5" />
+          <div className="text-center">
+            <div className="font-semibold">Creating PowerPoint</div>
+            <div className="text-sm text-gray-500">One moment please...</div>
+          </div>
+        </div>
+      </div>
+    ), {
+      duration: Infinity,
+      className: 'w-full max-w-md',
+    });
+  
     try {
       console.log('Generating PowerPoint with content:', content);
+      
       const response = await fetch('/api/fetch-powerpoint');
       if (!response.ok) {
         throw new Error('Failed to fetch PowerPoint template');
       }
+      
       const { filePath, signedUrl } = await response.json();
       if (!signedUrl) {
         throw new Error('No signed URL provided for the PowerPoint template');
       }
+      
       console.log('Signed URL before calling generatePowerPoint:', signedUrl);
       const favoriteTheme = response.headers.get('X-Favorite-Theme') || 'default_template.pptx';
+      
       await generatePowerPoint(content, filePath, favoriteTheme, signedUrl);
+  
+      toast.dismiss(toastId);
+  
+      toast.custom((t) => (
+        <div className="flex items-center justify-center w-full">
+          <div className="flex items-center space-x-2">
+            <IconPresentation className="h-5 w-5 text-green-500" />
+            <div className="text-center">
+              <div className="font-semibold">PowerPoint Created Successfully</div>
+              <div className="text-sm text-gray-500">Your presentation is ready to download.</div>
+            </div>
+          </div>
+        </div>
+      ), {
+        duration: 3000,
+        className: 'w-full max-w-md',
+      });
+  
     } catch (error) {
       console.error("Error creating PowerPoint:", error);
-      toast.error("Error creating PowerPoint");
+      
+      toast.dismiss(toastId);
+  
+      toast.error("Failed to create PowerPoint", {
+        description: "We encountered an error while generating your presentation. Please try again.",
+      });
     }
   };
 

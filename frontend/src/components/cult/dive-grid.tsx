@@ -1,6 +1,6 @@
 import React, { useContext, useState, useRef, useEffect, createContext } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { IconChartBar, IconDownload, IconFileText, IconPresentation, IconX } from "@tabler/icons-react";
+import { IconChartBar, IconDownload, IconFileText, IconLoader2, IconPresentation, IconX } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import { useOutsideClick } from "@/hooks/use-outside-click";
 import { Meteors } from './meteors';
@@ -145,6 +145,21 @@ export const Card: React.FC<CardProps> = ({
   };
 
   const sendCreateChartRequest = async (tableId: string, tableContent: string) => {
+    const toastId = toast.custom((t) => (
+      <div className="flex items-center justify-center w-full">
+        <div className="flex items-center space-x-2">
+          <IconLoader2 className="animate-spin h-5 w-5" />
+          <div className="text-center">
+            <div className="font-semibold">Creating your chart</div>
+            <div className="text-sm text-gray-500">One moment please...</div>
+          </div>
+        </div>
+      </div>
+    ), {
+      duration: Infinity,
+      className: 'w-full max-w-md',
+    });
+  
     try {
       const response = await fetch('/api/create-chart', {
         method: 'POST',
@@ -153,31 +168,44 @@ export const Card: React.FC<CardProps> = ({
         },
         body: JSON.stringify({ tableId, tableContent }),
       });
-
+  
       if (!response.ok) {
         throw new Error(`Error: ${response.status}`);
       }
-
+  
       const result = await response.json();
       console.log('Chart created successfully:', result);
       setChartData(prevState => ({ ...prevState, [tableId]: result.d3_code }));
       setChartError(prevState => ({ ...prevState, [tableId]: null }));
+  
+      toast.dismiss(toastId);
+  
+      toast.success("Chart created successfully!", {
+        description: "Your chart is now ready to view.",
+      });
     } catch (error) {
       console.error('Error creating chart:', error);
       setChartError(prevState => ({ ...prevState, [tableId]: 'Failed to create chart. Please try again.' }));
-      toast.error("We're having some trouble processing your request. Please try again in a moment.");
+  
+      toast.dismiss(toastId);
+  
+      toast.error("Failed to create chart", {
+        description: "We're having some trouble processing your request. Please try again in a moment.",
+      });
     }
   };
-
+  
   const handleCreateChart = (tableId: string) => {
     console.log('Creating chart for table:', tableId);
-    toast.success('Creating your chart, one moment please.')
     const table = card.tables.find(t => t.id === tableId);
     if (table) {
       sendCreateChartRequest(tableId, table.content);
     } else {
       console.error(`Table with id ${tableId} not found`);
       setChartError(prevState => ({ ...prevState, [tableId]: 'Table not found. Please try again.' }));
+      toast.error("Failed to create chart", {
+        description: "The specified table was not found. Please try again.",
+      });
     }
   };
 
@@ -188,7 +216,6 @@ export const Card: React.FC<CardProps> = ({
 
   const renderContent = () => {
     if (React.isValidElement(card.content) || Array.isArray(card.content)) {
-      // If content is a React element or an array of React elements, return it directly
       return card.content;
     }
 
