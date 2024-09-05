@@ -60,7 +60,7 @@ export async function checkAndInsertUserConfig() {
           job_title: 'Not specified',
           industry: 'Not specified',
           report_config: {},
-          favorite_theme: 'default'
+          favorite_theme: 'Heighliner Base Template.pptx'
         })
         .single()
 
@@ -71,8 +71,6 @@ export async function checkAndInsertUserConfig() {
       console.log('New user config inserted:', insertData)
 
       await createUserThemeFolder(userId, supabase)
-      
-      await setFavoriteTheme(`${userId}/Heighliner Base Template.pptx`)
     } else {
       console.log('User config already exists')
     }
@@ -109,27 +107,6 @@ async function createUserThemeFolder(userId: string, supabase: any) {
     console.log(`Base template copied to user ${userId}'s folder`)
   } catch (error) {
     console.error('Error in createUserThemeFolder:', error)
-  }
-}
-
-async function setFavoriteTheme(favorite_theme: string) {
-  try {
-    const response = await fetch('/api/set-favorite-theme', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ favorite_theme }),
-    })
-
-    if (!response.ok) {
-      throw new Error('Failed to set favorite theme')
-    }
-
-    const result = await response.json()
-    console.log('Favorite theme set successfully:', result.message)
-  } catch (error) {
-    console.error('Error setting favorite theme:', error)
   }
 }
 
