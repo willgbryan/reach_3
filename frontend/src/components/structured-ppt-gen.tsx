@@ -4,9 +4,6 @@ export async function generatePowerPoint(userPrompt: string, filePath: string, f
   console.log('generatePowerPoint function called with prompt:', userPrompt, 'and file path:', filePath);
   try {
     console.log('Sending request to generate PowerPoint...');
-    toast.success("Creating presentation", {
-      description: "Your presentation will automatically download shortly.",
-    });
     console.log('Signed URL before sending request:', signedUrl);
 
     const response = await fetch('/api/generate-presentation', {

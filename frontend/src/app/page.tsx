@@ -36,11 +36,10 @@ export default async function SignIn() {
       <section className="h-full w-full">
         <div className=" flex flex-col justify-center items-center mt-16 md:mt-36">
           <div className="flex gap-2">
-            <CultIcon className=" h-16 w-12 md:h-24 md:w-16 mt-1" />
             <div>
-              <Heading size="xxl">Manifest</Heading>
+              <Heading size="xxl">Heighliner</Heading>
               <Heading size="sm" variant="secondary" className="-mt-2 md:-mt-4">
-                newcult.co template
+                if you're reading this, the app is cooked.
               </Heading>
             </div>
           </div>

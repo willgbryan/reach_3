@@ -1,4 +1,5 @@
 import { type Message } from 'ai'
+import * as d3 from 'd3';
 
 export interface Chat extends Record<string, any> {
   id: string
@@ -7,7 +8,7 @@ export interface Chat extends Record<string, any> {
   userId: string
   path: string
   messages: Message[]
-  sharePath?: string // Refactor to use RLS
+  sharePath?: string
 }
 
 export interface ChatWithSources extends Record<string, any> {
@@ -21,3 +22,11 @@ export type ServerActionResult<Result> = Promise<
       error: string
     }
 >
+
+declare global {
+  interface Window {
+    d3: typeof d3;
+  }
+}
+
+export {}
