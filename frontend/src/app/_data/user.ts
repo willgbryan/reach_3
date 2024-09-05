@@ -71,6 +71,8 @@ export async function checkAndInsertUserConfig() {
       console.log('New user config inserted:', insertData)
 
       await createUserThemeFolder(userId, supabase)
+      
+      await setFavoriteTheme(`${userId}/Heighliner Base Template.pptx`)
     } else {
       console.log('User config already exists')
     }
@@ -81,18 +83,53 @@ export async function checkAndInsertUserConfig() {
 
 async function createUserThemeFolder(userId: string, supabase: any) {
   try {
-    const { data, error } = await supabase
+    const { data: folderData, error: folderError } = await supabase
       .storage
       .from('slide_themes')
       .upload(`${userId}/.folder`, new Uint8Array())
+
+    if (folderError) {
+      throw folderError
+    }
+
+    console.log(`Folder created for user ${userId} in slide_themes bucket`)
+
+    const sourceFile = 'base_templates/Heighliner Base Template.pptx'
+    const destinationFile = `${userId}/Heighliner Base Template.pptx`
+
+    const { data, error } = await supabase
+      .storage
+      .from('slide_themes')
+      .copy(sourceFile, destinationFile)
 
     if (error) {
       throw error
     }
 
-    console.log(`Folder created for user ${userId} in slide_themes bucket`)
+    console.log(`Base template copied to user ${userId}'s folder`)
   } catch (error) {
-    console.error('Error creating user theme folder:', error)
+    console.error('Error in createUserThemeFolder:', error)
+  }
+}
+
+async function setFavoriteTheme(favorite_theme: string) {
+  try {
+    const response = await fetch('/api/set-favorite-theme', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ favorite_theme }),
+    })
+
+    if (!response.ok) {
+      throw new Error('Failed to set favorite theme')
+    }
+
+    const result = await response.json()
+    console.log('Favorite theme set successfully:', result.message)
+  } catch (error) {
+    console.error('Error setting favorite theme:', error)
   }
 }
 
