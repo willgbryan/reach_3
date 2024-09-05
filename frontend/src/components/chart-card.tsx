@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import * as d3 from 'd3';
 import { IconX, IconDownload } from "@tabler/icons-react";
+import { toast } from 'sonner';
 
 interface ChartCardProps {
   d3Code: string;
@@ -70,6 +71,7 @@ const ChartCard: React.FC<ChartCardProps> = ({ d3Code, onClose }) => {
           console.log("D3 code executed successfully");
           setDebugInfo((prev) => prev + "D3 code executed successfully\n");
         } catch (error) {
+          toast.error('This one is on us, please try pressing the chart button again.')
           console.error('Error executing D3 code:', error);
           setError(`Error rendering chart: ${(error as Error).message}`);
           setDebugInfo((prev) => prev + `Error executing D3 code: ${(error as Error).message}\n`);
@@ -137,7 +139,6 @@ const ChartCard: React.FC<ChartCardProps> = ({ d3Code, onClose }) => {
       </div>
       <div ref={chartRef} className="chart-content w-full h-full">
       </div>
-      {error && <div className="error-message mt-2 text-red-500">{"This one's on us, please try pressing the chart button again."}</div>}
     </div>
   );
 };

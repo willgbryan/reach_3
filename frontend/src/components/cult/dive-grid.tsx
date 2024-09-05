@@ -9,6 +9,8 @@ import DOMPurify from 'dompurify';
 import { toast } from 'sonner';
 import ChartCard from '../chart-card';
 import ReactDOM from 'react-dom';
+import { TutorialOverlay } from '@/components/tutorial/tutorial-overlay';
+import { TutorialStep } from '@/components/tutorial/tutorial-step';
 
 type Card = {
   title: string;
@@ -90,6 +92,11 @@ export const Card: React.FC<CardProps> = ({
   const [chartError, setChartError] = useState<{ [key: string]: string | null }>({});
   const containerRef = useRef<HTMLDivElement>(null);
   const { onCardClose } = useContext(CarouselContext);
+
+  // keeping a tutorial overlay in here until the feature is stable (19/20 attempts are successes)
+  const [isChartTutorialActive, setIsChartTutorialActive] = useState(false);
+  const [dontShowChartTutorial, setDontShowChartTutorial] = useState(false);
+
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -179,10 +186,7 @@ export const Card: React.FC<CardProps> = ({
       setChartError(prevState => ({ ...prevState, [tableId]: null }));
   
       toast.dismiss(toastId);
-  
-      toast.success("Chart created successfully!", {
-        description: "Your chart is now ready to view.",
-      });
+      
     } catch (error) {
       console.error('Error creating chart:', error);
       setChartError(prevState => ({ ...prevState, [tableId]: 'Failed to create chart. Please try again.' }));
@@ -199,6 +203,9 @@ export const Card: React.FC<CardProps> = ({
     console.log('Creating chart for table:', tableId);
     const table = card.tables.find(t => t.id === tableId);
     if (table) {
+      if (!dontShowChartTutorial) {
+        setIsChartTutorialActive(true);
+      }
       sendCreateChartRequest(tableId, table.content);
     } else {
       console.error(`Table with id ${tableId} not found`);
@@ -207,6 +214,10 @@ export const Card: React.FC<CardProps> = ({
         description: "The specified table was not found. Please try again.",
       });
     }
+  };
+
+  const handleCloseChartTutorial = () => {
+    setIsChartTutorialActive(false);
   };
 
   const handleCloseChart = (tableId: string) => {
@@ -355,6 +366,24 @@ export const Card: React.FC<CardProps> = ({
               ref={containerRef}
               className="max-w-5xl mx-auto backdrop-blur-lg h-fit z-[110] my-10 p-4 md:p-10 rounded-lg font-sans relative"
             >
+              <AnimatePresence>
+              {isChartTutorialActive && (
+                <TutorialOverlay isFirstOrLastStep={true}>
+                  <TutorialStep
+                    title="Chart Creation Disclaimer"
+                    description="This is our newest (and least stable) feature. While we can't guarantee the charts will be perfect each time, feel free to generate as many as needed. It's on the house."
+                    highlightId=""
+                    onNext={handleCloseChartTutorial}
+                    onPrevious={handleCloseChartTutorial}
+                    onClose={handleCloseChartTutorial}
+                    isFirstStep={true}
+                    isLastStep={true}
+                    dontShowAgain={dontShowChartTutorial}
+                    setDontShowAgain={setDontShowChartTutorial}
+                  />
+                </TutorialOverlay>
+              )}
+            </AnimatePresence>
               <div className="sticky top-0 right-0 left-0 z-20 bg-transparent py-4 px-4 md:px-0 flex flex-col md:flex-row justify-end space-y-2 md:space-y-0 md:space-x-2">
                 <button
                   className="flex items-center justify-center px-3 py-2 hover:text-stone-900 bg-stone-900 dark:bg-stone-100 rounded-full text-sm font-medium text-stone-100 dark:hover:text-stone-100 dark:text-stone-900 hover:bg-stone-300 dark:hover:bg-stone-600 transition-colors"
