@@ -33,3 +33,6 @@ another note
 
     frontend changes are tailed
     backend changes are not tailed, so any change to the backend will require a rebuild
+
+you might need to wrestle with the auth process locally. the slug, callback, and redirect are configured for heighliner.tech not localhost:3000
+after logging in locally, just manually enter http://localhost:3000/chat in the search bar. it might take a couple tries.
