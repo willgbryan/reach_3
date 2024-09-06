@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -23,72 +23,74 @@ import { toast } from "sonner";
 const chartTypes = ["Bar", "Line", "Pie", "Scatter", "Area"];
 const colorSchemes = ["Category10", "Accent", "Paired", "Set1", "Set2", "Set3"];
 
+const defaultChartConfig = {
+  chartType: "",
+  width: "",
+  height: "",
+  margin: { top: "", right: "", bottom: "", left: "" },
+  colorScheme: "",
+  showLegend: false,
+  showTooltip: false,
+  xAxisLabel: "",
+  yAxisLabel: "",
+  animationDuration: "",
+};
+
 export function ChartsForm() {
-  const [chartConfig, setChartConfig] = useState({
-    chartType: "",
-    width: "",
-    height: "",
-    margin: { top: "", right: "", bottom: "", left: "" },
-    colorScheme: "",
-    showLegend: false,
-    showTooltip: false,
-    xAxisLabel: "",
-    yAxisLabel: "",
-    animationDuration: "",
-  });
+  const [chartConfig, setChartConfig] = useState(defaultChartConfig);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchChartConfig = async () => {
-      try {
-        const response = await fetch('/api/fetch-chart-config');
-        if (!response.ok) {
-          throw new Error('Failed to fetch chart configuration');
-        }
-        const data = await response.json();
-        setChartConfig(data.chart_config || {
-          chartType: "",
-          width: "",
-          height: "",
-          margin: { top: "", right: "", bottom: "", left: "" },
-          colorScheme: "",
-          showLegend: false,
-          showTooltip: false,
-          xAxisLabel: "",
-          yAxisLabel: "",
-          animationDuration: "",
-        });
-      } catch (error) {
-        setError(error.message);
-      } finally {
-        setIsLoading(false);
+  const fetchChartConfig = useCallback(async () => {
+    try {
+      const response = await fetch('/api/fetch-chart-config');
+      if (!response.ok) {
+        throw new Error('Failed to fetch chart configuration');
       }
-    };
-
-    fetchChartConfig();
+      const data = await response.json();
+      // Ensure that margin is always an object with the expected properties
+      const margin = data.chart_config?.margin || {};
+      setChartConfig({
+        ...defaultChartConfig,
+        ...data.chart_config,
+        margin: {
+          top: margin.top || "",
+          right: margin.right || "",
+          bottom: margin.bottom || "",
+          left: margin.left || "",
+        },
+      });
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
-  const handleInputChange = (e) => {
+  useEffect(() => {
+    fetchChartConfig();
+  }, [fetchChartConfig]);
+
+  const handleInputChange = useCallback((e) => {
     const { id, value } = e.target;
     setChartConfig(prev => ({ ...prev, [id]: value }));
-  };
+  }, []);
 
-  const handleMarginChange = (e) => {
+  const handleMarginChange = useCallback((e) => {
     const { id, value } = e.target;
     setChartConfig(prev => ({
       ...prev,
       margin: { ...prev.margin, [id]: value }
     }));
-  };
+  }, []);
 
-  const handleSelectChange = (key, value) => {
+  const handleSelectChange = useCallback((key, value) => {
     setChartConfig(prev => ({ ...prev, [key]: value }));
-  };
+  }, []);
 
-  const handleSwitchChange = (key) => {
+  const handleSwitchChange = useCallback((key) => {
     setChartConfig(prev => ({ ...prev, [key]: !prev[key] }));
-  };
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -116,20 +118,9 @@ export function ChartsForm() {
     }
   };
 
-  const handleReset = () => {
-    setChartConfig({
-      chartType: "",
-      width: "",
-      height: "",
-      margin: { top: "", right: "", bottom: "", left: "" },
-      colorScheme: "",
-      showLegend: false,
-      showTooltip: false,
-      xAxisLabel: "",
-      yAxisLabel: "",
-      animationDuration: "",
-    });
-  };
+  const handleReset = useCallback(() => {
+    setChartConfig(defaultChartConfig);
+  }, []);
 
   if (isLoading) {
     return <div>Loading...</div>;
