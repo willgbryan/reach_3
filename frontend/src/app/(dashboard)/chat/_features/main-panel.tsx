@@ -537,15 +537,10 @@ const ChatSection = ({
   const updatedMessages = [...messages, { content: reportContent, role: 'assistant', type: 'report' }];
   const [reportConfig, setReportConfig] = useState<ReportConfig>({
     font: "",
-    bulletStyle: "",
-    colorScheme: "",
-    headerStyle: "",
     pageOrientation: "portrait",
-    marginSize: 1,
+    marginSize: 15,
     documentTitle: "",
-    author: "",
     subject: "",
-    keywords: "",
     tableOfContents: false,
     pageNumbering: false,
     headerText: "",
@@ -554,15 +549,10 @@ const ChatSection = ({
 
   type ReportConfig = {
     font: string;
-    bulletStyle: string;
-    colorScheme: string;
-    headerStyle: string;
     pageOrientation: "portrait" | "landscape";
     marginSize: number;
     documentTitle: string;
-    author: string;
     subject: string;
-    keywords: string;
     tableOfContents: boolean;
     pageNumbering: boolean;
     headerText: string;

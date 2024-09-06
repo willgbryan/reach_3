@@ -25,15 +25,10 @@ import { marked } from 'marked';
 
 interface ReportConfig {
   font: string;
-  bulletStyle: string;
-  colorScheme: string;
-  headerStyle: string;
   pageOrientation: 'portrait' | 'landscape';
   marginSize: number;
   documentTitle: string;
-  author: string;
   subject: string;
-  keywords: string;
   tableOfContents: boolean;
   pageNumbering: boolean;
   headerText: string;
@@ -70,7 +65,6 @@ const createEditableDocument = async (content: string, config: ReportConfig): Pr
               text: element.textContent || '',
               heading: HeadingLevel[`HEADING_${element.tagName.charAt(1)}` as keyof typeof HeadingLevel],
               spacing: { before: 200, after: 100 },
-              style: config.headerStyle,
             })];
           case 'P':
             return [new Paragraph({
@@ -250,7 +244,6 @@ const createEditableDocument = async (content: string, config: ReportConfig): Pr
       }],
       title: config.documentTitle,
       subject: config.subject,
-      creator: config.author,
     });
 
     const buffer = await Packer.toBuffer(docx);

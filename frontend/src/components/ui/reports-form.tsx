@@ -31,23 +31,13 @@ const bulletStyles = [
   "Circular", "Square", "Diamond", "Dash", "Arrow"
 ];
 
-const colorSchemes = [
-  "Professional", "Vibrant", "Monochrome", "Pastel", "Dark"
-];
-
 export function ReportsForm() {
   const [reportConfig, setReportConfig] = useState({
     font: "",
-    bulletStyle: "",
-    colorScheme: "",
-    headerStyle: "",
     pageOrientation: "portrait",
     marginSize: "",
-    // New fields for Word document generation
     documentTitle: "",
-    author: "",
     subject: "",
-    keywords: "",
     tableOfContents: false,
     pageNumbering: false,
     headerText: "",
@@ -66,15 +56,10 @@ export function ReportsForm() {
         const data = await response.json();
         setReportConfig(data.report_config || {
           font: "",
-          bulletStyle: "",
-          colorScheme: "",
-          headerStyle: "",
           pageOrientation: "portrait",
           marginSize: "",
           documentTitle: "",
-          author: "",
           subject: "",
-          keywords: "",
           tableOfContents: false,
           pageNumbering: false,
           headerText: "",
@@ -136,15 +121,10 @@ export function ReportsForm() {
   const handleReset = () => {
     setReportConfig({
       font: "",
-      bulletStyle: "",
-      colorScheme: "",
-      headerStyle: "",
       pageOrientation: "portrait",
       marginSize: "",
       documentTitle: "",
-      author: "",
       subject: "",
-      keywords: "",
       tableOfContents: false,
       pageNumbering: false,
       headerText: "",
@@ -185,48 +165,6 @@ export function ReportsForm() {
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="bulletStyle">Bullet Style</Label>
-            <Select onValueChange={(value) => handleSelectChange("bulletStyle", value)} value={reportConfig.bulletStyle}>
-              <SelectTrigger id="bulletStyle">
-                <SelectValue placeholder="Select bullet style" />
-              </SelectTrigger>
-              <SelectContent>
-                {bulletStyles.map((style) => (
-                  <SelectItem key={style} value={style.toLowerCase()}>
-                    {style}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="colorScheme">Color Scheme</Label>
-            <Select onValueChange={(value) => handleSelectChange("colorScheme", value)} value={reportConfig.colorScheme}>
-              <SelectTrigger id="colorScheme">
-                <SelectValue placeholder="Select color scheme" />
-              </SelectTrigger>
-              <SelectContent>
-                {colorSchemes.map((scheme) => (
-                  <SelectItem key={scheme} value={scheme.toLowerCase()}>
-                    {scheme}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="headerStyle">Header Style</Label>
-            <Input
-              id="headerStyle"
-              placeholder="e.g., Bold 16pt Uppercase"
-              value={reportConfig.headerStyle}
-              onChange={handleInputChange}
-            />
-          </div>
-          
-          <div className="space-y-2">
             <Label>Page Orientation</Label>
             <RadioGroup value={reportConfig.pageOrientation} onValueChange={handleRadioChange}>
               <div className="flex items-center space-x-2">
@@ -241,11 +179,11 @@ export function ReportsForm() {
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="marginSize">Margin Size (in inches)</Label>
+            <Label htmlFor="marginSize">Margin Size</Label>
             <Input
               id="marginSize"
               type="number"
-              placeholder="e.g., 1"
+              placeholder="Default: 15"
               min="0"
               step="0.1"
               value={reportConfig.marginSize}
@@ -264,31 +202,11 @@ export function ReportsForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="author">Author</Label>
-            <Input
-              id="author"
-              placeholder="Enter author name"
-              value={reportConfig.author}
-              onChange={handleInputChange}
-            />
-          </div>
-
-          <div className="space-y-2">
             <Label htmlFor="subject">Subject</Label>
             <Input
               id="subject"
               placeholder="Enter document subject"
               value={reportConfig.subject}
-              onChange={handleInputChange}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="keywords">Keywords</Label>
-            <Input
-              id="keywords"
-              placeholder="Enter keywords, separated by commas"
-              value={reportConfig.keywords}
               onChange={handleInputChange}
             />
           </div>
