@@ -42,17 +42,17 @@ export async function checkAndInsertUserConfig() {
   }
 
   try {
-    const { data, error } = await supabase
+    const { data: existingConfig, error: selectError } = await supabase
       .from('user_config')
       .select('id')
       .eq('user_id', userId)
       .single()
 
-    if (error && error.code !== 'PGRST116') {
-      throw error
+    if (selectError && selectError.code !== 'PGRST116') {
+      throw selectError
     }
 
-    if (!data) {
+    if (!existingConfig) {
       const { data: insertData, error: insertError } = await supabase
         .from('user_config')
         .insert({
@@ -60,16 +60,21 @@ export async function checkAndInsertUserConfig() {
           job_title: 'Not specified',
           industry: 'Not specified',
           report_config: {},
-          favorite_theme: 'Heighliner Base Template.pptx'
+          favorite_theme: (`${userId}/HeighlinerBaseTemplate.pptx`)
         })
         .single()
 
       if (insertError) {
+        // If insert fails due to a conflict, it means another process inserted the config
+        // between our check and insert. In this case, we can consider it a success.
+        if (insertError.code === '23505') { // unique_violation error code
+          console.log('User config was inserted by another process')
+          return
+        }
         throw insertError
       }
 
       console.log('New user config inserted:', insertData)
-
       await createUserThemeFolder(userId, supabase)
     } else {
       console.log('User config already exists')
@@ -92,8 +97,8 @@ async function createUserThemeFolder(userId: string, supabase: any) {
 
     console.log(`Folder created for user ${userId} in slide_themes bucket`)
 
-    const sourceFile = 'base_templates/Heighliner Base Template.pptx'
-    const destinationFile = `${userId}/Heighliner Base Template.pptx`
+    const sourceFile = 'base_templates/HeighlinerBaseTemplate.pptx'
+    const destinationFile = `${userId}/HeighlinerBaseTemplate.pptx`
 
     const { data, error } = await supabase
       .storage

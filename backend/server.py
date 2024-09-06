@@ -136,13 +136,7 @@ async def generate_powerpoint(request: PowerPointRequest):
         print(f"Favorite theme: {request.favoriteTheme}")
         print(f"Signed URL: {request.signedUrl}")
         
-        try:
-            prs = read_pptx_from_supabase(request.filePath, request.signedUrl)
-            print("PowerPoint read from Supabase successfully")
-        except Exception as e:
-            print(f"Failed to read PowerPoint from Supabase: {str(e)}")
-            print("Falling back to base presentation")
-            prs = Presentation()
+        prs = read_pptx_from_supabase(request.filePath, request.signedUrl)    
 
         completion = client.chat.completions.create(
             model="gpt-4o-2024-08-06",
