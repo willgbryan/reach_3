@@ -43,6 +43,7 @@ export interface Database {
           job_title: string
           industry: string
           report_config: Json
+          chart_config: Json
           favorite_theme: string
         }
         Insert: {
@@ -52,6 +53,7 @@ export interface Database {
           job_title: string
           industry: string
           report_config: Json
+          chart_config: Json
           favorite_theme: string
         }
         Update: {
@@ -61,6 +63,7 @@ export interface Database {
           job_title?: string
           industry?: string
           report_config?: Json
+          chart_config?: Json
           favorite_theme?: string
         }
         Relationships: [
