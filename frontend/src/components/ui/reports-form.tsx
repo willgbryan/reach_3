@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 
 const fonts = [
@@ -42,6 +43,15 @@ export function ReportsForm() {
     headerStyle: "",
     pageOrientation: "portrait",
     marginSize: "",
+    // New fields for Word document generation
+    documentTitle: "",
+    author: "",
+    subject: "",
+    keywords: "",
+    tableOfContents: false,
+    pageNumbering: false,
+    headerText: "",
+    footerText: "",
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -61,6 +71,14 @@ export function ReportsForm() {
           headerStyle: "",
           pageOrientation: "portrait",
           marginSize: "",
+          documentTitle: "",
+          author: "",
+          subject: "",
+          keywords: "",
+          tableOfContents: false,
+          pageNumbering: false,
+          headerText: "",
+          footerText: "",
         });
       } catch (error) {
         setError(error.message);
@@ -83,6 +101,10 @@ export function ReportsForm() {
 
   const handleRadioChange = (value) => {
     setReportConfig(prev => ({ ...prev, pageOrientation: value }));
+  };
+
+  const handleSwitchChange = (key) => {
+    setReportConfig(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
   const handleSubmit = async (e) => {
@@ -119,6 +141,14 @@ export function ReportsForm() {
       headerStyle: "",
       pageOrientation: "portrait",
       marginSize: "",
+      documentTitle: "",
+      author: "",
+      subject: "",
+      keywords: "",
+      tableOfContents: false,
+      pageNumbering: false,
+      headerText: "",
+      footerText: "",
     });
   };
 
@@ -134,11 +164,11 @@ export function ReportsForm() {
     <Card className="w-full border-none shadow-none dark:bg-transparent">
       <CardHeader className="px-0 pt-0">
         <CardTitle className="text-4xl font-normal">Configure Reports</CardTitle>
-        <CardDescription>Customize the styling of your reports.</CardDescription>
+        <CardDescription>Customize the styling of your reports and Word document settings.</CardDescription>
       </CardHeader>
       <CardContent className="px-0">
         <form className="space-y-4" onSubmit={handleSubmit}>
-          <div className="space-y-2">
+        <div className="space-y-2">
             <Label htmlFor="font">Font</Label>
             <Select onValueChange={(value) => handleSelectChange("font", value)} value={reportConfig.font}>
               <SelectTrigger id="font">
@@ -219,6 +249,84 @@ export function ReportsForm() {
               min="0"
               step="0.1"
               value={reportConfig.marginSize}
+              onChange={handleInputChange}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="documentTitle">Document Title</Label>
+            <Input
+              id="documentTitle"
+              placeholder="Enter document title"
+              value={reportConfig.documentTitle}
+              onChange={handleInputChange}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="author">Author</Label>
+            <Input
+              id="author"
+              placeholder="Enter author name"
+              value={reportConfig.author}
+              onChange={handleInputChange}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="subject">Subject</Label>
+            <Input
+              id="subject"
+              placeholder="Enter document subject"
+              value={reportConfig.subject}
+              onChange={handleInputChange}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="keywords">Keywords</Label>
+            <Input
+              id="keywords"
+              placeholder="Enter keywords, separated by commas"
+              value={reportConfig.keywords}
+              onChange={handleInputChange}
+            />
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="tableOfContents"
+              checked={reportConfig.tableOfContents}
+              onCheckedChange={() => handleSwitchChange("tableOfContents")}
+            />
+            <Label htmlFor="tableOfContents">Include Table of Contents</Label>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="pageNumbering"
+              checked={reportConfig.pageNumbering}
+              onCheckedChange={() => handleSwitchChange("pageNumbering")}
+            />
+            <Label htmlFor="pageNumbering">Include Page Numbering</Label>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="headerText">Header Text</Label>
+            <Input
+              id="headerText"
+              placeholder="Enter header text"
+              value={reportConfig.headerText}
+              onChange={handleInputChange}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="footerText">Footer Text</Label>
+            <Input
+              id="footerText"
+              placeholder="Enter footer text"
+              value={reportConfig.footerText}
               onChange={handleInputChange}
             />
           </div>

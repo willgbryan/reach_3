@@ -535,6 +535,39 @@ const ChatSection = ({
 }) => {
   const [localSources, setLocalSources] = useState<Source[]>([]);
   const updatedMessages = [...messages, { content: reportContent, role: 'assistant', type: 'report' }];
+  const [reportConfig, setReportConfig] = useState<ReportConfig>({
+    font: "",
+    bulletStyle: "",
+    colorScheme: "",
+    headerStyle: "",
+    pageOrientation: "portrait",
+    marginSize: 1,
+    documentTitle: "",
+    author: "",
+    subject: "",
+    keywords: "",
+    tableOfContents: false,
+    pageNumbering: false,
+    headerText: "",
+    footerText: "",
+  });
+
+  type ReportConfig = {
+    font: string;
+    bulletStyle: string;
+    colorScheme: string;
+    headerStyle: string;
+    pageOrientation: "portrait" | "landscape";
+    marginSize: number;
+    documentTitle: string;
+    author: string;
+    subject: string;
+    keywords: string;
+    tableOfContents: boolean;
+    pageNumbering: boolean;
+    headerText: string;
+    footerText: string;
+  };
 
   useEffect(() => {
     const fetchSources = async () => {
@@ -551,6 +584,27 @@ const ChatSection = ({
 
     fetchSources();
   }, [chatId, allSources]);
+
+  useEffect(() => {
+    const fetchReportConfig = async () => {
+      try {
+        const response = await fetch('/api/fetch-report-config');
+        if (response.ok) {
+          const data = await response.json();
+          const pageOrientation = data.report_config.pageOrientation === "landscape" ? "landscape" : "portrait";
+          setReportConfig({
+            ...data.report_config,
+            pageOrientation,
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching report configuration:', error);
+      }
+    };
+
+    fetchReportConfig();
+  }, []);
+
 
   const sourcesToUse = allSources.length > 0 ? allSources : localSources;
   
@@ -823,7 +877,7 @@ const ChatSection = ({
             tables,
           }}
           index={index}
-          onCreateDoc={createEditableDocument}
+          onCreateDoc={(content: string) => createEditableDocument(content, reportConfig)}
           onCreatePowerPoint={handleCreateStructuredPowerPoint}
           onCreateChart={(tableId: string) => {
             console.log(`Create chart for table ${tableId}`);
