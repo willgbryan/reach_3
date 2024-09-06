@@ -133,8 +133,8 @@ export function ChartsForm() {
   return (
     <Card className="w-full border-none shadow-none dark:bg-transparent">
       <CardHeader className="px-0 pt-0">
-        <CardTitle className="text-4xl font-normal">Configure D3 Charts</CardTitle>
-        <CardDescription>Customize the styling and behavior of your D3 charts.</CardDescription>
+        <CardTitle className="text-4xl font-normal">Configure Chart Styles</CardTitle>
+        <CardDescription>Customize the styling behavior of your generated charts.</CardDescription>
       </CardHeader>
       <CardContent className="px-0">
         <form className="space-y-4" onSubmit={handleSubmit}>

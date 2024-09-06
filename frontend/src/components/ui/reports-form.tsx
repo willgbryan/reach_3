@@ -143,8 +143,8 @@ export function ReportsForm() {
   return (
     <Card className="w-full border-none shadow-none dark:bg-transparent">
       <CardHeader className="px-0 pt-0">
-        <CardTitle className="text-4xl font-normal">Configure Reports</CardTitle>
-        <CardDescription>Customize the styling of your reports and Word document settings.</CardDescription>
+        <CardTitle className="text-4xl font-normal">Configure Report Attributes</CardTitle>
+        <CardDescription>Customize the styling of your Word document exports.</CardDescription>
       </CardHeader>
       <CardContent className="px-0">
         <form className="space-y-4" onSubmit={handleSubmit}>
