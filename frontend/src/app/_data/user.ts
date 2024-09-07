@@ -60,7 +60,8 @@ export async function checkAndInsertUserConfig() {
           job_title: 'Not specified',
           industry: 'Not specified',
           report_config: {},
-          favorite_theme: (`${userId}/HeighlinerBaseTemplate.pptx`)
+          favorite_theme: (`${userId}/HeighlinerBaseTemplate.pptx`),
+          chart_config: {},
         })
         .single()
 
