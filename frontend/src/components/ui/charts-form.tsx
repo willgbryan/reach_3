@@ -20,20 +20,14 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 
-const chartTypes = ["Bar", "Line", "Pie", "Scatter", "Area"];
-const colorSchemes = ["Category10", "Accent", "Paired", "Set1", "Set2", "Set3"];
+const colorSchemes = ["Earth", "Pastel", "Vibrant", "Monochrome"];
 
 const defaultChartConfig = {
-  chartType: "",
-  width: "",
-  height: "",
-  margin: { top: "", right: "", bottom: "", left: "" },
-  colorScheme: "",
-  showLegend: false,
-  showTooltip: false,
-  xAxisLabel: "",
-  yAxisLabel: "",
-  animationDuration: "",
+  colorScheme: "Earth",
+  showLegend: true,
+  showTitle: true,
+  titleFontSize: "18",
+  showAxisLabels: true,
 };
 
 export function ChartsForm() {
@@ -48,17 +42,9 @@ export function ChartsForm() {
         throw new Error('Failed to fetch chart configuration');
       }
       const data = await response.json();
-      // Ensure that margin is always an object with the expected properties
-      const margin = data.chart_config?.margin || {};
       setChartConfig({
         ...defaultChartConfig,
         ...data.chart_config,
-        margin: {
-          top: margin.top || "",
-          right: margin.right || "",
-          bottom: margin.bottom || "",
-          left: margin.left || "",
-        },
       });
     } catch (error) {
       setError(error.message);
@@ -74,14 +60,6 @@ export function ChartsForm() {
   const handleInputChange = useCallback((e) => {
     const { id, value } = e.target;
     setChartConfig(prev => ({ ...prev, [id]: value }));
-  }, []);
-
-  const handleMarginChange = useCallback((e) => {
-    const { id, value } = e.target;
-    setChartConfig(prev => ({
-      ...prev,
-      margin: { ...prev.margin, [id]: value }
-    }));
   }, []);
 
   const handleSelectChange = useCallback((key, value) => {
@@ -118,10 +96,6 @@ export function ChartsForm() {
     }
   };
 
-  const handleReset = useCallback(() => {
-    setChartConfig(defaultChartConfig);
-  }, []);
-
   if (isLoading) {
     return <div>Loading...</div>;
   }
@@ -138,75 +112,6 @@ export function ChartsForm() {
       </CardHeader>
       <CardContent className="px-0">
         <form className="space-y-4" onSubmit={handleSubmit}>
-          <div className="space-y-2">
-            <Label htmlFor="chartType">Chart Type</Label>
-            <Select onValueChange={(value) => handleSelectChange("chartType", value)} value={chartConfig.chartType}>
-              <SelectTrigger id="chartType">
-                <SelectValue placeholder="Select a chart type" />
-              </SelectTrigger>
-              <SelectContent>
-                {chartTypes.map((type) => (
-                  <SelectItem key={type} value={type.toLowerCase()}>
-                    {type}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="width">Width (px)</Label>
-              <Input
-                id="width"
-                type="number"
-                placeholder="e.g., 800"
-                value={chartConfig.width}
-                onChange={handleInputChange}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="height">Height (px)</Label>
-              <Input
-                id="height"
-                type="number"
-                placeholder="e.g., 400"
-                value={chartConfig.height}
-                onChange={handleInputChange}
-              />
-            </div>
-          </div>
-          
-          <div className="space-y-2">
-            <Label>Margin</Label>
-            <div className="grid grid-cols-2 gap-4">
-              <Input
-                id="top"
-                placeholder="Top"
-                value={chartConfig.margin.top}
-                onChange={handleMarginChange}
-              />
-              <Input
-                id="right"
-                placeholder="Right"
-                value={chartConfig.margin.right}
-                onChange={handleMarginChange}
-              />
-              <Input
-                id="bottom"
-                placeholder="Bottom"
-                value={chartConfig.margin.bottom}
-                onChange={handleMarginChange}
-              />
-              <Input
-                id="left"
-                placeholder="Left"
-                value={chartConfig.margin.left}
-                onChange={handleMarginChange}
-              />
-            </div>
-          </div>
-          
           <div className="space-y-2">
             <Label htmlFor="colorScheme">Color Scheme</Label>
             <Select onValueChange={(value) => handleSelectChange("colorScheme", value)} value={chartConfig.colorScheme}>
@@ -234,47 +139,37 @@ export function ChartsForm() {
           
           <div className="flex items-center space-x-2">
             <Switch
-              id="showTooltip"
-              checked={chartConfig.showTooltip}
-              onCheckedChange={() => handleSwitchChange("showTooltip")}
+              id="showTitle"
+              checked={chartConfig.showTitle}
+              onCheckedChange={() => handleSwitchChange("showTitle")}
             />
-            <Label htmlFor="showTooltip">Show Tooltip</Label>
+            <Label htmlFor="showTitle">Show Title</Label>
           </div>
           
-          <div className="space-y-2">
-            <Label htmlFor="xAxisLabel">X-Axis Label</Label>
-            <Input
-              id="xAxisLabel"
-              placeholder="e.g., Time"
-              value={chartConfig.xAxisLabel}
-              onChange={handleInputChange}
-            />
-          </div>
+          {chartConfig.showTitle && (
+            <div className="space-y-2">
+              <Label htmlFor="titleFontSize">Title Font Size</Label>
+              <Input
+                id="titleFontSize"
+                type="number"
+                placeholder="e.g., 18"
+                value={chartConfig.titleFontSize}
+                onChange={handleInputChange}
+              />
+            </div>
+          )}
           
-          <div className="space-y-2">
-            <Label htmlFor="yAxisLabel">Y-Axis Label</Label>
-            <Input
-              id="yAxisLabel"
-              placeholder="e.g., Value"
-              value={chartConfig.yAxisLabel}
-              onChange={handleInputChange}
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="showAxisLabels"
+              checked={chartConfig.showAxisLabels}
+              onCheckedChange={() => handleSwitchChange("showAxisLabels")}
             />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="animationDuration">Animation Duration (ms)</Label>
-            <Input
-              id="animationDuration"
-              type="number"
-              placeholder="e.g., 1000"
-              value={chartConfig.animationDuration}
-              onChange={handleInputChange}
-            />
+            <Label htmlFor="showAxisLabels">Show Axis Labels</Label>
           </div>
         </form>
       </CardContent>
       <CardFooter className="px-0 pb-0 pt-4 flex justify-end space-x-2">
-        <Button type="button" variant="outline" onClick={handleReset}>Reset to Default</Button>
         <Button type="submit" onClick={handleSubmit} disabled={isLoading}>
           {isLoading ? 'Saving...' : 'Save Configuration'}
         </Button>

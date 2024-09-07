@@ -221,36 +221,43 @@ async def generate_powerpoint(request: PowerPointRequest):
 class ChartRequest(BaseModel):
     tableId: str
     tableContent: str
+    chartConfig: dict
 
 @app.post("/create-chart")
 async def create_chart(request: ChartRequest):
+    # always double check that chart-card.tsx matches the code in component_injection()
     component_code = component_injection()
+    
+    config_str = "\n".join([f"{k}: {v}" for k, v in request.chartConfig.items()])
+    
     user_prompt = f"""
     You are an expert D3.js developer.
-
-    Create only the necessary D3.js code to generate a chart based on the following data and include labels:
-
+    Create only the necessary D3.js code to generate a chart based on the following data and configuration:
+    
     Data:
     {request.tableContent}
-
-    Avoid the use of `translate`, `width`, and `selectAll`.
-
-    If the x-axis contains time indices, ensure time increases to the right.
-
-    The charts should be visually appealing. Lean into earth toned colors like stone-400 and stone-500 as well as zinc-600 and zinc-500.
-
-    Do not redeclare the variable `svg` or any other variables if they have already been declared in the environment.
-    Assume that a D3.js environment is already available and that an `svg` element has been appended to the DOM.
-    Do not include any HTML tags, <script> tags, or references to external libraries.
-
-    The D3.js code will be executed in the following component: {component_code}.
     
-    The D3 code's compatability with the provided component is mission critical. My job depends on it.
+    Chart Configuration:
+    {config_str}
+    
+    Follow these guidelines:
+    - Use the specified color scheme. If not specified, lean into earth toned colors like stone-400, stone-500, zinc-600, and zinc-500.
+    - Include a legend if showLegend is true.
+    - Add a title if showTitle is true, using the specified titleText and titleFontSize.
+    - Include axis labels if showAxisLabels is true, using the specified xAxisLabel and yAxisLabel.
+    - Avoid the use of `translate`, `width`, and `selectAll`.
+    - If the x-axis contains time indices, ensure time increases to the right.
+    - Do not redeclare the variable `svg` or any other variables if they have already been declared in the environment.
+    - Assume that a D3.js environment is already available and that an `svg` element has been appended to the DOM.
+    - Do not include any HTML tags, <script> tags, or references to external libraries.
+    
+    The D3.js code will be executed in the following component: {component_code}.
+    The D3 code's compatibility with the provided component is mission critical.
     """
 
     prompt = """
     You are an expert D3.js developer.
-    Your task is to create D3.js code for a chart based on the provided table data.
+    Your task is to create D3.js code for a chart based on the provided table data and user configuration.
     """
 
     try:
