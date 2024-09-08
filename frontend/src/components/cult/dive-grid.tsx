@@ -1,6 +1,6 @@
 import React, { useContext, useState, useRef, useEffect, createContext } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { IconChartBar, IconDownload, IconFileText, IconLoader2, IconPresentation, IconX } from "@tabler/icons-react";
+import { IconChartDots3, IconDownload, IconFileText, IconLoader2, IconPresentation, IconX } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import { useOutsideClick } from "@/hooks/use-outside-click";
 import { Meteors } from './meteors';
@@ -93,6 +93,7 @@ export const Card: React.FC<CardProps> = ({
   const [chartError, setChartError] = useState<{ [key: string]: string | null }>({});
   const containerRef = useRef<HTMLDivElement>(null);
   const { onCardClose } = useContext(CarouselContext);
+  const [mermaidCode, setMermaidCode] = useState<string | null>(null);
 
   // keeping a tutorial overlay in here until the feature is stable (19/20 attempts are successes)
   const [isChartTutorialActive, setIsChartTutorialActive] = useState(false);
@@ -236,6 +237,46 @@ export const Card: React.FC<CardProps> = ({
     setChartError(prevState => ({ ...prevState, [tableId]: null }));
   };
 
+  const handleCreateDiagram = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const toastId = toast.custom((t) => (
+      <div className="flex items-center justify-center w-full">
+        <div className="flex items-center space-x-2">
+          <IconLoader2 className="animate-spin h-5 w-5" />
+          <div className="text-center">
+            <div className="font-semibold">Creating your diagram</div>
+            <div className="text-sm text-gray-500">One moment please...</div>
+          </div>
+        </div>
+      </div>
+    ), {
+      duration: Infinity,
+      className: 'w-full max-w-md',
+    });
+    console.log('Creating diagram for card', index);
+    try {
+      const response = await fetch('/api/generate-diagram', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ content: card.rawContent }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setMermaidCode(data.mermaid_code);
+      toast.dismiss(toastId);
+    } catch (error) {
+      console.error('Error creating diagram:', error);
+      toast.error('This one is on us, please try again.')
+      toast.dismiss(toastId);
+    }
+  };
+
   const renderContent = () => {
     if (React.isValidElement(card.content) || Array.isArray(card.content)) {
       return card.content;
@@ -286,7 +327,6 @@ export const Card: React.FC<CardProps> = ({
           `;
           placeholder.parentNode?.replaceChild(tableWrapper, placeholder);
 
-          // Add chart container after the table
           const chartContainer = document.createElement('div');
           chartContainer.id = `chart-container-${tableId}`;
           chartContainer.className = 'mt-4';
@@ -357,7 +397,21 @@ export const Card: React.FC<CardProps> = ({
         }
       });
     }
-  }, [open, chartData]);
+    if (mermaidCode) {
+      const diagramContainer = document.createElement('div');
+      diagramContainer.id = 'diagram-container';
+      diagramContainer.className = 'mt-4';
+      containerRef.current?.appendChild(diagramContainer);
+
+      ReactDOM.render(
+        <ChartCard 
+          mermaidCode={mermaidCode} 
+          onClose={() => setMermaidCode(null)}
+        />,
+        diagramContainer
+      );
+    }
+}, [open, chartData, mermaidCode]);
 
   return (
     <>
@@ -422,6 +476,14 @@ export const Card: React.FC<CardProps> = ({
                   </button>
                 )}
                 <button
+                  className="flex items-center justify-center px-3 py-2 hover:text-stone-900 bg-stone-900 dark:bg-stone-100 rounded-full text-sm font-medium text-stone-100 dark:hover:text-stone-100 dark:text-stone-900 hover:bg-stone-300 dark:hover:bg-stone-600 transition-colors"
+                  onClick={handleCreateDiagram}
+                  title="Create Diagram"
+                >
+                  <IconChartDots3 className="h-5 w-5 mr-2" />
+                  Create Diagram
+                </button>
+                <button
                   className="flex items-center justify-center w-10 h-10 bg-black rounded-full hover:text-stone-900 text-stone-100 dark:bg-white dark:text-stone-900 hover:bg-stone-300 dark:hover:bg-stone-600 dark:text-neutral-900 dark:hover:text-stone-100"
                   onClick={(e) => {
                     e.stopPropagation();
@@ -430,7 +492,7 @@ export const Card: React.FC<CardProps> = ({
                 >
                   <IconX className="h-6 w-6" />
                 </button>
-                </div>
+              </div>
               <div className="mt-4">
                 <p className="text-base font-medium text-black dark:text-white">
                   {card.category}

@@ -15,6 +15,10 @@ from reach_core.master.prompts import component_injection, generate_report_promp
 from fastapi.middleware.cors import CORSMiddleware
 from pptx.util import Inches, Pt
 from openai import OpenAI
+import subprocess
+import tempfile
+import os
+
 
 # from reach_core.utils.unstructured_functions import *
 # from reach_core.utils.hubspot_functions import *
@@ -308,6 +312,38 @@ async def condense_findings(request: CondenseRequest):
         print(f"Error in condense-findings: {str(e)}")
         print(traceback.format_exc())
         raise HTTPException(status_code=500)
+    
+class DiagramRequest(BaseModel):
+    content: str
+
+@app.post("/generate-diagram")
+async def generate_diagram(request: DiagramRequest):
+    try:
+        client = OpenAI()
+
+        prompt = f"""
+        You are an expert in creating Mermaid.js diagrams. Based on the following content, create a Mermaid.js diagram that best represents the information:
+
+        {request.content}
+
+        Provide only the Mermaid.js code, without any explanation or additional text.
+        """
+
+        completion = client.chat.completions.create(
+            model="gpt-4o-2024-08-06",
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant that creates Mermaid.js diagrams."},
+                {"role": "user", "content": prompt}
+            ]
+        )
+
+        mermaid_code = completion.choices[0].message.content.strip()
+
+        return JSONResponse(content={"mermaid_code": mermaid_code})
+
+    except Exception as e:
+        print(f"Error in generate-diagram: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 # @app.post("/setEnvironmentVariables")
 # async def set_environment_variables(credentials: SalesforceCredentials):
