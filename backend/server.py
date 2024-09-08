@@ -225,7 +225,6 @@ class ChartRequest(BaseModel):
 
 @app.post("/create-chart")
 async def create_chart(request: ChartRequest):
-    # always double check that chart-card.tsx matches the code in component_injection()
     component_code = component_injection()
     
     config_str = "\n".join([f"{k}: {v}" for k, v in request.chartConfig.items()])
@@ -243,8 +242,9 @@ async def create_chart(request: ChartRequest):
     Follow these guidelines:
     - Use the specified color scheme. If not specified, lean into earth toned colors like stone-400, stone-500, zinc-600, and zinc-500.
     - Include a legend if showLegend is true.
-    - Add a title if showTitle is true, using the specified titleText and titleFontSize.
-    - Include axis labels if showAxisLabels is true, using the specified xAxisLabel and yAxisLabel.
+    - Add a title if showTitle is true, using the specified titleFontSize.
+    - Include axis labels if showAxisLabels is true.
+    - If showChartLabels is true, add labels to the chart elements (e.g., percentages on pie chart slices, values on bar chart bars).
     - Avoid the use of `translate`, `width`, and `selectAll`.
     - If the x-axis contains time indices, ensure time increases to the right.
     - Do not redeclare the variable `svg` or any other variables if they have already been declared in the environment.

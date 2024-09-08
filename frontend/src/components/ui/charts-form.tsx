@@ -28,6 +28,7 @@ const defaultChartConfig = {
   showTitle: true,
   titleFontSize: "18",
   showAxisLabels: true,
+  showChartLabels: false,
 };
 
 export function ChartsForm() {
@@ -166,6 +167,15 @@ export function ChartsForm() {
               onCheckedChange={() => handleSwitchChange("showAxisLabels")}
             />
             <Label htmlFor="showAxisLabels">Show Axis Labels</Label>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="showChartLabels"
+              checked={chartConfig.showChartLabels}
+              onCheckedChange={() => handleSwitchChange("showChartLabels")}
+            />
+            <Label htmlFor="showChartLabels">Show Chart Labels</Label>
           </div>
         </form>
       </CardContent>
