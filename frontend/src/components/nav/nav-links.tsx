@@ -1,5 +1,5 @@
 'use client'
-import { BookCopy, DollarSign, Home, Newspaper, Settings } from 'lucide-react'
+import { BookCopy, DollarSign, Home, Newspaper, Settings, Globe } from 'lucide-react'
 import { Nav } from './nav'
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://themagi.systems';
@@ -11,6 +11,14 @@ export function NavLinks({ isCollapsed }) {
         isCollapsed={isCollapsed}
         links={[
           // { title: 'Home', icon: Home, variant: 'ghost', href: `/chat` },
+          { 
+            title: 'Research', 
+            icon: Globe, 
+            variant: 'ghost', 
+            href: `/chat`, 
+            disabled: false, 
+            // label: 'Coming soon'
+          },
           { 
             title: 'Newsletter', 
             icon: Newspaper, 
