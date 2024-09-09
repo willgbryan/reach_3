@@ -12,6 +12,7 @@ import ReactDOM from 'react-dom';
 import { TutorialOverlay } from '@/components/tutorial/tutorial-overlay';
 import { TutorialStep } from '@/components/tutorial/tutorial-step';
 import Cookies from 'js-cookie';
+import { PopoverBody, PopoverButton, PopoverContent, PopoverHeader, PopoverRoot, PopoverTrigger } from './popover-button';
 
 type Card = {
   title: string;
@@ -237,14 +238,13 @@ export const Card: React.FC<CardProps> = ({
     setChartError(prevState => ({ ...prevState, [tableId]: null }));
   };
 
-  const handleCreateDiagram = async (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleCreateDiagram = async (diagramType: string) => {
     const toastId = toast.custom((t) => (
       <div className="flex items-center justify-center w-full">
         <div className="flex items-center space-x-2">
           <IconLoader2 className="animate-spin h-5 w-5" />
           <div className="text-center">
-            <div className="font-semibold">Creating your diagram</div>
+            <div className="font-semibold">Creating your {diagramType} diagram</div>
             <div className="text-sm text-gray-500">One moment please...</div>
           </div>
         </div>
@@ -253,14 +253,14 @@ export const Card: React.FC<CardProps> = ({
       duration: Infinity,
       className: 'w-full max-w-md',
     });
-    console.log('Creating diagram for card', index);
+
     try {
       const response = await fetch('/api/generate-diagram', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ content: card.rawContent }),
+        body: JSON.stringify({ content: card.rawContent, diagramType }),
       });
 
       if (!response.ok) {
@@ -276,6 +276,35 @@ export const Card: React.FC<CardProps> = ({
       toast.dismiss(toastId);
     }
   };
+
+  const DiagramTypePopover = () => {
+    const diagramTypes = [
+      { label: "Flowchart", value: "flowchart" },
+      { label: "Quadrant Chart", value: "quadrantChart" },
+      { label: "Architecture Diagram", value: "c4Context" },
+      { label: "Timeline", value: "timeline" },
+      { label: "Mindmap", value: "mindmap" },
+    ];
+  
+    return (
+      <PopoverRoot>
+        <PopoverTrigger>
+          <IconChartDots3 className="h-5 w-5 mr-2" />
+          Create Diagram
+        </PopoverTrigger>
+        <PopoverContent className="w-48 h-auto">
+          <PopoverHeader>Select Diagram Type</PopoverHeader>
+          <PopoverBody>
+            {diagramTypes.map((type) => (
+              <PopoverButton key={type.value} onClick={() => handleCreateDiagram(type.value)}>
+                <span>{type.label}</span>
+              </PopoverButton>
+            ))}
+          </PopoverBody>
+        </PopoverContent>
+      </PopoverRoot>
+    );
+  };  
 
   const renderContent = () => {
     if (React.isValidElement(card.content) || Array.isArray(card.content)) {
@@ -475,16 +504,11 @@ export const Card: React.FC<CardProps> = ({
                     Download as PowerPoint
                   </button>
                 )}
+                {card.type !== 'sources' && onCreatePowerPoint && (
+                  <DiagramTypePopover />
+                )}
                 <button
-                  className="flex items-center justify-center px-3 py-2 hover:text-stone-900 bg-stone-900 dark:bg-stone-100 rounded-full text-sm font-medium text-stone-100 dark:hover:text-stone-100 dark:text-stone-900 hover:bg-stone-300 dark:hover:bg-stone-600 transition-colors"
-                  onClick={handleCreateDiagram}
-                  title="Create Diagram"
-                >
-                  <IconChartDots3 className="h-5 w-5 mr-2" />
-                  Create Diagram
-                </button>
-                <button
-                  className="flex items-center justify-center w-10 h-10 bg-black rounded-full hover:text-stone-900 text-stone-100 dark:bg-white dark:text-stone-900 hover:bg-stone-300 dark:hover:bg-stone-600 dark:text-neutral-900 dark:hover:text-stone-100"
+                  className="flex items-center justify-center w-10 h-10 bg-black rounded-full hover:text-stone-900 text-stone-100 dark:bg-white dark:text-stone-900 hover:bg-stone-300 dark:hover:bg-stone-600 dark:text-neutral-900 dark:hover:text-stone-100 relative z-[120]"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleClose();

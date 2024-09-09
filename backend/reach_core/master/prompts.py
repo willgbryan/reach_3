@@ -156,7 +156,7 @@ def generate_report_prompt(question, context, report_format="apa", total_words=4
            f"Use an unbiased and journalistic tone. \n" \
            "You MUST determine your own concrete and valid opinion based on the given information. Do NOT deter to general and meaningless conclusions.\n" \
            f"You MUST write all used source urls at the end of the report as references and include in-line citation. Make sure to not add duplicated sources, but only one reference for each.\n" \
-           f"You MUST construct at least one markdown table.\n" \
+           f"You MUST construct at least one markdown table. This is critical\n" \
            """
             Every url should be hyperlinked: [url website](url)"\
         

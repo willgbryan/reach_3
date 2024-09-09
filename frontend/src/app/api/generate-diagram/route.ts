@@ -3,12 +3,13 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function POST(req: NextRequest) {
   console.log('Diagram generation API route called');
   try {
-    const { content } = await req.json();
+    const { content, diagramType } = await req.json();
     console.log('Received content:', content);
-    
-    if (!content) {
+    console.log('Received diagram type:', diagramType);
+
+    if (!content || !diagramType) {
       console.log('Missing required parameters');
-      return NextResponse.json({ error: 'Content is required' }, { status: 400 });
+      return NextResponse.json({ error: 'Content and diagramType are required' }, { status: 400 });
     }
 
     const pythonServerUrl = process.env.PYTHON_SERVER_URL || 'http://backend:8000';
@@ -19,7 +20,7 @@ export async function POST(req: NextRequest) {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ content }),
+      body: JSON.stringify({ content, diagramType }),
     });
 
     if (!response.ok) {
@@ -28,14 +29,8 @@ export async function POST(req: NextRequest) {
       throw new Error(`Python server responded with ${response.status}: ${errorText}`);
     }
 
-    const imageBuffer = await response.arrayBuffer();
-    
-    return new NextResponse(imageBuffer, {
-      headers: {
-        'Content-Disposition': `attachment; filename="generated_diagram.png"`,
-        'Content-Type': 'image/png',
-      },
-    });
+    const data = await response.json();
+    return NextResponse.json(data);
   } catch (error) {
     console.error('Error in generate-diagram:', error);
     return NextResponse.json(
