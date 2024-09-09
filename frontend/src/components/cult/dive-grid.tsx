@@ -95,6 +95,8 @@ export const Card: React.FC<CardProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const { onCardClose } = useContext(CarouselContext);
   const [mermaidCode, setMermaidCode] = useState<string | null>(null);
+  const [diagramData, setDiagramData] = useState<string | null>(null);
+  const [diagramError, setDiagramError] = useState<string | null>(null);
 
   // keeping a tutorial overlay in here until the feature is stable (19/20 attempts are successes)
   const [isChartTutorialActive, setIsChartTutorialActive] = useState(false);
@@ -238,6 +240,11 @@ export const Card: React.FC<CardProps> = ({
     setChartError(prevState => ({ ...prevState, [tableId]: null }));
   };
 
+  const handleCloseDiagram = () => {
+    setDiagramData(null);
+    setDiagramError(null);
+  };
+
   const handleCreateDiagram = async (diagramType: string) => {
     const toastId = toast.custom((t) => (
       <div className="flex items-center justify-center w-full">
@@ -268,16 +275,22 @@ export const Card: React.FC<CardProps> = ({
       }
 
       const data = await response.json();
-      setMermaidCode(data.mermaid_code);
+      setDiagramData(data.mermaid_code);
+      setDiagramError(null);
       toast.dismiss(toastId);
     } catch (error) {
       console.error('Error creating diagram:', error);
+      setDiagramError('Failed to create diagram. Please try again.');
       toast.error('This one is on us, please try again.')
       toast.dismiss(toastId);
     }
   };
 
   const DiagramTypePopover = () => {
+    const [popoverPosition, setPopoverPosition] = useState({ top: false, left: 0 });
+    const triggerRef = useRef<HTMLButtonElement>(null);
+    const contentRef = useRef<HTMLDivElement>(null);
+  
     const diagramTypes = [
       { label: "Flowchart", value: "flowchart" },
       { label: "Quadrant Chart", value: "quadrantChart" },
@@ -286,25 +299,45 @@ export const Card: React.FC<CardProps> = ({
       { label: "Mindmap", value: "mindmap" },
     ];
   
+    useEffect(() => {
+      const updatePosition = () => {
+        if (triggerRef.current && contentRef.current) {
+          const triggerRect = triggerRef.current.getBoundingClientRect();
+          const contentRect = contentRef.current.getBoundingClientRect();
+          const windowHeight = window.innerHeight;
+  
+          const spaceAbove = triggerRect.top;
+          const spaceBelow = windowHeight - triggerRect.bottom;
+  
+          setPopoverPosition({
+            top: spaceBelow < contentRect.height && spaceAbove > spaceBelow,
+            left: triggerRect.left,
+          });
+        }
+      };
+  
+      window.addEventListener('resize', updatePosition);
+      updatePosition();
+  
+      return () => window.removeEventListener('resize', updatePosition);
+    }, []);
+  
     return (
-      <PopoverRoot>
-        <PopoverTrigger>
-          <IconChartDots3 className="h-5 w-5 mr-2" />
-          Create Diagram
-        </PopoverTrigger>
-        <PopoverContent className="w-48 h-auto">
-          <PopoverHeader>Select Diagram Type</PopoverHeader>
-          <PopoverBody>
-            {diagramTypes.map((type) => (
-              <PopoverButton key={type.value} onClick={() => handleCreateDiagram(type.value)}>
-                <span>{type.label}</span>
-              </PopoverButton>
-            ))}
-          </PopoverBody>
-        </PopoverContent>
-      </PopoverRoot>
-    );
-  };  
+    <PopoverRoot>
+      <PopoverTrigger ref={triggerRef}>
+        <IconChartDots3 className="h-5 w-5 mr-2" />
+        Create Diagram
+      </PopoverTrigger>
+      <PopoverContent ref={contentRef}>
+        {diagramTypes.map((type) => (
+          <PopoverButton key={type.value} onClick={() => handleCreateDiagram(type.value)}>
+            {type.label}
+          </PopoverButton>
+        ))}
+      </PopoverContent>
+    </PopoverRoot>
+  );
+};
 
   const renderContent = () => {
     if (React.isValidElement(card.content) || Array.isArray(card.content)) {
@@ -425,22 +458,21 @@ export const Card: React.FC<CardProps> = ({
           }
         }
       });
-    }
-    if (mermaidCode) {
-      const diagramContainer = document.createElement('div');
-      diagramContainer.id = 'diagram-container';
-      diagramContainer.className = 'mt-4';
-      containerRef.current?.appendChild(diagramContainer);
 
-      ReactDOM.render(
-        <ChartCard 
-          mermaidCode={mermaidCode} 
-          onClose={() => setMermaidCode(null)}
-        />,
-        diagramContainer
-      );
+      if (diagramData) {
+        const diagramContainer = document.getElementById('diagram-container');
+        if (diagramContainer) {
+          ReactDOM.render(
+            <ChartCard 
+              mermaidCode={diagramData} 
+              onClose={handleCloseDiagram}
+            />,
+            diagramContainer
+          );
+        }
+      }
     }
-}, [open, chartData, mermaidCode]);
+  }, [open, chartData, diagramData]);
 
   return (
     <>
@@ -527,6 +559,17 @@ export const Card: React.FC<CardProps> = ({
                 <div className="py-10 text-stone-900 dark:text-stone-100 text-base md:text-lg font-sans prose prose-stone dark:prose-invert max-w-none">
                   {renderContent()}
                 </div>
+                {diagramData && (
+                  <div id="diagram-container" className="mt-4">
+                    <ChartCard 
+                      mermaidCode={diagramData} 
+                      onClose={handleCloseDiagram}
+                    />
+                  </div>
+                )}
+                {diagramError && (
+                  <p className="text-red-500 mt-4">{diagramError}</p>
+                )}
               </div>
             </motion.div>
           </div>

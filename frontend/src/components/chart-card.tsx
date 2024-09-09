@@ -91,11 +91,24 @@ const ChartCard: React.FC<ChartCardProps> = ({ d3Code, mermaidCode, onClose }) =
     }
   };
 
+  const cleanMermaidCode = (code: string): string => {
+    let cleaned = code.replace(/^```mermaid\n/, '').replace(/```$/, '').trim();
+    
+    cleaned = cleaned.replace(/^\s*title\s+(.*)$/m, '%% Title: $1');
+    
+    if (!/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|gantt|pie|timeline|mindmap)/m.test(cleaned)) {
+      cleaned = `flowchart TD\n${cleaned}`;
+    }
+    
+    return cleaned;
+  };
+
   const renderDiagram = async () => {
     if (chartRef.current && mermaidCode) {
       try {
-        const cleanedMermaidCode = mermaidCode.replace(/^```mermaid\n/, '').replace(/```$/, '').trim();
-        console.log(`mermaid code: ${mermaidCode}`)
+        const cleanedMermaidCode = cleanMermaidCode(mermaidCode);
+        console.log('Cleaned Mermaid code:', cleanedMermaidCode);
+        
         mermaid.initialize({ startOnLoad: false });
         const { svg } = await mermaid.render('mermaid-diagram', cleanedMermaidCode);
         chartRef.current.innerHTML = svg;
@@ -106,6 +119,7 @@ const ChartCard: React.FC<ChartCardProps> = ({ d3Code, mermaidCode, onClose }) =
       }
     }
   };
+
 
   const handleDownload = () => {
     if (d3Code) {

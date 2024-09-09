@@ -319,6 +319,8 @@ class DiagramRequest(BaseModel):
 
 @app.post("/generate-diagram")
 async def generate_diagram(request: DiagramRequest):
+    component_code = component_injection()
+
     try:
         diagram_examples = {
             "flowchart": """
@@ -411,6 +413,7 @@ async def generate_diagram(request: DiagramRequest):
         3. Ensure the diagram accurately represents the provided content.
         4. Do not nest parentheses.
 
+        The code will be rendered in the following component with renderDiagram, its compatiability is mission critical: {component_code}
         Provide only the Mermaid.js code, without any explanation or additional text.
         """
 
