@@ -255,7 +255,7 @@ async def create_chart(request: ChartRequest):
     - Assume that a D3.js environment is already available and that an `svg` element has been appended to the DOM.
     - Do not include any HTML tags, <script> tags, or references to external libraries.
     
-    The D3.js code will be executed in the following component: {component_code}.
+    The D3.js code will be executed in the following component in renderChart: {component_code}.
     The D3 code's compatibility with the provided component is mission critical.
     """
 
@@ -318,17 +318,111 @@ class DiagramRequest(BaseModel):
 
 @app.post("/generate-diagram")
 async def generate_diagram(request: DiagramRequest):
+    component_code = component_injection()
     try:
-        client = OpenAI()
-
         prompt = f"""
         You are an expert in creating Mermaid.js diagrams. Based on the following content, create a Mermaid.js diagram that best represents the information:
 
         {request.content}
 
+        Prioritize flow charts, quadrant charts, architecture diagrams, timelines, and mindmaps. Use your best judgement to determine which chart best represents the provided content.
+
+        Here are syntax examples for each chart type:
+
+        1. Flowchart:
+        ```mermaid
+        flowchart TD
+            A[Start] --> B{{Is it?}}
+            B -->|Yes| C[OK]
+            C --> D[Rethink]
+            D --> B
+            B -->|No| E[End]
+        ```
+
+        2. Quadrant Chart:
+        ```mermaid
+        quadrantChart
+            title Quadrant Chart
+            x-axis Low Priority --> High Priority
+            y-axis Low Value --> High Value
+            quadrant-1 High Value, Low Priority
+            quadrant-2 High Value, High Priority
+            quadrant-3 Low Value, Low Priority
+            quadrant-4 Low Value, High Priority
+            Task A: [0.4, 0.3]
+            Task B: [0.6, 0.7]
+            Task C: [0.2, 0.8]
+        ```
+
+        3. Architecture Diagram:
+        ```mermaid
+        C4Context
+          title System Context diagram for Internet Banking System
+          Enterprise_Boundary(b0, "BankBoundary") {{
+            Person(customerA, "Banking Customer A", "A customer of the bank, with personal bank accounts")
+            System(SystemAA, "Internet Banking System", "Allows customers to view information about their bank accounts, and make payments")
+          }}
+          Person(customerB, "Banking Customer B")
+          Enterprise_Boundary(b1, "BankBoundary2") {{
+            System(SystemB, "Main Banking System", "Stores all of the core banking information about customers, accounts, transactions, etc.")
+          }}
+          Rel(customerA, SystemAA, "Uses")
+          Rel(SystemAA, SystemB, "Uses")
+          Rel(customerB, SystemB, "Uses")
+        ```
+
+        4. Timeline:
+        ```mermaid
+        timeline
+            title History of AI Development
+            section 1950s
+                1956 : Dartmouth Conference
+                    : Birth of AI as a field
+            section 1960s-1970s
+                1965 : ELIZA chatbot
+                1972 : PROLOG language
+            section 1980s-1990s
+                1997 : IBM's Deep Blue beats Kasparov
+            section 2000s-2010s
+                2011 : IBM Watson wins Jeopardy!
+                2014 : Google acquires DeepMind
+            section 2020s
+                2022 : ChatGPT released
+        ```
+
+        5. Mindmap:
+        ```mermaid
+        mindmap
+          root((mindmap))
+            Origins
+              Long history
+              Popularisation
+                British popular psychology author Tony Buzan
+            Research
+              On effectiveness and features
+              On Automatic creation
+                Uses
+                  Creative techniques
+                  Strategic planning
+                  Argument mapping
+            Tools
+              Pen and paper
+              Mermaid
+        ```
+
+        Important notes for creating timelines:
+        1. Always start with the 'timeline' keyword.
+        2. Use 'title' to set the timeline's title.
+        3. Group events into sections using the 'section' keyword.
+        4. For each event, use the format: 'YEAR : Event description'.
+        5. For additional information about an event, add it on the next line with a colon at the start.
+        6. Ensure there's at least one space before each colon.
+
+        The Mermaid.js code will be executed in the following component in renderDiagram: {component_code}.
         Provide only the Mermaid.js code, without any explanation or additional text.
         """
 
+        client = OpenAI()
         completion = client.chat.completions.create(
             model="gpt-4o-2024-08-06",
             messages=[
@@ -338,9 +432,7 @@ async def generate_diagram(request: DiagramRequest):
         )
 
         mermaid_code = completion.choices[0].message.content.strip()
-
         return JSONResponse(content={"mermaid_code": mermaid_code})
-
     except Exception as e:
         print(f"Error in generate-diagram: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))

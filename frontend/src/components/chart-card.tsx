@@ -95,7 +95,7 @@ const ChartCard: React.FC<ChartCardProps> = ({ d3Code, mermaidCode, onClose }) =
     if (chartRef.current && mermaidCode) {
       try {
         const cleanedMermaidCode = mermaidCode.replace(/^```mermaid\n/, '').replace(/```$/, '').trim();
-        
+        console.log(`mermaid code: ${mermaidCode}`)
         mermaid.initialize({ startOnLoad: false });
         const { svg } = await mermaid.render('mermaid-diagram', cleanedMermaidCode);
         chartRef.current.innerHTML = svg;
