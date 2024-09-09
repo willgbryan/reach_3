@@ -164,7 +164,7 @@ interface PopoverContextType {
         key: "button",
         onClick: openPopover,
         className: cn(
-          "flex items-center justify-center px-3 py-2 bg-stone-900 dark:bg-stone-100 text-sm font-medium text-stone-100 dark:hover:text-stone-100 dark:text-stone-900 transition-colors rounded-full",
+          "flex items-center justify-center px-3 py-2 bg-stone-900 dark:bg-stone-100 text-sm font-medium text-stone-100 hover:text-stone-900 dark:hover:text-stone-100 dark:text-stone-900 transition-colors rounded-full",
           isOpen ? "bg-stone-300 dark:bg-stone-600" : "hover:bg-stone-300 dark:hover:bg-stone-600",
           className
         ),
@@ -237,7 +237,7 @@ interface PopoverContextType {
               ref={handleRef}
               layoutId={`popover-${uniqueId}`}
               className={cn(
-                "absolute overflow-hidden border border-zinc-200 bg-white shadow-lg outline-none dark:border-zinc-700 dark:bg-zinc-800 z-50",
+                "absolute overflow-hidden border border-black bg-black text-stone-100 shadow-lg outline-none dark:border-stone-700 dark:bg-stone-800 z-50",
                 className
               )}
               style={{
@@ -260,7 +260,7 @@ interface PopoverContextType {
                     // Type guard to ensure child is a valid React element
                     return React.cloneElement(child, {
                       className: cn(
-                        "block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-200 dark:hover:bg-gray-700 dark:hover:text-white",
+                        "block w-full text-left px-4 py-2 text-sm text-stone-100 hover:bg-stone-900 hover:text-stone-100 dark:text-stone-200 dark:hover:bg-stone-700 dark:hover:text-white",
                         child.props.className
                       ),
                     } as React.HTMLAttributes<HTMLElement>)
