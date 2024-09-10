@@ -13,6 +13,7 @@ import { TutorialOverlay } from '@/components/tutorial/tutorial-overlay';
 import { TutorialStep } from '@/components/tutorial/tutorial-step';
 import Cookies from 'js-cookie';
 import { PopoverBody, PopoverButton, PopoverContent, PopoverHeader, PopoverRoot, PopoverTrigger } from './popover-button';
+import { LoaderIcon } from 'lucide-react';
 
 type Card = {
   title: string;
@@ -160,7 +161,7 @@ export const Card: React.FC<CardProps> = ({
     const toastId = toast.custom((t) => (
       <div className="flex items-center justify-center w-full">
         <div className="flex items-center space-x-2">
-          <IconLoader2 className="animate-spin h-5 w-5" />
+          <LoaderIcon className="animate-spin h-5 w-5" />
           <div className="text-center">
             <div className="font-semibold">Creating your chart</div>
             <div className="text-sm text-gray-500">One moment please...</div>
@@ -249,7 +250,7 @@ export const Card: React.FC<CardProps> = ({
     const toastId = toast.custom((t) => (
       <div className="flex items-center justify-center w-full">
         <div className="flex items-center space-x-2">
-          <IconLoader2 className="animate-spin h-5 w-5" />
+          <LoaderIcon className="animate-spin h-5 w-5" />
           <div className="text-center">
             <div className="font-semibold">Creating your {diagramLabel}</div>
             <div className="text-sm text-gray-500">One moment please...</div>

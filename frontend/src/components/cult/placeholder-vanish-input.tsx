@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
+import { LoaderIcon } from "lucide-react";
 
 interface PixelData {
   x: number;
@@ -220,7 +221,7 @@ export function PlaceholdersAndVanishInput({
 
       {currentStep !== 'initial' ? (
         <div className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-stone-900 dark:border-stone-100"></div>
+          <LoaderIcon className="mr-2 animate-spin" />
         </div>
       ) : hasContent ? (
         <button

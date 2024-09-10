@@ -30,6 +30,7 @@ import InfoButton from '@/components/tutorial/info-button'
 import createEditableDocument from '@/components/word-doc-functions'
 import TableDownloader from '@/components/table-downloader'
 import { IconLoader2, IconPresentation } from '@tabler/icons-react'
+import { LoaderIcon } from 'lucide-react'
 
 interface MainVectorPanelProps {
   id?: string | undefined
@@ -602,7 +603,7 @@ const ChatSection = ({
     const toastId = toast.custom((t) => (
       <div className="flex items-center justify-center w-full">
         <div className="flex items-center space-x-2">
-          <IconLoader2 className="animate-spin h-5 w-5" />
+          <LoaderIcon className="animate-spin h-5 w-5" />
           <div className="text-center">
             <div className="font-semibold">Creating PowerPoint</div>
             <div className="text-sm text-gray-500">One moment please...</div>
