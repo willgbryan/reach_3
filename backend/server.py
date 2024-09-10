@@ -443,9 +443,11 @@ async def generate_diagram(request: DiagramRequest):
         ```
 
         Important notes:
+        - Adhere closely to the syntax provided in the example.
         - Ensure the diagram accurately represents the provided content.
         - Do not nest parentheses.
         - Do not use abbreviations in parenthesis. Ex: 'Complete Blood Count (CBC)' is invalid syntax.
+        - NEVER include a title denoted with '%% Title:'. Ex: '%% Title: Diagnostic Process for Thoracic Pain'
 
         The code will be rendered in the following component with renderDiagram, its compatiability is mission critical: {component_code}
         Provide only the Mermaid.js code, without any explanation or additional text.

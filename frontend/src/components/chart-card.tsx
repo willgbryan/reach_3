@@ -94,12 +94,6 @@ const ChartCard: React.FC<ChartCardProps> = ({ d3Code, mermaidCode, onClose }) =
   const cleanMermaidCode = (code: string): string => {
     let cleaned = code.replace(/^```mermaid\n/, '').replace(/```$/, '').trim();
     
-    cleaned = cleaned.replace(/^\s*title\s+(.*)$/m, '%% Title: $1');
-    
-    if (!/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|gantt|pie|timeline|mindmap)/m.test(cleaned)) {
-      cleaned = `flowchart TD\n${cleaned}`;
-    }
-    
     return cleaned;
   };
 
