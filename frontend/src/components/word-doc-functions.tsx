@@ -28,8 +28,8 @@ interface ReportConfig {
   pageOrientation: 'portrait' | 'landscape';
   marginSize: number;
   documentTitle: string;
-  subject: string;
-  tableOfContents: boolean;
+  // subject: string;
+  // tableOfContents: boolean;
   pageNumbering: boolean;
   headerText: string;
   footerText: string;
@@ -170,9 +170,9 @@ const createEditableDocument = async (content: string, config: ReportConfig): Pr
 
     children.push(...Array.from(doc.body.childNodes).flatMap(processNode));
 
-    if (config.tableOfContents) {
-      children.unshift(new TableOfContents());
-    }
+    // if (config.tableOfContents) {
+    //   children.unshift(new TableOfContents());
+    // }
 
     const docx = new Document({
       styles: {
@@ -243,7 +243,7 @@ const createEditableDocument = async (content: string, config: ReportConfig): Pr
         children: children,
       }],
       title: config.documentTitle,
-      subject: config.subject,
+      // subject: config.subject,
     });
 
     const buffer = await Packer.toBuffer(docx);

@@ -84,7 +84,7 @@ const cards = [
     id: 5,
     content: <SkeletonFive />,
     className: "md:col-span-2 opacity-75",
-    title: "Metrics Coming Soon",
+    title: "Diagrams Coming Soon",
     disabled: true
   },
 ];

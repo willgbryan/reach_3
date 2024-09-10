@@ -25,7 +25,6 @@ const colorSchemes = ["Earth", "Pastel", "Vibrant", "Monochrome"];
 const defaultChartConfig = {
   colorScheme: "Earth",
   showLegend: true,
-  showTitle: true,
   titleFontSize: "18",
   showAxisLabels: true,
   showChartLabels: false,
@@ -137,28 +136,6 @@ export function ChartsForm() {
             />
             <Label htmlFor="showLegend">Show Legend</Label>
           </div>
-          
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="showTitle"
-              checked={chartConfig.showTitle}
-              onCheckedChange={() => handleSwitchChange("showTitle")}
-            />
-            <Label htmlFor="showTitle">Show Title</Label>
-          </div>
-          
-          {chartConfig.showTitle && (
-            <div className="space-y-2">
-              <Label htmlFor="titleFontSize">Title Font Size</Label>
-              <Input
-                id="titleFontSize"
-                type="number"
-                placeholder="e.g., 18"
-                value={chartConfig.titleFontSize}
-                onChange={handleInputChange}
-              />
-            </div>
-          )}
           
           <div className="flex items-center space-x-2">
             <Switch

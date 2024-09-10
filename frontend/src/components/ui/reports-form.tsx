@@ -37,8 +37,8 @@ export function ReportsForm() {
     pageOrientation: "portrait",
     marginSize: "",
     documentTitle: "",
-    subject: "",
-    tableOfContents: false,
+    // subject: "",
+    // tableOfContents: false,
     pageNumbering: false,
     headerText: "",
     footerText: "",
@@ -59,8 +59,8 @@ export function ReportsForm() {
           pageOrientation: "portrait",
           marginSize: "",
           documentTitle: "",
-          subject: "",
-          tableOfContents: false,
+          // subject: "",
+          // tableOfContents: false,
           pageNumbering: false,
           headerText: "",
           footerText: "",
@@ -124,8 +124,8 @@ export function ReportsForm() {
       pageOrientation: "portrait",
       marginSize: "",
       documentTitle: "",
-      subject: "",
-      tableOfContents: false,
+      // subject: "",
+      // tableOfContents: false,
       pageNumbering: false,
       headerText: "",
       footerText: "",
@@ -201,7 +201,7 @@ export function ReportsForm() {
             />
           </div>
 
-          <div className="space-y-2">
+          {/* <div className="space-y-2">
             <Label htmlFor="subject">Subject</Label>
             <Input
               id="subject"
@@ -209,16 +209,16 @@ export function ReportsForm() {
               value={reportConfig.subject}
               onChange={handleInputChange}
             />
-          </div>
+          </div> */}
 
-          <div className="flex items-center space-x-2">
+          {/* <div className="flex items-center space-x-2">
             <Switch
               id="tableOfContents"
               checked={reportConfig.tableOfContents}
               onCheckedChange={() => handleSwitchChange("tableOfContents")}
             />
             <Label htmlFor="tableOfContents">Include Table of Contents</Label>
-          </div>
+          </div> */}
 
           <div className="flex items-center space-x-2">
             <Switch
