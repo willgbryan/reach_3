@@ -330,7 +330,7 @@ export const Card: React.FC<CardProps> = ({
       </PopoverTrigger>
       <PopoverContent ref={contentRef}>
         {diagramTypes.map((type) => (
-          <PopoverButton key={type.value} onClick={() => handleCreateDiagram(type.value)}>
+          <PopoverButton key={type.value} onClick={() => handleCreateDiagram(type.label)}>
             {type.label}
           </PopoverButton>
         ))}

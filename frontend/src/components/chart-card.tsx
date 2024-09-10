@@ -192,6 +192,8 @@ const ChartCard: React.FC<ChartCardProps> = ({ d3Code, mermaidCode, onClose }) =
           <IconX className="h-5 w-5" />
         </button>
       </div>
+      <div ref={chartRef} className="chart-content w-full h-full">
+      </div>
     </div>
   );
 };
