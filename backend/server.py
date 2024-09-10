@@ -325,39 +325,73 @@ async def generate_diagram(request: DiagramRequest):
         diagram_examples = {
             "flowchart": """
             flowchart TD
-                A[Start] --> B{{Is it?}}
+                A[Start] --> B{Is it?}
                 B -->|Yes| C[OK]
                 C --> D[Rethink]
                 D --> B
-                B -->|No| E[End]
+                B ---->|No| E[End]
+
             """,
             "quadrantChart": """
             quadrantChart
-                title Quadrant Chart
-                x-axis Low Priority --> High Priority
-                y-axis Low Value --> High Value
-                quadrant-1 High Value, Low Priority
-                quadrant-2 High Value, High Priority
-                quadrant-3 Low Value, Low Priority
-                quadrant-4 Low Value, High Priority
-                Task A: [0.4, 0.3]
-                Task B: [0.6, 0.7]
-                Task C: [0.2, 0.8]
+                title Reach and engagement of campaigns
+                x-axis Low Reach --> High Reach
+                y-axis Low Engagement --> High Engagement
+                quadrant-1 We should expand
+                quadrant-2 Need to promote
+                quadrant-3 Re-evaluate
+                quadrant-4 May be improved
+                Campaign A: [0.3, 0.6]
+                Campaign B: [0.45, 0.23]
+                Campaign C: [0.57, 0.69]
+                Campaign D: [0.78, 0.34]
+                Campaign E: [0.40, 0.34]
+                Campaign F: [0.35, 0.78]
+
             """,
             "c4Context": """
-            C4Context
-              title System Context diagram for Internet Banking System
-              Enterprise_Boundary(b0, "BankBoundary") {
-                Person(customerA, "Banking Customer A", "A customer of the bank, with personal bank accounts")
-                System(SystemAA, "Internet Banking System", "Allows customers to view information about their bank accounts, and make payments")
-              }
-              Person(customerB, "Banking Customer B")
-              Enterprise_Boundary(b1, "BankBoundary2") {
-                System(SystemB, "Main Banking System", "Stores all of the core banking information about customers, accounts, transactions, etc.")
-              }
-              Rel(customerA, SystemAA, "Uses")
-              Rel(SystemAA, SystemB, "Uses")
-              Rel(customerB, SystemB, "Uses")
+                C4Context
+                    title System Context diagram for Internet Banking System
+                    Enterprise_Boundary(b0, "BankBoundary0") {
+                        Person(customerA, "Banking Customer A", "A customer of the bank, with personal bank accounts.")
+                        Person(customerB, "Banking Customer B")
+                        Person_Ext(customerC, "Banking Customer C", "desc")
+
+                        Person(customerD, "Banking Customer D", "A customer of the bank, <br/> with personal bank accounts.")
+
+                        System(SystemAA, "Internet Banking System", "Allows customers to view information about their bank accounts, and make payments.")
+
+                        Enterprise_Boundary(b1, "BankBoundary") {
+
+                        SystemDb_Ext(SystemE, "Mainframe Banking System", "Stores all of the core banking information about customers, accounts, transactions, etc.")
+
+                        System_Boundary(b2, "BankBoundary2") {
+                            System(SystemA, "Banking System A")
+                            System(SystemB, "Banking System B", "A system of the bank, with personal bank accounts. next line.")
+                        }
+
+                        System_Ext(SystemC, "E-mail system", "The internal Microsoft Exchange e-mail system.")
+                        SystemDb(SystemD, "Banking System D Database", "A system of the bank, with personal bank accounts.")
+
+                        Boundary(b3, "BankBoundary3", "boundary") {
+                            SystemQueue(SystemF, "Banking System F Queue", "A system of the bank.")
+                            SystemQueue_Ext(SystemG, "Banking System G Queue", "A system of the bank, with personal bank accounts.")
+                        }
+                        }
+                    }
+
+                    BiRel(customerA, SystemAA, "Uses")
+                    BiRel(SystemAA, SystemE, "Uses")
+                    Rel(SystemAA, SystemC, "Sends e-mails", "SMTP")
+                    Rel(SystemC, customerA, "Sends e-mails to")
+
+                    UpdateElementStyle(customerA, $fontColor="red", $bgColor="grey", $borderColor="red")
+                    UpdateRelStyle(customerA, SystemAA, $textColor="blue", $lineColor="blue", $offsetX="5")
+                    UpdateRelStyle(SystemAA, SystemE, $textColor="blue", $lineColor="blue", $offsetY="-10")
+                    UpdateRelStyle(SystemAA, SystemC, $textColor="blue", $lineColor="blue", $offsetY="-40", $offsetX="-50")
+                    UpdateRelStyle(SystemC, customerA, $textColor="red", $lineColor="red", $offsetX="-50", $offsetY="20")
+
+                    UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
             """,
             "timeline": """
             timeline
@@ -377,22 +411,23 @@ async def generate_diagram(request: DiagramRequest):
                     2022 : ChatGPT released
             """,
             "mindmap": """
-            mindmap
-              root((mindmap))
-                Origins
-                  Long history
-                  Popularisation
-                    British popular psychology author Tony Buzan
-                Research
-                  On effectiveness and features
-                  On Automatic creation
-                    Uses
-                      Creative techniques
-                      Strategic planning
-                      Argument mapping
-                Tools
-                  Pen and paper
-                  Mermaid
+              mindmap
+                root((mindmap))
+                    Origins
+                    Long history
+                    ::icon(fa fa-book)
+                    Popularisation
+                        British popular psychology author Tony Buzan
+                    Research
+                    On effectiveness<br/>and features
+                    On Automatic creation
+                        Uses
+                            Creative techniques
+                            Strategic planning
+                            Argument mapping
+                    Tools
+                    Pen and paper
+                    Mermaid
             """
         }
 
@@ -408,10 +443,9 @@ async def generate_diagram(request: DiagramRequest):
         ```
 
         Important notes:
-        1. Always start with the '{request.diagramType}' keyword.
-        2. Use 'title' to set the diagram's title if applicable.
-        3. Ensure the diagram accurately represents the provided content.
-        4. Do not nest parentheses.
+        - Ensure the diagram accurately represents the provided content.
+        - Do not nest parentheses.
+        - Do not use abbreviations in parenthesis. Ex: 'Complete Blood Count (CBC)' is invalid syntax.
 
         The code will be rendered in the following component with renderDiagram, its compatiability is mission critical: {component_code}
         Provide only the Mermaid.js code, without any explanation or additional text.
