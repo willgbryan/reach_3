@@ -245,13 +245,13 @@ export const Card: React.FC<CardProps> = ({
     setDiagramError(null);
   };
 
-  const handleCreateDiagram = async (diagramType: string) => {
+  const handleCreateDiagram = async (diagramType: string, diagramLabel: string) => {
     const toastId = toast.custom((t) => (
       <div className="flex items-center justify-center w-full">
         <div className="flex items-center space-x-2">
           <IconLoader2 className="animate-spin h-5 w-5" />
           <div className="text-center">
-            <div className="font-semibold">Creating your {diagramType} diagram</div>
+            <div className="font-semibold">Creating your {diagramLabel}</div>
             <div className="text-sm text-gray-500">One moment please...</div>
           </div>
         </div>
@@ -279,8 +279,8 @@ export const Card: React.FC<CardProps> = ({
       setDiagramError(null);
       toast.dismiss(toastId);
     } catch (error) {
-      console.error('Error creating diagram:', error);
-      setDiagramError('Failed to create diagram. Please try again.');
+      // console.error('Error creating diagram:', error);
+      // setDiagramError('Failed to create diagram. Please try again.');
       toast.error('This one is on us, please try again.')
       toast.dismiss(toastId);
     }
@@ -330,7 +330,7 @@ export const Card: React.FC<CardProps> = ({
       </PopoverTrigger>
       <PopoverContent ref={contentRef}>
         {diagramTypes.map((type) => (
-          <PopoverButton key={type.value} onClick={() => handleCreateDiagram(type.label)}>
+          <PopoverButton key={type.value} onClick={() => handleCreateDiagram(type.value, type.label)}>
             {type.label}
           </PopoverButton>
         ))}
@@ -556,9 +556,6 @@ export const Card: React.FC<CardProps> = ({
                 <p className="text-2xl md:text-5xl font-semibold text-neutral-700 mt-4 dark:text-white">
                   {card.title}
                 </p>
-                <div className="py-10 text-stone-900 dark:text-stone-100 text-base md:text-lg font-sans prose prose-stone dark:prose-invert max-w-none">
-                  {renderContent()}
-                </div>
                 {diagramData && (
                   <div id="diagram-container" className="mt-4">
                     <ChartCard 
@@ -567,9 +564,9 @@ export const Card: React.FC<CardProps> = ({
                     />
                   </div>
                 )}
-                {diagramError && (
-                  <p className="text-red-500 mt-4">{diagramError}</p>
-                )}
+                <div className="py-10 text-stone-900 dark:text-stone-100 text-base md:text-lg font-sans prose prose-stone dark:prose-invert max-w-none">
+                  {renderContent()}
+                </div>
               </div>
             </motion.div>
           </div>
