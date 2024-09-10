@@ -3,6 +3,24 @@ import * as d3 from 'd3';
 import { IconX, IconDownload } from "@tabler/icons-react";
 import { toast } from 'sonner';
 import mermaid from 'mermaid';
+import type { MermaidConfig } from 'mermaid';
+
+mermaid.initialize({
+  startOnLoad: false,
+  securityLevel: 'strict',
+  theme: 'default',
+  logLevel: 'error',
+  deterministicIds: true,
+  flowchart: { 
+    htmlLabels: false,
+    useMaxWidth: true 
+  },
+  errorHandler: (error) => {
+    console.error('Mermaid error:', error);
+    // Prevent the default error display from polluting the UI, who's idea was it to allow errors to render html...
+    return null;
+  }
+} as MermaidConfig);
 
 interface ChartCardProps {
   d3Code?: string;
@@ -102,13 +120,13 @@ const ChartCard: React.FC<ChartCardProps> = ({ d3Code, mermaidCode, onClose }) =
       try {
         const cleanedMermaidCode = cleanMermaidCode(mermaidCode);
         console.log('Cleaned Mermaid code:', cleanedMermaidCode);
-        
-        mermaid.initialize({ startOnLoad: false });
+
         const { svg } = await mermaid.render('mermaid-diagram', cleanedMermaidCode);
         chartRef.current.innerHTML = svg;
+        setError(null);
       } catch (error) {
-        // console.error('Error rendering Mermaid diagram:', error);
-        // setError(`Error rendering diagram: ${(error as Error).message}`);
+        console.error('Error rendering Mermaid diagram:', error);
+        setError(`Error rendering diagram: ${(error as Error).message}`);
         toast.error('This one is on us, please try creating the diagram again.');
       }
     }
