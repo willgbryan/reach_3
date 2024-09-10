@@ -107,9 +107,9 @@ const ChartCard: React.FC<ChartCardProps> = ({ d3Code, mermaidCode, onClose }) =
         const { svg } = await mermaid.render('mermaid-diagram', cleanedMermaidCode);
         chartRef.current.innerHTML = svg;
       } catch (error) {
-        console.error('Error rendering Mermaid diagram:', error);
-        setError(`Error rendering diagram: ${(error as Error).message}`);
-        toast.error('Failed to render diagram. Please try again.');
+        // console.error('Error rendering Mermaid diagram:', error);
+        // setError(`Error rendering diagram: ${(error as Error).message}`);
+        toast.error('This one is on us, please try creating the diagram again.');
       }
     }
   };
@@ -191,9 +191,6 @@ const ChartCard: React.FC<ChartCardProps> = ({ d3Code, mermaidCode, onClose }) =
         >
           <IconX className="h-5 w-5" />
         </button>
-      </div>
-      <div ref={chartRef} className="chart-content w-full h-full">
-        {error && <p className="text-red-500">{error}</p>}
       </div>
     </div>
   );
