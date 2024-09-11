@@ -226,23 +226,20 @@ class ChartRequest(BaseModel):
     tableId: str
     tableContent: str
     chartConfig: dict
+    previousError: str = None
 
 @app.post("/create-chart")
 async def create_chart(request: ChartRequest):
     component_code = component_injection()
-    
     config_str = "\n".join([f"{k}: {v}" for k, v in request.chartConfig.items()])
     
-    user_prompt = f"""
+    base_prompt = f"""
     You are an expert D3.js developer.
     Create only the necessary D3.js code to generate a chart based on the following data and configuration:
-    
     Data:
     {request.tableContent}
-    
     Chart Configuration:
     {config_str}
-    
     Follow these guidelines:
     - Use the specified color scheme. If not specified, lean into earth toned colors like stone-400, stone-500, zinc-600, and zinc-500.
     - Include a legend if showLegend is true.
@@ -254,22 +251,21 @@ async def create_chart(request: ChartRequest):
     - Do not redeclare the variable `svg` or any other variables if they have already been declared in the environment.
     - Assume that a D3.js environment is already available and that an `svg` element has been appended to the DOM.
     - Do not include any HTML tags, <script> tags, or references to external libraries.
-    
     The D3.js code will be executed in the following component in renderChart: {component_code}.
     The D3 code's compatibility with the provided component is mission critical.
     """
 
-    prompt = """
-    You are an expert D3.js developer.
-    Your task is to create D3.js code for a chart based on the provided table data and user configuration.
-    """
+    if request.previousError:
+        prompt = f"{base_prompt}\n\nThe previous attempt resulted in an error: {request.previousError}. Please correct the D3.js code to ensure it is valid and can be rendered correctly."
+    else:
+        prompt = base_prompt
 
     try:
         completion = client.chat.completions.create(
             model="gpt-4o-2024-08-06",
             messages=[
-                {"role": "system", "content": prompt},
-                {"role": "user", "content": user_prompt}
+                {"role": "system", "content": "You are an expert D3.js developer."},
+                {"role": "user", "content": prompt}
             ],
         )
         d3_code = completion.choices[0].message.content
@@ -316,6 +312,7 @@ async def condense_findings(request: CondenseRequest):
 class DiagramRequest(BaseModel):
     content: str
     diagramType: str
+    previousError: str = None
 
 @app.post("/generate-diagram")
 async def generate_diagram(request: DiagramRequest):
@@ -431,7 +428,7 @@ async def generate_diagram(request: DiagramRequest):
             """
         }
 
-        prompt = f"""
+        base_prompt = f"""
         You are an expert in creating Mermaid.js diagrams. Based on the following content, create a Mermaid.js {request.diagramType} diagram that best represents the information:
 
         {request.content}
@@ -443,15 +440,21 @@ async def generate_diagram(request: DiagramRequest):
         ```
 
         Important notes:
+        - The first line of your code MUST be the diagram type: {request.diagramType}
         - Adhere closely to the syntax provided in the example.
         - Ensure the diagram accurately represents the provided content.
         - Do not nest parentheses.
         - Do not use abbreviations in parenthesis. Ex: 'Complete Blood Count (CBC)' is invalid syntax.
         - NEVER include a title denoted with '%% Title:'. Ex: '%% Title: Diagnostic Process for Thoracic Pain'
 
-        The code will be rendered in the following component with renderDiagram, its compatiability is mission critical: {component_code}
+        The code will be rendered in the following component with renderDiagram, its compatibility is mission critical: {component_code}
         Provide only the Mermaid.js code, without any explanation or additional text.
         """
+
+        if request.previousError:
+            prompt = f"{base_prompt}\n\nThe previous attempt resulted in an error. Please correct the Mermaid.js code to ensure it is valid and can be rendered correctly. Remember to start with the diagram type: {request.diagramType}"
+        else:
+            prompt = base_prompt
 
         client = OpenAI()
         completion = client.chat.completions.create(
@@ -463,7 +466,11 @@ async def generate_diagram(request: DiagramRequest):
         )
 
         mermaid_code = completion.choices[0].message.content.strip()
-        return JSONResponse(content={"mermaid_code": mermaid_code})
+        
+        if not mermaid_code.startswith(request.diagramType):
+            mermaid_code = f"{request.diagramType}\n{mermaid_code}"
+
+        return {"mermaid_code": mermaid_code}
     except Exception as e:
         print(f"Error in generate-diagram: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))

@@ -1,12 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+function cleanMermaidCode(code: string, diagramType: string): string {
+  let cleanedCode = code.replace(/```mermaid\n?/g, '').replace(/```\n?/g, '').trim();
+
+  if (diagramType.toLowerCase() === 'c4context') {
+    cleanedCode = cleanedCode.replace(/^c4context\s*\n?/i, '');
+    
+    if (!cleanedCode.startsWith('C4Context')) {
+      cleanedCode = `C4Context\n${cleanedCode}`;
+    }
+  } else {
+    const diagramTypeRegex = new RegExp(`^${diagramType}\\s*\\n`, 'i');
+    cleanedCode = cleanedCode.replace(diagramTypeRegex, '');
+
+    if (!cleanedCode.startsWith(diagramType)) {
+      cleanedCode = `${diagramType}\n${cleanedCode}`;
+    }
+  }
+
+  console.log('Cleaned Mermaid code:', cleanedCode);
+  return cleanedCode;
+}
+
 export async function POST(req: NextRequest) {
   console.log('Diagram generation API route called');
+  
   try {
-    const { content, diagramType } = await req.json();
+    const { content, diagramType, previousError } = await req.json();
     console.log('Received content:', content);
     console.log('Received diagram type:', diagramType);
-
+    console.log('Previous error:', previousError);
+    
     if (!content || !diagramType) {
       console.log('Missing required parameters');
       return NextResponse.json({ error: 'Content and diagramType are required' }, { status: 400 });
@@ -20,7 +44,7 @@ export async function POST(req: NextRequest) {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ content, diagramType }),
+      body: JSON.stringify({ content, diagramType, previousError }),
     });
 
     if (!response.ok) {
@@ -30,7 +54,11 @@ export async function POST(req: NextRequest) {
     }
 
     const data = await response.json();
-    return NextResponse.json(data);
+    let mermaidCode = data.mermaid_code;
+
+    let finalCode = cleanMermaidCode(mermaidCode, diagramType);
+
+    return NextResponse.json({ mermaid_code: finalCode });
   } catch (error) {
     console.error('Error in generate-diagram:', error);
     return NextResponse.json(
