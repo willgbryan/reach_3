@@ -251,6 +251,10 @@ async def create_chart(request: ChartRequest):
     - Do not redeclare the variable `svg` or any other variables if they have already been declared in the environment.
     - Assume that a D3.js environment is already available and that an `svg` element has been appended to the DOM.
     - Do not include any HTML tags, <script> tags, or references to external libraries.
+    - Avoid pie charts entirely.
+
+    Provide only the D3.js code, without any explanation or additional text.
+
     The D3.js code will be executed in the following component in renderChart: {component_code}.
     The D3 code's compatibility with the provided component is mission critical.
 

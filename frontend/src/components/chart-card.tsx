@@ -41,19 +41,27 @@ const ChartCard: React.FC<ChartCardProps> = ({ d3Code, mermaidCode, onClose, onR
     if (chartRef.current && d3Code) {
       chartRef.current.innerHTML = '';
       const cleanedCode = d3Code
-        .replace(/```javascript\n/, '')
-        .replace(/```[\s]*$/, '')
-        .trim();
+          .replace(/```javascript\n/, '')
+          .replace(/```[\s]*$/, '')
+          .trim();
+      console.log("Cleaned D3 Code: ", cleanedCode);
+
+      if ((cleanedCode.match(/{/g) || []).length !== (cleanedCode.match(/}/g) || []).length) {
+          setError("Error rendering chart: Unmatched braces in the generated code.");
+          return;
+      }
 
       try {
-        const wrappedCode = `
+          console.log("Executing D3 code...");
+
+          const wrappedCode = `
           (function() {
-            try {
+              try {
               let svg = d3.select(container).select('svg');
               if (!svg.empty()) {
-                svg.selectAll("*").remove(); // Clear any existing chart
+                  svg.selectAll("*").remove(); // Clear any existing chart
               } else {
-                svg = d3.select(container)
+                  svg = d3.select(container)
                   .append('svg')
                   .attr('width', '100%')
                   .attr('height', '100%')
@@ -67,12 +75,12 @@ const ChartCard: React.FC<ChartCardProps> = ({ d3Code, mermaidCode, onClose, onR
               // Ensure the chart fills the container
               const chartBBox = svg.node().getBBox();
               svg.attr('viewBox', \`\${chartBBox.x} \${chartBBox.y} \${chartBBox.width} \${chartBBox.height}\`);
-            } catch (error) {
+              } catch (error) {
               console.error('Error in D3 code:', error);
               throw error;
-            }
+              }
           })();
-        `;
+          `;
 
         const executeD3Code = new Function('d3', 'container', wrappedCode);
         executeD3Code(d3, chartRef.current);
