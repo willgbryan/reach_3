@@ -245,7 +245,7 @@ async def create_chart(request: ChartRequest):
     - Include a legend if showLegend is true.
     - Add a title if showTitle is true, using the specified titleFontSize.
     - Include axis labels if showAxisLabels is true.
-    - If showChartLabels is true, add labels to the chart elements (e.g., percentages on pie chart slices, values on bar chart bars).
+    - If showChartLabels is true, add labels to the chart elements.
     - Avoid the use of `translate`, `width`, and `selectAll`.
     - If the x-axis contains time indices, ensure time increases to the right.
     - Do not redeclare the variable `svg` or any other variables if they have already been declared in the environment.
@@ -253,6 +253,8 @@ async def create_chart(request: ChartRequest):
     - Do not include any HTML tags, <script> tags, or references to external libraries.
     The D3.js code will be executed in the following component in renderChart: {component_code}.
     The D3 code's compatibility with the provided component is mission critical.
+
+    Be creative! Use a chart type that best visualizes the data and tells the most rich data story.
     """
 
     if request.previousError:
