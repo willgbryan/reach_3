@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@/db/server';
+import { cookies } from 'next/headers';
 
 export async function POST(req: NextRequest) {
   console.log('Create chart API route called');
+  const db = createClient(cookies());
+
   try {
     const { tableId, tableContent } = await req.json();
     console.log('Received tableId:', tableId);
@@ -12,6 +16,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Table ID and content are required' }, { status: 400 });
     }
 
+    const { data: { session } } = await db.auth.getSession();
+    const userId = session?.user.id;
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { data: userData, error: userError } = await db
+      .from('user_config')
+      .select('chart_config')
+      .eq('user_id', userId)
+      .single();
+
+    if (userError && userError.code !== 'PGRST116') {
+      throw userError;
+    }
+
+    const chartConfig = userData?.chart_config || {};
+
     const pythonServerUrl = process.env.PYTHON_SERVER_URL || 'http://backend:8000';
     console.log('Sending request to Python server:', pythonServerUrl);
 
@@ -20,7 +42,7 @@ export async function POST(req: NextRequest) {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ tableId, tableContent }),
+      body: JSON.stringify({ tableId, tableContent, chartConfig }),
     });
 
     if (!response.ok) {

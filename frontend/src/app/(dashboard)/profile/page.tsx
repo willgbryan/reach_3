@@ -5,6 +5,7 @@ import { ProfileForm } from "@/components/ui/profile-form";
 import { SlidesForm } from "@/components/ui/slides-form";
 import { ReportsForm } from "@/components/ui/reports-form";
 import { MetricsShowcase } from "@/components/ui/metrics-showcase";
+import { ChartsForm } from "@/components/ui/charts-form";
 
 export default function ConfigGrid() {
   return (
@@ -41,6 +42,14 @@ const SkeletonThree = () => (
 const SkeletonFour = () => (
   <div className="w-full">
     <div className="mt-4">
+      <ChartsForm />
+    </div>
+  </div>
+);
+
+const SkeletonFive = () => (
+  <div className="w-full">
+    <div className="mt-4">
       <MetricsShowcase />
     </div>
   </div>
@@ -59,18 +68,23 @@ const cards = [
     className: "col-span-1",
     title: "Slides",
   },
-  // {
-  //   id: 3,
-  //   content: <SkeletonThree />,
-  //   className: "col-span-1 opacity-75",
-  //   title: "Reports",
-  //   disabled: true
-  // },
+  {
+    id: 3,
+    content: <SkeletonThree />,
+    className: "col-span-1",
+    title: "Reports",
+  },
   {
     id: 4,
     content: <SkeletonFour />,
+    className: "md:col-span-2",
+    title: "Charts",
+  },
+  {
+    id: 5,
+    content: <SkeletonFive />,
     className: "md:col-span-2 opacity-75",
-    title: "Metrics Coming Soon",
+    title: "Diagrams Coming Soon",
     disabled: true
   },
 ];

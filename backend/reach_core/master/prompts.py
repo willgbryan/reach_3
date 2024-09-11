@@ -36,7 +36,7 @@ def generate_search_queries_prompt(question: str, parent_query: str, report_type
         "recency_requirement": f"Restrict information to the {cadence}. THIS IS CRITICALLY IMPORTANT.",
         "date_needed": f"Use the current date: {datetime.now().strftime('%B %d, %Y')}. Adhere to recency_requirement. The provided information must be only within the requested time window of the previous day, week, or month depending on the cadence.",
         "files_info": f"Files can be present and questions can be asked about them. Uploaded files if any: {uploaded_files}",
-        "additional_instructions": "Also include in the queries specified task details such as locations, names, etc. Adhering to the recency_requirement and date_needed is critically important.",
+        "additional_instructions": "Also include in the queries specified task details such as locations, names, etc. Adhering to the recency_requirement and date_needed is critically important. Strive to collect quantitative data as well as rich qualitative data.",
         "response_format": "You must respond with a list of strings in the following format: [\"query 1\", \"query 2\", \"query 3\"]."
     }
 
@@ -152,11 +152,11 @@ def generate_report_prompt(question, context, report_format="apa", total_words=4
            " The report should focus on the answer to the query, should be well structured, informative," \
            f" in depth and comprehensive, with facts and numbers if available and a minimum of {total_words} words.\n" \
            "You should strive to write the report as long as you can using all relevant and necessary information provided.\n"\
-           "You must write the report with markdown syntax. Using headings, bulleted lists, tables, block quotes, and other markdown formatted features when appropriate.\n " \
+           "You must write the report with markdown syntax. Use headings, bulleted lists, tables, block quotes, and other markdown formatted features.\n " \
            f"Use an unbiased and journalistic tone. \n" \
            "You MUST determine your own concrete and valid opinion based on the given information. Do NOT deter to general and meaningless conclusions.\n" \
-           f"You MUST write all used source urls at the end of the report as references, and make sure to not add duplicated sources, but only one reference for each.\n" \
-           f"You may come across Source: that are filepaths, be sure to include the name of the file in the references as well.\n" \
+           f"You MUST write all used source urls at the end of the report as references and include in-line citation. Make sure to not add duplicated sources, but only one reference for each.\n" \
+           f"You MUST construct at least one markdown table. This is critical\n" \
            """
             Every url should be hyperlinked: [url website](url)"\
         
@@ -437,99 +437,147 @@ def component_injection():
     return """
     import React, { useRef, useEffect, useState } from 'react';
     import * as d3 from 'd3';
-    import { IconX, IconDownload } from "@tabler/icons-react";
+    import { IconX, IconDownload, IconRefresh } from "@tabler/icons-react";
+    import { toast } from 'sonner';
+    import mermaid from 'mermaid';
+
+    mermaid.initialize({
+    startOnLoad: false,
+    securityLevel: 'strict',
+    theme: 'default',
+    logLevel: 5,
+    deterministicIds: true,
+    flowchart: { 
+        htmlLabels: false,
+        useMaxWidth: true 
+    }
+    });
 
     interface ChartCardProps {
-    d3Code: string;
+    d3Code?: string;
+    mermaidCode?: string;
     onClose: () => void;
+    onRetry?: () => void;
     }
 
-    const ChartCard: React.FC<ChartCardProps> = ({ d3Code, onClose }) => {
+    const ChartCard: React.FC<ChartCardProps> = ({ d3Code, mermaidCode, onClose, onRetry }) => {
     const chartRef = useRef<HTMLDivElement>(null);
     const [error, setError] = useState<string | null>(null);
-    const [debugInfo, setDebugInfo] = useState<string>('');
+    const [retryCount, setRetryCount] = useState(0);
+    const MAX_RETRIES = 3;
 
     useEffect(() => {
-        const renderChart = () => {
-        if (chartRef.current) {
-            chartRef.current.innerHTML = '';
-            const cleanedCode = d3Code
+        if (d3Code) {
+        renderChart();
+        } else if (mermaidCode) {
+        renderDiagram();
+        }
+    }, [d3Code, mermaidCode]);
+
+    const renderChart = () => {
+        if (chartRef.current && d3Code) {
+        chartRef.current.innerHTML = '';
+        const cleanedCode = d3Code
             .replace(/```javascript\n/, '')
             .replace(/```[\s]*$/, '')
             .trim();
-            console.log("Cleaned D3 Code: ", cleanedCode);
-            setDebugInfo((prev) => prev + `Cleaned D3 Code:\n${cleanedCode}\n\n`);
+        console.log("Cleaned D3 Code: ", cleanedCode);
 
-            if ((cleanedCode.match(/{/g) || []).length !== (cleanedCode.match(/}/g) || []).length) {
+        if ((cleanedCode.match(/{/g) || []).length !== (cleanedCode.match(/}/g) || []).length) {
             setError("Error rendering chart: Unmatched braces in the generated code.");
-            setDebugInfo((prev) => prev + "Error: Unmatched braces in the code.\n");
             return;
-            }
+        }
 
-            try {
+        try {
             console.log("Executing D3 code...");
-            setDebugInfo((prev) => prev + "Executing D3 code...\n");
 
             const wrappedCode = `
-                (function() {
+            (function() {
                 try {
-                    let svg = d3.select(container).select('svg');
-                    if (!svg.empty()) {
+                let svg = d3.select(container).select('svg');
+                if (!svg.empty()) {
                     svg.selectAll("*").remove(); // Clear any existing chart
-                    } else {
+                } else {
                     svg = d3.select(container)
-                        .append('svg')
-                        .attr('width', '100%')
-                        .attr('height', '100%')
-                        .attr('preserveAspectRatio', 'xMidYMid meet')
-                        .attr('viewBox', '0 0 600 400');
-                    }
-                    // Execute the provided D3 code
-                    ${cleanedCode}
-                    console.log('D3 code executed successfully');
-
-                    // Ensure the chart fills the container
-                    const chartBBox = svg.node().getBBox();
-                    svg.attr('viewBox', \`\${chartBBox.x} \${chartBBox.y} \${chartBBox.width} \${chartBBox.height}\`);
-                } catch (error) {
-                    console.error('Error in D3 code:', error);
-                    throw error;
+                    .append('svg')
+                    .attr('width', '100%')
+                    .attr('height', '100%')
+                    .attr('preserveAspectRatio', 'xMidYMid meet')
+                    .attr('viewBox', '0 0 600 400');
                 }
-                })();
-            `;
+                // Execute the provided D3 code
+                ${cleanedCode}
+                console.log('D3 code executed successfully');
 
-            console.log('Wrapped D3 Code (IIFE):', wrappedCode);
-            setDebugInfo((prev) => prev + `Wrapped D3 Code (IIFE):\n${wrappedCode}\n\n`);
+                // Ensure the chart fills the container
+                const chartBBox = svg.node().getBBox();
+                svg.attr('viewBox', \`\${chartBBox.x} \${chartBBox.y} \${chartBBox.width} \${chartBBox.height}\`);
+                } catch (error) {
+                console.error('Error in D3 code:', error);
+                throw error;
+                }
+            })();
+            `;
 
             const executeD3Code = new Function('d3', 'container', wrappedCode);
             executeD3Code(d3, chartRef.current);
 
-            console.log("D3 code executed successfully");
-            setDebugInfo((prev) => prev + "D3 code executed successfully\n");
-            } catch (error) {
+            setError(null);
+            setRetryCount(0);
+        } catch (error) {
             console.error('Error executing D3 code:', error);
             setError(`Error rendering chart: ${(error as Error).message}`);
-            setDebugInfo((prev) => prev + `Error executing D3 code: ${(error as Error).message}\n`);
+            if (retryCount < MAX_RETRIES) {
+            setRetryCount(prevCount => prevCount + 1);
+            onRetry?.();
+            } else {
+            toast.error('Failed to render chart after multiple attempts. Please try again later.');
             }
-        } else {
-            setError("Chart container not found");
-            setDebugInfo((prev) => prev + "Error: Chart container not found\n");
         }
-        };
+        } else {
+        setError("Chart container not found");
+        }
+    };
 
-        renderChart();
+    const cleanMermaidCode = (code: string): string => {
+        let cleaned = code.replace(/^```mermaid\n/, '').replace(/```$/, '').trim();
+        
+        return cleaned;
+    };
 
-        const handleResize = () => {
-        renderChart();
-        };
-        window.addEventListener('resize', handleResize);
+    const renderDiagram = async () => {
+        if (chartRef.current && mermaidCode) {
+        try {
+            console.log('Rendering Mermaid code:', mermaidCode);
 
-        return () => {
-        window.removeEventListener('resize', handleResize);
-        };
-    }, [d3Code]);
+            const id = `mermaid-diagram-${Date.now()}`;
+
+            const { svg } = await mermaid.render(id, mermaidCode);
+            chartRef.current.innerHTML = svg;
+            setError(null);
+            setRetryCount(0);
+        } catch (error) {
+            console.error('Error rendering Mermaid diagram:', error);
+            setError(`Error rendering diagram: ${(error as Error).message}`);
+            if (retryCount < MAX_RETRIES) {
+            setRetryCount(prevCount => prevCount + 1);
+            onRetry?.();
+            } else {
+            toast.error('Failed to render diagram after multiple attempts. Please try again later.');
+            }
+        }
+        }
+    };
 
     const handleDownload = () => {
+        if (d3Code) {
+        downloadChart();
+        } else if (mermaidCode) {
+        downloadDiagram();
+        }
+    };
+
+    const downloadChart = () => {
         const svg = chartRef.current?.querySelector('svg');
         if (svg) {
         const svgData = new XMLSerializer().serializeToString(svg);
@@ -554,9 +602,44 @@ def component_injection():
         }
     };
 
+    const downloadDiagram = () => {
+        const svg = chartRef.current?.querySelector('svg');
+        if (svg) {
+        const svgData = new XMLSerializer().serializeToString(svg);
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
+
+        img.onload = () => {
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx?.drawImage(img, 0, 0);
+            const pngFile = canvas.toDataURL('image/png');
+            const downloadLink = document.createElement('a');
+            downloadLink.download = 'diagram.png';
+            downloadLink.href = pngFile;
+            downloadLink.click();
+        };
+
+        img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+        } else {
+        console.error('SVG element not found');
+        toast.error('Failed to download diagram. Please try again.');
+        }
+    };
+
     return (
         <div className="chart-container relative bg-transparent rounded-lg p-4 mt-4 w-full h-full">
         <div className="absolute top-2 right-2 flex space-x-2 z-10">
+            {error && retryCount < MAX_RETRIES && (
+            <button
+                onClick={onRetry}
+                className="p-1 rounded transition-colors hover:bg-gray-200 dark:hover:bg-stone-700"
+                title="Retry"
+            >
+                <IconRefresh className="h-5 w-5" />
+            </button>
+            )}
             <button
             onClick={handleDownload}
             className="p-1 rounded transition-colors hover:bg-gray-200 dark:hover:bg-stone-700"
@@ -572,9 +655,11 @@ def component_injection():
             <IconX className="h-5 w-5" />
             </button>
         </div>
-        <div ref={chartRef} className="chart-content w-full h-full">
-        </div>
-        {error && <div className="error-message mt-2 text-red-500">{"This one's on us, please try pressing the chart button again."}</div>}
+        {error ? (
+            <div className="text-red-500">{error}</div>
+        ) : (
+            <div ref={chartRef} className="chart-content w-full h-full" />
+        )}
         </div>
     );
     };

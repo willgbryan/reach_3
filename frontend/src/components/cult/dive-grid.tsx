@@ -1,6 +1,6 @@
 import React, { useContext, useState, useRef, useEffect, createContext } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { IconChartBar, IconDownload, IconFileText, IconLoader2, IconPresentation, IconX } from "@tabler/icons-react";
+import { IconChartDots3, IconDownload, IconFileText, IconLoader2, IconPresentation, IconX } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import { useOutsideClick } from "@/hooks/use-outside-click";
 import { Meteors } from './meteors';
@@ -12,6 +12,8 @@ import ReactDOM from 'react-dom';
 import { TutorialOverlay } from '@/components/tutorial/tutorial-overlay';
 import { TutorialStep } from '@/components/tutorial/tutorial-step';
 import Cookies from 'js-cookie';
+import { PopoverBody, PopoverButton, PopoverContent, PopoverHeader, PopoverRoot, PopoverTrigger } from './popover-button';
+import { LoaderIcon } from 'lucide-react';
 
 type Card = {
   title: string;
@@ -93,11 +95,26 @@ export const Card: React.FC<CardProps> = ({
   const [chartError, setChartError] = useState<{ [key: string]: string | null }>({});
   const containerRef = useRef<HTMLDivElement>(null);
   const { onCardClose } = useContext(CarouselContext);
+  const [mermaidCode, setMermaidCode] = useState<string | null>(null);
+  const [diagramData, setDiagramData] = useState<string | null>(null);
+  const [diagramError, setDiagramError] = useState<string | null>(null);
 
   // keeping a tutorial overlay in here until the feature is stable (19/20 attempts are successes)
   const [isChartTutorialActive, setIsChartTutorialActive] = useState(false);
   const [dontShowChartTutorial, setDontShowChartTutorial] = useState(false);
+  const [chartRetries, setChartRetries] = useState<{ [key: string]: number }>({});
+  const MAX_RETRIES = 3;
+  const [diagramRetries, setDiagramRetries] = useState(0);
+  const [currentDiagramType, setCurrentDiagramType] = useState<string | null>(null);
+  const MAX_DIAGRAM_RETRIES = 3;
 
+  const diagramTypes = [
+    { label: "Flowchart", value: "flowchart" },
+    { label: "Quadrant Chart", value: "quadrantChart" },
+    // { label: "Architecture Diagram", value: "c4Context" },
+    { label: "Timeline", value: "timeline" },
+    { label: "Mindmap", value: "mindmap" },
+  ];
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -156,7 +173,7 @@ export const Card: React.FC<CardProps> = ({
     const toastId = toast.custom((t) => (
       <div className="flex items-center justify-center w-full">
         <div className="flex items-center space-x-2">
-          <IconLoader2 className="animate-spin h-5 w-5" />
+          <LoaderIcon className="animate-spin h-5 w-5" />
           <div className="text-center">
             <div className="font-semibold">Creating your chart</div>
             <div className="text-sm text-gray-500">One moment please...</div>
@@ -185,17 +202,30 @@ export const Card: React.FC<CardProps> = ({
       console.log('Chart created successfully:', result);
       setChartData(prevState => ({ ...prevState, [tableId]: result.d3_code }));
       setChartError(prevState => ({ ...prevState, [tableId]: null }));
+      setChartRetries(prevState => ({ ...prevState, [tableId]: 0 }));
   
       toast.dismiss(toastId);
-
     } catch (error) {
       console.error('Error creating chart:', error);
       setChartError(prevState => ({ ...prevState, [tableId]: 'Failed to create chart. Please try again.' }));
-  
       toast.dismiss(toastId);
-  
       toast.error("Failed to create chart", {
         description: "We're having some trouble processing your request. Please try again in a moment.",
+      });
+    }
+  };
+
+  const handleChartRetry = (tableId: string) => {
+    const currentRetries = chartRetries[tableId] || 0;
+    if (currentRetries < MAX_RETRIES) {
+      setChartRetries(prevState => ({ ...prevState, [tableId]: currentRetries + 1 }));
+      const table = card.tables.find(t => t.id === tableId);
+      if (table) {
+        sendCreateChartRequest(tableId, table.content);
+      }
+    } else {
+      toast.error("Failed to create chart after multiple attempts", {
+        description: "Please try again later or contact support if the issue persists.",
       });
     }
   };
@@ -235,6 +265,117 @@ export const Card: React.FC<CardProps> = ({
     setChartData(prevState => ({ ...prevState, [tableId]: null }));
     setChartError(prevState => ({ ...prevState, [tableId]: null }));
   };
+
+  const handleCloseDiagram = () => {
+    setDiagramData(null);
+    setDiagramError(null);
+  };
+
+  const handleCreateDiagram = async (diagramType: string, diagramLabel: string) => {
+    setCurrentDiagramType(diagramType);
+    setDiagramRetries(0);
+
+    const toastId = toast.custom((t) => (
+      <div className="flex items-center justify-center w-full">
+        <div className="flex items-center space-x-2">
+          <LoaderIcon className="animate-spin h-5 w-5" />
+          <div className="text-center">
+            <div className="font-semibold">Creating your {diagramLabel}</div>
+            <div className="text-sm text-gray-500">One moment please...</div>
+          </div>
+        </div>
+      </div>
+    ), {
+      duration: Infinity,
+      className: 'w-full max-w-md',
+    });
+
+    try {
+      const response = await fetch('/api/generate-diagram', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ content: card.rawContent, diagramType }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setDiagramData(data.mermaid_code);
+      setDiagramError(null);
+      toast.dismiss(toastId);
+    } catch (error) {
+      console.error('Error creating diagram:', error);
+      setDiagramError('Failed to create diagram. Please try again.');
+      toast.error('This one is on us, please try again.')
+      toast.dismiss(toastId);
+    }
+  };
+
+  const handleDiagramRetry = () => {
+    if (diagramRetries < MAX_DIAGRAM_RETRIES && currentDiagramType) {
+      setDiagramRetries(prevRetries => prevRetries + 1);
+      handleCreateDiagram(currentDiagramType, getDiagramLabel(currentDiagramType));
+    } else {
+      toast.error("Failed to create diagram after multiple attempts", {
+        description: "Please try again later or contact support if the issue persists.",
+      });
+    }
+  };
+
+  const getDiagramLabel = (diagramType: string): string => {
+    const diagramTypeObj = diagramTypes.find(type => type.value === diagramType);
+    return diagramTypeObj ? diagramTypeObj.label : 'Diagram';
+  };
+
+  const DiagramTypePopover = () => {
+    const [popoverPosition, setPopoverPosition] = useState({ top: false, left: 0 });
+    const triggerRef = useRef<HTMLButtonElement>(null);
+    const contentRef = useRef<HTMLDivElement>(null);
+  
+    useEffect(() => {
+      const updatePosition = () => {
+        if (triggerRef.current && contentRef.current) {
+          const triggerRect = triggerRef.current.getBoundingClientRect();
+          const contentRect = contentRef.current.getBoundingClientRect();
+          const windowHeight = window.innerHeight;
+  
+          const spaceAbove = triggerRect.top;
+          const spaceBelow = windowHeight - triggerRect.bottom;
+  
+          setPopoverPosition({
+            top: spaceBelow < contentRect.height && spaceAbove > spaceBelow,
+            left: triggerRect.left,
+          });
+        }
+      };
+  
+      window.addEventListener('resize', updatePosition);
+      updatePosition();
+  
+      return () => window.removeEventListener('resize', updatePosition);
+    }, []);
+  
+    return (
+      <PopoverRoot>
+        <PopoverTrigger ref={triggerRef}>
+          <IconChartDots3 className="h-5 w-5 mr-2" />
+          Create Diagram
+        </PopoverTrigger>
+        <PopoverContent ref={contentRef}>
+          {diagramTypes.map((type) => (
+            <PopoverButton key={type.value} onClick={() => handleCreateDiagram(type.value, type.label)}>
+              {type.label}
+            </PopoverButton>
+          ))}
+        </PopoverContent>
+      </PopoverRoot>
+    );
+  };
+
 
   const renderContent = () => {
     if (React.isValidElement(card.content) || Array.isArray(card.content)) {
@@ -286,7 +427,6 @@ export const Card: React.FC<CardProps> = ({
           `;
           placeholder.parentNode?.replaceChild(tableWrapper, placeholder);
 
-          // Add chart container after the table
           const chartContainer = document.createElement('div');
           chartContainer.id = `chart-container-${tableId}`;
           chartContainer.className = 'mt-4';
@@ -350,14 +490,29 @@ export const Card: React.FC<CardProps> = ({
               <ChartCard 
                 d3Code={d3Code} 
                 onClose={() => handleCloseChart(tableId)}
+                onRetry={() => handleChartRetry(tableId)}
               />,
               chartContainer
             );
           }
         }
       });
+
+      if (diagramData) {
+        const diagramContainer = document.getElementById('diagram-container');
+        if (diagramContainer) {
+          ReactDOM.render(
+            <ChartCard 
+              mermaidCode={diagramData} 
+              onClose={handleCloseDiagram}
+              onRetry={handleDiagramRetry}
+            />,
+            diagramContainer
+          );
+        }
+      }
     }
-  }, [open, chartData]);
+  }, [open, chartData, diagramData]);
 
   return (
     <>
@@ -421,8 +576,11 @@ export const Card: React.FC<CardProps> = ({
                     Download as PowerPoint
                   </button>
                 )}
+                {card.type !== 'sources' && onCreatePowerPoint && (
+                  <DiagramTypePopover />
+                )}
                 <button
-                  className="flex items-center justify-center w-10 h-10 bg-black rounded-full hover:text-stone-900 text-stone-100 dark:bg-white dark:text-stone-900 hover:bg-stone-300 dark:hover:bg-stone-600 dark:text-neutral-900 dark:hover:text-stone-100"
+                  className="flex items-center justify-center w-10 h-10 bg-black rounded-full hover:text-stone-900 text-stone-100 dark:bg-white dark:text-stone-900 hover:bg-stone-300 dark:hover:bg-stone-600 dark:text-neutral-900 dark:hover:text-stone-100 relative z-[120]"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleClose();
@@ -430,7 +588,7 @@ export const Card: React.FC<CardProps> = ({
                 >
                   <IconX className="h-6 w-6" />
                 </button>
-                </div>
+              </div>
               <div className="mt-4">
                 <p className="text-base font-medium text-black dark:text-white">
                   {card.category}
@@ -438,6 +596,14 @@ export const Card: React.FC<CardProps> = ({
                 <p className="text-2xl md:text-5xl font-semibold text-neutral-700 mt-4 dark:text-white">
                   {card.title}
                 </p>
+                {diagramData && (
+                  <div id="diagram-container" className="mt-4">
+                    <ChartCard 
+                      mermaidCode={diagramData} 
+                      onClose={handleCloseDiagram}
+                    />
+                  </div>
+                )}
                 <div className="py-10 text-stone-900 dark:text-stone-100 text-base md:text-lg font-sans prose prose-stone dark:prose-invert max-w-none">
                   {renderContent()}
                 </div>

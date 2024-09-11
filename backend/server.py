@@ -15,6 +15,10 @@ from reach_core.master.prompts import component_injection, generate_report_promp
 from fastapi.middleware.cors import CORSMiddleware
 from pptx.util import Inches, Pt
 from openai import OpenAI
+import subprocess
+import tempfile
+import os
+
 
 # from reach_core.utils.unstructured_functions import *
 # from reach_core.utils.hubspot_functions import *
@@ -221,44 +225,53 @@ async def generate_powerpoint(request: PowerPointRequest):
 class ChartRequest(BaseModel):
     tableId: str
     tableContent: str
+    chartConfig: dict
+    previousError: str = None
 
 @app.post("/create-chart")
 async def create_chart(request: ChartRequest):
     component_code = component_injection()
-    user_prompt = f"""
+    config_str = "\n".join([f"{k}: {v}" for k, v in request.chartConfig.items()])
+    
+    base_prompt = f"""
     You are an expert D3.js developer.
-
-    Create only the necessary D3.js code to generate a chart based on the following data and include labels:
-
+    Create only the necessary D3.js code to generate a chart based on the following data and configuration:
     Data:
     {request.tableContent}
+    Chart Configuration:
+    {config_str}
+    Follow these guidelines:
+    - Use the specified color scheme. If not specified, lean into earth toned colors like stone-400, stone-500, zinc-600, and zinc-500.
+    - Include a legend if showLegend is true.
+    - Add a title if showTitle is true, using the specified titleFontSize.
+    - Include axis labels if showAxisLabels is true.
+    - If showChartLabels is true, add labels to the chart elements.
+    - Avoid the use of `translate`, `width`, and `selectAll`.
+    - If the x-axis contains time indices, ensure time increases to the right.
+    - Do not redeclare the variable `svg` or any other variables if they have already been declared in the environment.
+    - Assume that a D3.js environment is already available and that an `svg` element has been appended to the DOM.
+    - Do not include any HTML tags, <script> tags, or references to external libraries.
+    - Avoid pie charts entirely.
 
-    Avoid the use of `translate`, `width`, and `selectAll`.
+    Provide only the D3.js code, without any explanation or additional text.
 
-    If the x-axis contains time indices, ensure time increases to the right.
+    The D3.js code will be executed in the following component in renderChart: {component_code}.
+    The D3 code's compatibility with the provided component is mission critical.
 
-    The charts should be visually appealing. Lean into earth toned colors like stone-400 and stone-500 as well as zinc-600 and zinc-500.
-
-    Do not redeclare the variable `svg` or any other variables if they have already been declared in the environment.
-    Assume that a D3.js environment is already available and that an `svg` element has been appended to the DOM.
-    Do not include any HTML tags, <script> tags, or references to external libraries.
-
-    The D3.js code will be executed in the following component: {component_code}.
-    
-    The D3 code's compatability with the provided component is mission critical. My job depends on it.
+    Be creative! Use a chart type that best visualizes the data and tells the most rich data story.
     """
 
-    prompt = """
-    You are an expert D3.js developer.
-    Your task is to create D3.js code for a chart based on the provided table data.
-    """
+    if request.previousError:
+        prompt = f"{base_prompt}\n\nThe previous attempt resulted in an error: {request.previousError}. Please correct the D3.js code to ensure it is valid and can be rendered correctly."
+    else:
+        prompt = base_prompt
 
     try:
         completion = client.chat.completions.create(
             model="gpt-4o-2024-08-06",
             messages=[
-                {"role": "system", "content": prompt},
-                {"role": "user", "content": user_prompt}
+                {"role": "system", "content": "You are an expert D3.js developer."},
+                {"role": "user", "content": prompt}
             ],
         )
         d3_code = completion.choices[0].message.content
@@ -301,6 +314,173 @@ async def condense_findings(request: CondenseRequest):
         print(f"Error in condense-findings: {str(e)}")
         print(traceback.format_exc())
         raise HTTPException(status_code=500)
+    
+class DiagramRequest(BaseModel):
+    content: str
+    diagramType: str
+    previousError: str = None
+
+@app.post("/generate-diagram")
+async def generate_diagram(request: DiagramRequest):
+    component_code = component_injection()
+
+    try:
+        diagram_examples = {
+            "flowchart": """
+            flowchart TD
+                A[Start] --> B{Is it?}
+                B -->|Yes| C[OK]
+                C --> D[Rethink]
+                D --> B
+                B ---->|No| E[End]
+
+            """,
+            "quadrantChart": """
+            quadrantChart
+                title Reach and engagement of campaigns
+                x-axis Low Reach --> High Reach
+                y-axis Low Engagement --> High Engagement
+                quadrant-1 We should expand
+                quadrant-2 Need to promote
+                quadrant-3 Re-evaluate
+                quadrant-4 May be improved
+                Campaign A: [0.3, 0.6]
+                Campaign B: [0.45, 0.23]
+                Campaign C: [0.57, 0.69]
+                Campaign D: [0.78, 0.34]
+                Campaign E: [0.40, 0.34]
+                Campaign F: [0.35, 0.78]
+
+            """,
+            "c4Context": """
+                C4Context
+                    title System Context diagram for Internet Banking System
+                    Enterprise_Boundary(b0, "BankBoundary0") {
+                        Person(customerA, "Banking Customer A", "A customer of the bank, with personal bank accounts.")
+                        Person(customerB, "Banking Customer B")
+                        Person_Ext(customerC, "Banking Customer C", "desc")
+
+                        Person(customerD, "Banking Customer D", "A customer of the bank, <br/> with personal bank accounts.")
+
+                        System(SystemAA, "Internet Banking System", "Allows customers to view information about their bank accounts, and make payments.")
+
+                        Enterprise_Boundary(b1, "BankBoundary") {
+
+                        SystemDb_Ext(SystemE, "Mainframe Banking System", "Stores all of the core banking information about customers, accounts, transactions, etc.")
+
+                        System_Boundary(b2, "BankBoundary2") {
+                            System(SystemA, "Banking System A")
+                            System(SystemB, "Banking System B", "A system of the bank, with personal bank accounts. next line.")
+                        }
+
+                        System_Ext(SystemC, "E-mail system", "The internal Microsoft Exchange e-mail system.")
+                        SystemDb(SystemD, "Banking System D Database", "A system of the bank, with personal bank accounts.")
+
+                        Boundary(b3, "BankBoundary3", "boundary") {
+                            SystemQueue(SystemF, "Banking System F Queue", "A system of the bank.")
+                            SystemQueue_Ext(SystemG, "Banking System G Queue", "A system of the bank, with personal bank accounts.")
+                        }
+                        }
+                    }
+
+                    BiRel(customerA, SystemAA, "Uses")
+                    BiRel(SystemAA, SystemE, "Uses")
+                    Rel(SystemAA, SystemC, "Sends e-mails", "SMTP")
+                    Rel(SystemC, customerA, "Sends e-mails to")
+
+                    UpdateElementStyle(customerA, $fontColor="red", $bgColor="grey", $borderColor="red")
+                    UpdateRelStyle(customerA, SystemAA, $textColor="blue", $lineColor="blue", $offsetX="5")
+                    UpdateRelStyle(SystemAA, SystemE, $textColor="blue", $lineColor="blue", $offsetY="-10")
+                    UpdateRelStyle(SystemAA, SystemC, $textColor="blue", $lineColor="blue", $offsetY="-40", $offsetX="-50")
+                    UpdateRelStyle(SystemC, customerA, $textColor="red", $lineColor="red", $offsetX="-50", $offsetY="20")
+
+                    UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
+            """,
+            "timeline": """
+            timeline
+                title History of AI Development
+                section 1950s
+                    1956 : Dartmouth Conference
+                        : Birth of AI as a field
+                section 1960s-1970s
+                    1965 : ELIZA chatbot
+                    1972 : PROLOG language
+                section 1980s-1990s
+                    1997 : IBM's Deep Blue beats Kasparov
+                section 2000s-2010s
+                    2011 : IBM Watson wins Jeopardy!
+                    2014 : Google acquires DeepMind
+                section 2020s
+                    2022 : ChatGPT released
+            """,
+            "mindmap": """
+              mindmap
+                root((mindmap))
+                    Origins
+                    Long history
+                    ::icon(fa fa-book)
+                    Popularisation
+                        British popular psychology author Tony Buzan
+                    Research
+                    On effectiveness<br/>and features
+                    On Automatic creation
+                        Uses
+                            Creative techniques
+                            Strategic planning
+                            Argument mapping
+                    Tools
+                    Pen and paper
+                    Mermaid
+            """
+        }
+
+        base_prompt = f"""
+        You are an expert in creating Mermaid.js diagrams. Based on the following content, create a Mermaid.js {request.diagramType} diagram that best represents the information:
+
+        {request.content}
+
+        Here's a syntax example for the {request.diagramType}:
+
+        ```mermaid
+        {diagram_examples[request.diagramType]}
+        ```
+
+        Important notes:
+        - The first line of your code MUST be the diagram type: {request.diagramType}
+        - Adhere closely to the syntax provided in the example.
+        - Ensure the diagram accurately represents the provided content.
+        - Do not nest parentheses.
+        - Do not use abbreviations in parenthesis. Ex: 'Complete Blood Count (CBC)' is invalid syntax.
+        - NEVER include a title denoted with '%% Title:'. Ex: '%% Title: Diagnostic Process for Thoracic Pain'
+        - Do NOT use underscores in entity names or labels. Underscores are protected syntax in Mermaid C4Context diagrams and should not be used as text. Use spaces instead.
+
+        The code will be rendered in the following component with renderDiagram, its compatibility is mission critical: {component_code}
+        Provide only the Mermaid.js code, without any explanation or additional text.
+        """
+
+        if request.previousError:
+            prompt = f"{base_prompt}\n\nThe previous attempt resulted in an error. Please correct the Mermaid.js code to ensure it is valid and can be rendered correctly. Remember to start with the diagram type: {request.diagramType}"
+        else:
+            prompt = base_prompt
+
+        client = OpenAI()
+        completion = client.chat.completions.create(
+            model="gpt-4o-2024-08-06",
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant that creates Mermaid.js diagrams."},
+                {"role": "user", "content": prompt}
+            ]
+        )
+
+        mermaid_code = completion.choices[0].message.content.strip()
+        
+        if not mermaid_code.startswith(request.diagramType):
+            mermaid_code = f"{request.diagramType}\n{mermaid_code}"
+
+        return {"mermaid_code": mermaid_code}
+    except Exception as e:
+        print(f"Error in generate-diagram: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 # @app.post("/setEnvironmentVariables")
 # async def set_environment_variables(credentials: SalesforceCredentials):

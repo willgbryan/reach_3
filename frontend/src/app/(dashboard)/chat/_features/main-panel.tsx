@@ -30,6 +30,7 @@ import InfoButton from '@/components/tutorial/info-button'
 import createEditableDocument from '@/components/word-doc-functions'
 import TableDownloader from '@/components/table-downloader'
 import { IconLoader2, IconPresentation } from '@tabler/icons-react'
+import { LoaderIcon } from 'lucide-react'
 
 interface MainVectorPanelProps {
   id?: string | undefined
@@ -535,6 +536,29 @@ const ChatSection = ({
 }) => {
   const [localSources, setLocalSources] = useState<Source[]>([]);
   const updatedMessages = [...messages, { content: reportContent, role: 'assistant', type: 'report' }];
+  const [reportConfig, setReportConfig] = useState<ReportConfig>({
+    font: "",
+    pageOrientation: "portrait",
+    marginSize: 15,
+    documentTitle: "",
+    subject: "",
+    tableOfContents: false,
+    pageNumbering: false,
+    headerText: "",
+    footerText: "",
+  });
+
+  type ReportConfig = {
+    font: string;
+    pageOrientation: "portrait" | "landscape";
+    marginSize: number;
+    documentTitle: string;
+    subject: string;
+    tableOfContents: boolean;
+    pageNumbering: boolean;
+    headerText: string;
+    footerText: string;
+  };
 
   useEffect(() => {
     const fetchSources = async () => {
@@ -552,13 +576,34 @@ const ChatSection = ({
     fetchSources();
   }, [chatId, allSources]);
 
+  useEffect(() => {
+    const fetchReportConfig = async () => {
+      try {
+        const response = await fetch('/api/fetch-report-config');
+        if (response.ok) {
+          const data = await response.json();
+          const pageOrientation = data.report_config.pageOrientation === "landscape" ? "landscape" : "portrait";
+          setReportConfig({
+            ...data.report_config,
+            pageOrientation,
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching report configuration:', error);
+      }
+    };
+
+    fetchReportConfig();
+  }, []);
+
+
   const sourcesToUse = allSources.length > 0 ? allSources : localSources;
   
   const handleCreateStructuredPowerPoint = async (content: string) => {
     const toastId = toast.custom((t) => (
       <div className="flex items-center justify-center w-full">
         <div className="flex items-center space-x-2">
-          <IconLoader2 className="animate-spin h-5 w-5" />
+          <LoaderIcon className="animate-spin h-5 w-5" />
           <div className="text-center">
             <div className="font-semibold">Creating PowerPoint</div>
             <div className="text-sm text-gray-500">One moment please...</div>
@@ -823,7 +868,7 @@ const ChatSection = ({
             tables,
           }}
           index={index}
-          onCreateDoc={createEditableDocument}
+          onCreateDoc={(content: string) => createEditableDocument(content, reportConfig)}
           onCreatePowerPoint={handleCreateStructuredPowerPoint}
           onCreateChart={(tableId: string) => {
             console.log(`Create chart for table ${tableId}`);
