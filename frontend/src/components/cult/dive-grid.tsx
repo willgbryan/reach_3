@@ -111,7 +111,7 @@ export const Card: React.FC<CardProps> = ({
   const diagramTypes = [
     { label: "Flowchart", value: "flowchart" },
     { label: "Quadrant Chart", value: "quadrantChart" },
-    { label: "Architecture Diagram", value: "c4Context" },
+    // { label: "Architecture Diagram", value: "c4Context" },
     { label: "Timeline", value: "timeline" },
     { label: "Mindmap", value: "mindmap" },
   ];

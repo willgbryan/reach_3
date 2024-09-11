@@ -446,6 +446,7 @@ async def generate_diagram(request: DiagramRequest):
         - Do not nest parentheses.
         - Do not use abbreviations in parenthesis. Ex: 'Complete Blood Count (CBC)' is invalid syntax.
         - NEVER include a title denoted with '%% Title:'. Ex: '%% Title: Diagnostic Process for Thoracic Pain'
+        - Do NOT use underscores in entity names or labels. Underscores are protected syntax in Mermaid C4Context diagrams and should not be used as text. Use spaces instead.
 
         The code will be rendered in the following component with renderDiagram, its compatibility is mission critical: {component_code}
         Provide only the Mermaid.js code, without any explanation or additional text.
