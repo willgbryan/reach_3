@@ -140,13 +140,18 @@ async def generate_powerpoint(request: PowerPointRequest):
         print(f"Favorite theme: {request.favoriteTheme}")
         print(f"Signed URL: {request.signedUrl}")
         
-        prs = read_pptx_from_supabase(request.filePath, request.signedUrl)    
+        prs = read_pptx_from_supabase(request.filePath, request.signedUrl) 
+
+        user_prompt = f"""
+            Create a presentation summarizing the following content. Be sure to include the links in a References slide: {request.prompt}.
+            Use headings to drive the narrative for the presentation and slide titles. Distill the core content down to create succinct slide content.
+        """  
 
         completion = client.chat.completions.create(
             model="gpt-4o-2024-08-06",
             messages=[
                 {"role": "system", "content": "You are a helpful assistant that creates PowerPoint presentations. Generate a presentation structure based on the user's request by calling the create_presentation function."},
-                {"role": "user", "content": f"Create a presentation summarizing the following content. Be sure to include the links in a References slide: {request.prompt}"}
+                {"role": "user", "content": user_prompt}
             ],
             functions=[{
                 "name": "create_presentation",
