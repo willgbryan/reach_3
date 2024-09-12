@@ -23,18 +23,16 @@ const pricingTiers = [
     features: [
       "Individual use",
       "10 queries per month",
-      { text: "Maximum of 1 concurrent newsletter(s)", subtext: "then $0.99 per newsletter" },
       "Default static file exports"
     ]
   },
   {
     title: "Pro",
     price: 29,
-    description: "Accelerate your professional work",
+    description: "Accelerate your work",
     features: [
-      "Individual use with added memory layer",
+      "Basic tier features",
       "Unlimited queries",
-      { text: "Maximum of 5 concurrent newsletters", subtext: "then $0.99 per newsletter" },
       "Static file export customization",
       "24/7 support"
     ],
@@ -45,12 +43,13 @@ const pricingTiers = [
     price: 49,
     description: "Collaborative tools for teams",
     features: [
-      "Team level memory layer",
+      "Pro tier features",
       "Unlimited queries",
-      { text: "Maximum of 5 concurrent newsletters per team member", subtext: "then $0.99 per newsletter" },
+      "In app collaboration and shared outputs",
       "Export sharing via Slack",
       "24/7 support"
-    ]
+    ],
+    comingSoon: true
   },
   {
     title: "Enterprise",
@@ -58,7 +57,6 @@ const pricingTiers = [
     description: "Integrated analytics and acceleration",
     features: [
       "Custom user limit",
-      "Configurable memory layer granularity",
       "Organization wide observability dashboard",
       "Unlimited queries",
       "Unlimited concurrent newsletters",
@@ -70,6 +68,8 @@ const pricingTiers = [
 const PricingCard = ({ tier, session, emphasized, index, totalCards }) => {
   const isFirst = index === 0;
   const isLast = index === totalCards - 1;
+  const isBasic = tier.title === "Basic";
+  const isComingSoon = tier.comingSoon;
 
   return (
     <div className={cn(
@@ -77,32 +77,40 @@ const PricingCard = ({ tier, session, emphasized, index, totalCards }) => {
       emphasized ? "z-10 scale-y-[1.03] -mt-1.5 -mb-1.5" : ""
     )}>
       <Card className={cn(
-        "h-full flex flex-col",
+        "h-full flex flex-col dark:bg-zinc-800 dark:border-white",
         emphasized ? "shadow-lg" : "shadow-sm",
         isFirst ? "rounded-r-none" : isLast ? "rounded-l-none" : "rounded-none",
-        emphasized && "rounded-lg"
+        emphasized && "rounded-lg",
+        isComingSoon && "opacity-70"
       )}>
         <CardHeader>
           <CardTitle>{tier.title}</CardTitle>
           <CardDescription>{tier.description}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-6">
-          <StripeCheckout
-            metadata={{
-              userId: session?.user.id ?? null,
-              pricingTier: tier.title,
-            }}
-            paymentType="subscription"
-            price={typeof tier.price === 'number' ? tier.price * 100 : 0}
-            className="w-full"
-          >
-            <Button className={cn(
-              "w-full",
-              emphasized ? "bg-primary text-primary-foreground hover:bg-primary/90" : ""
-            )}>
-              Get started
-            </Button>
-          </StripeCheckout>
+          {!isBasic && !isComingSoon && (
+            <StripeCheckout
+              metadata={{
+                userId: session?.user.id ?? null,
+                pricingTier: tier.title,
+              }}
+              paymentType="subscription"
+              price={typeof tier.price === 'number' ? tier.price * 100 : 0}
+              className="w-full"
+            >
+              <Button className={cn(
+                "w-full",
+                emphasized ? "bg-primary text-primary-foreground hover:bg-primary/90" : ""
+              )}>
+                Get started
+              </Button>
+            </StripeCheckout>
+          )}
+          {isComingSoon && (
+            <div className="text-center text-lg font-semibold text-primary dark:text-white">
+              Coming Soon
+            </div>
+          )}
           <div className="flex items-baseline justify-center gap-x-2">
             <span className="text-3xl font-bold">
               {typeof tier.price === 'number' ? `$${tier.price}` : tier.price}
@@ -111,7 +119,7 @@ const PricingCard = ({ tier, session, emphasized, index, totalCards }) => {
               <span className="text-sm text-muted-foreground">/month</span>
             )}
           </div>
-          <Separator className="my-2" />
+          <Separator className="my-2 dark:bg-white" />
           <div>
             {tier.features.map((feature, index) => (
               <div
