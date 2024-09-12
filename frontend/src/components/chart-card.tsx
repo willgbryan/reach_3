@@ -102,12 +102,6 @@ const ChartCard: React.FC<ChartCardProps> = ({ d3Code, mermaidCode, onClose, onR
     }
   };
 
-  const cleanMermaidCode = (code: string): string => {
-    let cleaned = code.replace(/^```mermaid\n/, '').replace(/```$/, '').trim();
-    
-    return cleaned;
-  };
-
   const renderDiagram = async () => {
     if (chartRef.current && mermaidCode) {
       try {
@@ -133,61 +127,62 @@ const ChartCard: React.FC<ChartCardProps> = ({ d3Code, mermaidCode, onClose, onR
   };
 
   const handleDownload = () => {
-    if (d3Code) {
-      downloadChart();
-    } else if (mermaidCode) {
-      downloadDiagram();
-    }
-  };
-
-  const downloadChart = () => {
     const svg = chartRef.current?.querySelector('svg');
     if (svg) {
-      const svgData = new XMLSerializer().serializeToString(svg);
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      const img = new Image();
+      // Ensure all SVG animations are complete
+      svg.pauseAnimations();
 
+      const svgData = new XMLSerializer().serializeToString(svg);
+      const svgBlob = new Blob([svgData], {type: 'image/svg+xml;charset=utf-8'});
+      const svgUrl = URL.createObjectURL(svgBlob);
+
+      const img = new Image();
       img.onload = () => {
-        canvas.width = img.width;
-        canvas.height = img.height;
-        ctx?.drawImage(img, 0, 0);
-        const pngFile = canvas.toDataURL('image/png');
-        const downloadLink = document.createElement('a');
-        downloadLink.download = 'chart.png';
-        downloadLink.href = pngFile;
-        downloadLink.click();
+        URL.revokeObjectURL(svgUrl);
+
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const scaleFactor = 2; // Increase this for higher resolution
+
+        // Use the natural size of the image (original SVG size)
+        canvas.width = img.naturalWidth * scaleFactor;
+        canvas.height = img.naturalHeight * scaleFactor;
+
+        if (ctx) {
+          ctx.scale(scaleFactor, scaleFactor);
+          ctx.drawImage(img, 0, 0);
+
+          // Add a small delay to ensure the canvas is fully rendered
+          setTimeout(() => {
+            canvas.toBlob((blob) => {
+              if (blob) {
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'chart.png';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+              } else {
+                toast.error('Failed to generate PNG. Please try again.');
+              }
+            }, 'image/png');
+          }, 100);
+        } else {
+          toast.error('Failed to process SVG for PNG conversion.');
+        }
       };
 
-      img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
-    } else {
-      console.error('SVG element not found');
-    }
-  };
-
-  const downloadDiagram = () => {
-    const svg = chartRef.current?.querySelector('svg');
-    if (svg) {
-      const svgData = new XMLSerializer().serializeToString(svg);
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      const img = new Image();
-
-      img.onload = () => {
-        canvas.width = img.width;
-        canvas.height = img.height;
-        ctx?.drawImage(img, 0, 0);
-        const pngFile = canvas.toDataURL('image/png');
-        const downloadLink = document.createElement('a');
-        downloadLink.download = 'diagram.png';
-        downloadLink.href = pngFile;
-        downloadLink.click();
+      img.onerror = () => {
+        URL.revokeObjectURL(svgUrl);
+        toast.error('Failed to load SVG for PNG conversion.');
       };
 
-      img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+      img.src = svgUrl;
     } else {
       console.error('SVG element not found');
-      toast.error('Failed to download diagram. Please try again.');
+      toast.error('Failed to download chart. Please try again.');
     }
   };
 
