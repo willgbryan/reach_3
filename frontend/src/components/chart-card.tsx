@@ -129,7 +129,6 @@ const ChartCard: React.FC<ChartCardProps> = ({ d3Code, mermaidCode, onClose, onR
   const handleDownload = () => {
     const svg = chartRef.current?.querySelector('svg');
     if (svg) {
-      // Ensure all SVG animations are complete
       svg.pauseAnimations();
 
       const svgData = new XMLSerializer().serializeToString(svg);
@@ -144,7 +143,6 @@ const ChartCard: React.FC<ChartCardProps> = ({ d3Code, mermaidCode, onClose, onR
         const ctx = canvas.getContext('2d');
         const scaleFactor = 2; // Increase this for higher resolution
 
-        // Use the natural size of the image (original SVG size)
         canvas.width = img.naturalWidth * scaleFactor;
         canvas.height = img.naturalHeight * scaleFactor;
 
@@ -152,7 +150,6 @@ const ChartCard: React.FC<ChartCardProps> = ({ d3Code, mermaidCode, onClose, onR
           ctx.scale(scaleFactor, scaleFactor);
           ctx.drawImage(img, 0, 0);
 
-          // Add a small delay to ensure the canvas is fully rendered
           setTimeout(() => {
             canvas.toBlob((blob) => {
               if (blob) {
