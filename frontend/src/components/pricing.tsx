@@ -14,6 +14,7 @@ import { StripeCheckout } from '@/app/api/stripe/server';
 import { Heading } from '@/components/cult/gradient-heading';
 import { Separator } from "@/components/ui/separator";
 import { Meteors } from '@/components/cult/meteors';
+import EnterpriseFormPopover from '@/components/enterprise-popover';
 
 const pricingTiers = [
   {
@@ -32,7 +33,7 @@ const pricingTiers = [
     description: "Accelerate your work",
     features: [
       "Basic tier features",
-      "Unlimited queries",
+      { text: "Unlimited queries", subtext: "Rate limit: 10 /hour"},
       "Static file export customization",
       "24/7 support"
     ],
@@ -44,7 +45,7 @@ const pricingTiers = [
     description: "Collaborative tools for teams",
     features: [
       "Pro tier features",
-      "Unlimited queries",
+      { text: "Unlimited queries", subtext: "Rate limit: 50 /hour"},
       "In app collaboration and shared outputs",
       "Export sharing via Slack",
       "24/7 support"
@@ -54,12 +55,11 @@ const pricingTiers = [
   {
     title: "Enterprise",
     price: "Custom",
-    description: "Integrated analytics and acceleration",
+    description: "Integrated observability and tailored optimization",
     features: [
       "Custom user limit",
       "Organization wide observability dashboard",
-      "Unlimited queries",
-      "Unlimited concurrent newsletters",
+      { text: "Unlimited queries", subtext: "Priority uptime and no rate limits"},
       "24/7 support"
     ]
   }
@@ -70,6 +70,7 @@ const PricingCard = ({ tier, session, emphasized, index, totalCards }) => {
   const isLast = index === totalCards - 1;
   const isBasic = tier.title === "Basic";
   const isComingSoon = tier.comingSoon;
+  const isEnterprise = tier.title === "Enterprise";
 
   return (
     <div className={cn(
@@ -88,7 +89,7 @@ const PricingCard = ({ tier, session, emphasized, index, totalCards }) => {
           <CardDescription>{tier.description}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-6">
-          {!isBasic && !isComingSoon && (
+          {!isBasic && !isComingSoon && !isEnterprise && (
             <StripeCheckout
               metadata={{
                 userId: session?.user.id ?? null,
@@ -98,11 +99,11 @@ const PricingCard = ({ tier, session, emphasized, index, totalCards }) => {
               price={typeof tier.price === 'number' ? tier.price * 100 : 0}
               className="w-full"
             >
-              <Button className={cn(
-                "w-full",
-                emphasized ? "bg-primary text-primary-foreground hover:bg-primary/90" : ""
-              )}>
+              <Button className="relative mb-4 text-stone-100 dark:text-stone-900 bg-stone-900 dark:bg-stone-100 from-neutral-800 via-neutral-800 to-black px-6 py-2 rounded-lg group transition-[width] duration-100 ease-[cubic-bezier(0.64_0.57_0.67_1.53)] text-lg flex items-center mx-auto w-auto shadow-[0_1px_5px_rgba(0,0,0,0.2)]">
                 Get started
+                <div className="w-0 opacity-0 group-hover:w-[16px] group-hover:opacity-100 ml-1 overflow-hidden duration-100 ease-[cubic-bezier(0.64_0.57_0.67_1.53)] transition-[width]">
+                  →
+                </div>
               </Button>
             </StripeCheckout>
           )}
@@ -111,6 +112,7 @@ const PricingCard = ({ tier, session, emphasized, index, totalCards }) => {
               Coming Soon
             </div>
           )}
+          {isEnterprise && <EnterpriseFormPopover />}
           <div className="flex items-baseline justify-center gap-x-2">
             <span className="text-3xl font-bold">
               {typeof tier.price === 'number' ? `$${tier.price}` : tier.price}
