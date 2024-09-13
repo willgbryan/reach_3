@@ -516,7 +516,7 @@ const TopSection = ({ docSetName, documentSets, onTriggerTutorial }) => {
       <div>
         {/* <SelectScrollable prevDocSets={documentSets} /> */}
       </div>
-      <div id="profile" className="flex items-center space-x-4">
+      <div id="profile" className="flex items-center space-x-2">
         <InfoButton onTriggerTutorial={onTriggerTutorial} />
         <ModeToggle/>
         <UserProvider id="profile"/>
