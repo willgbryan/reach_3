@@ -380,6 +380,41 @@ export interface Database {
           },
         ]
       }
+      enterprise_contact_and_waitlist: {
+        Row: {
+          id: string
+          created_at: string
+          name: string
+          email: string
+          company: string
+          user_id: string | null
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          name: string
+          email: string
+          company: string
+          user_id?: string | null
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          name?: string
+          email?: string
+          company?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enterprise-contact-and-waitlist_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never

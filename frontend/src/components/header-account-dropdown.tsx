@@ -1,27 +1,30 @@
 'use client'
-
 import React from 'react'
 import Link from 'next/link'
-
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu'
+import { User } from 'lucide-react'
 import { Separator } from './ui/separator'
+import { Button } from './cult/moving-border'
 
 export function HeaderAccountDropdown({ user }: any) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger className="outline-none">
-        <Avatar className="h-8 w-8">
-          <AvatarImage src={user.image ?? undefined} alt="user" />
-          <AvatarFallback className="bg-gradient-to-r from-brand-300 to-brand-200 text-white">
-            {user.name?.charAt(0).toUpperCase()}
-          </AvatarFallback>
-        </Avatar>
+        <Button
+          borderRadius="9999px"
+          className="bg-transparent p-0"
+          containerClassName="h-8 w-8"
+          borderClassName="bg-[radial-gradient(var(--zinc-500)_40%,var(--orange-500)_60%)]"
+        >
+          <div className="h-full w-full bg-white dark:bg-slate-900 rounded-full flex items-center justify-center">
+            <User className="h-4 w-4 text-black dark:text-white" />
+          </div>
+        </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-48 px-0 py-1" align="end">
         <div className="flex items-center gap-2 p-2">
@@ -42,11 +45,6 @@ export function HeaderAccountDropdown({ user }: any) {
               <span>Try Pro</span>
             </Link>
           </DropdownMenuItem>
-          {/* <DropdownMenuItem>
-            <Link href="/library" className="flex w-full items-center justify-between gap-2">
-              <span>Library</span>
-            </Link>
-          </DropdownMenuItem> */}
         </div>
         <Separator />
         <div className="py-1">
