@@ -35,52 +35,54 @@ const ChartCard: React.FC<ChartCardProps> = ({ d3Code, mermaidCode, onClose, onR
     } else if (mermaidCode) {
       renderDiagram();
     }
-  }, [d3Code, mermaidCode]);
+  }, [d3Code, mermaidCode, retryCount]);
 
   const renderChart = () => {
     if (chartRef.current && d3Code) {
       chartRef.current.innerHTML = '';
       const cleanedCode = d3Code
-          .replace(/```javascript\n/, '')
-          .replace(/```[\s]*$/, '')
-          .trim();
+        .replace(/```javascript\n/, '')
+        .replace(/```[\s]*$/, '')
+        .trim();
       console.log("Cleaned D3 Code: ", cleanedCode);
 
       if ((cleanedCode.match(/{/g) || []).length !== (cleanedCode.match(/}/g) || []).length) {
-          setError("Error rendering chart: Unmatched braces in the generated code.");
-          return;
+        setError("Error rendering chart: Unmatched braces in the generated code.");
+        return;
       }
 
       try {
-          console.log("Executing D3 code...");
+        console.log("Executing D3 code...");
 
-          const wrappedCode = `
-          (function() {
-              try {
-              let svg = d3.select(container).select('svg');
-              if (!svg.empty()) {
-                  svg.selectAll("*").remove(); // Clear any existing chart
-              } else {
-                  svg = d3.select(container)
-                  .append('svg')
-                  .attr('width', '100%')
-                  .attr('height', '100%')
-                  .attr('preserveAspectRatio', 'xMidYMid meet')
-                  .attr('viewBox', '0 0 600 400');
-              }
-              // Execute the provided D3 code
-              ${cleanedCode}
-              console.log('D3 code executed successfully');
+        const wrappedCode = `
+        (function() {
+          try {
+            let svg = d3.select(container).select('svg');
+            if (!svg.empty()) {
+              svg.selectAll("*").remove(); // Clear any existing chart
+            } else {
+              svg = d3.select(container)
+                .append('svg')
+                .attr('width', 600) // Set explicit width
+                .attr('height', 400) // Set explicit height
+                .attr('preserveAspectRatio', 'xMidYMid meet')
+                .attr('viewBox', '0 0 600 400');
+            }
+            // Execute the provided D3 code
+            ${cleanedCode}
+            console.log('D3 code executed successfully');
 
-              // Ensure the chart fills the container
-              const chartBBox = svg.node().getBBox();
-              svg.attr('viewBox', \`\${chartBBox.x} \${chartBBox.y} \${chartBBox.width} \${chartBBox.height}\`);
-              } catch (error) {
-              console.error('Error in D3 code:', error);
-              throw error;
-              }
-          })();
-          `;
+            // Update the SVG dimensions based on content
+            const chartBBox = svg.node().getBBox();
+            svg.attr('viewBox', \`\${chartBBox.x} \${chartBBox.y} \${chartBBox.width} \${chartBBox.height}\`);
+            svg.attr('width', chartBBox.width);
+            svg.attr('height', chartBBox.height);
+          } catch (error) {
+            console.error('Error in D3 code:', error);
+            throw error;
+          }
+        })();
+        `;
 
         const executeD3Code = new Function('d3', 'container', wrappedCode);
         executeD3Code(d3, chartRef.current);
@@ -111,6 +113,16 @@ const ChartCard: React.FC<ChartCardProps> = ({ d3Code, mermaidCode, onClose, onR
 
         const { svg } = await mermaid.render(id, mermaidCode);
         chartRef.current.innerHTML = svg;
+
+        // Adjust SVG dimensions
+        const svgElement = chartRef.current.querySelector('svg');
+        if (svgElement) {
+          const bbox = svgElement.getBBox();
+          svgElement.setAttribute('width', bbox.width.toString());
+          svgElement.setAttribute('height', bbox.height.toString());
+          svgElement.setAttribute('viewBox', `0 0 ${bbox.width} ${bbox.height}`);
+        }
+
         setError(null);
         setRetryCount(0);
       } catch (error) {
@@ -129,10 +141,26 @@ const ChartCard: React.FC<ChartCardProps> = ({ d3Code, mermaidCode, onClose, onR
   const handleDownload = () => {
     const svg = chartRef.current?.querySelector('svg');
     if (svg) {
-      svg.pauseAnimations();
+      const svgClone = svg.cloneNode(true) as SVGSVGElement;
 
-      const svgData = new XMLSerializer().serializeToString(svg);
-      const svgBlob = new Blob([svgData], {type: 'image/svg+xml;charset=utf-8'});
+      let width, height;
+
+      if (svgClone.hasAttribute('width') && svgClone.hasAttribute('height')) {
+        width = parseFloat(svgClone.getAttribute('width')!);
+        height = parseFloat(svgClone.getAttribute('height')!);
+      } else if (svgClone.hasAttribute('viewBox')) {
+        const viewBox = svgClone.getAttribute('viewBox')!.split(' ');
+        width = parseFloat(viewBox[2]);
+        height = parseFloat(viewBox[3]);
+        svgClone.setAttribute('width', width.toString());
+        svgClone.setAttribute('height', height.toString());
+      } else {
+        toast.error('SVG does not have width/height or viewBox attributes.');
+        return;
+      }
+
+      const svgData = new XMLSerializer().serializeToString(svgClone);
+      const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
       const svgUrl = URL.createObjectURL(svgBlob);
 
       const img = new Image();
@@ -141,31 +169,30 @@ const ChartCard: React.FC<ChartCardProps> = ({ d3Code, mermaidCode, onClose, onR
 
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
-        const scaleFactor = 2; // Increase this for higher resolution
 
-        canvas.width = img.naturalWidth * scaleFactor;
-        canvas.height = img.naturalHeight * scaleFactor;
+        const scaleFactor = 2; // Increase for higher resolution
+
+        canvas.width = width * scaleFactor;
+        canvas.height = height * scaleFactor;
 
         if (ctx) {
           ctx.scale(scaleFactor, scaleFactor);
           ctx.drawImage(img, 0, 0);
 
-          setTimeout(() => {
-            canvas.toBlob((blob) => {
-              if (blob) {
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = 'chart.png';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                URL.revokeObjectURL(url);
-              } else {
-                toast.error('Failed to generate PNG. Please try again.');
-              }
-            }, 'image/png');
-          }, 100);
+          canvas.toBlob((blob) => {
+            if (blob) {
+              const url = URL.createObjectURL(blob);
+              const link = document.createElement('a');
+              link.href = url;
+              link.download = 'chart.png';
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+              URL.revokeObjectURL(url);
+            } else {
+              toast.error('Failed to generate PNG. Please try again.');
+            }
+          }, 'image/png');
         } else {
           toast.error('Failed to process SVG for PNG conversion.');
         }
@@ -176,6 +203,7 @@ const ChartCard: React.FC<ChartCardProps> = ({ d3Code, mermaidCode, onClose, onR
         toast.error('Failed to load SVG for PNG conversion.');
       };
 
+      img.crossOrigin = 'anonymous';
       img.src = svgUrl;
     } else {
       console.error('SVG element not found');
@@ -213,7 +241,7 @@ const ChartCard: React.FC<ChartCardProps> = ({ d3Code, mermaidCode, onClose, onR
       {error ? (
         <div className="text-red-500">{error}</div>
       ) : (
-        <div ref={chartRef} className="chart-content w-full h-full" />
+        <div ref={chartRef} className="chart-content w-full h-full" style={{ overflow: 'auto' }} />
       )}
     </div>
   );
