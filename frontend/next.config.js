@@ -5,30 +5,25 @@ const nextConfig = {
       "api.microlink.io", // Microlink Image Preview
     ],
   },
-  // Optional - turn this off if you would like
-  // https://nextjs.org/docs/app/api-reference/next-config-js/partial-prerendering
   experimental: {
     ppr: true,
   },
-
-//   webpack: (config) => {
-//     config.resolve.alias = {
-//       ...config.resolve.alias,
-//       'sharp$': false,
-//       'onnxruntime-node$': false,
-//     }
-//     return config
-//   },
-// }
-webpack: (config, { dev }) => {
-  if (dev) {
-    config.watchOptions = {
-      poll: 1000,
-      aggregateTimeout: 300,
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        tls: false,
+      };
     }
-  }
-  return config
-},
-}
 
-module.exports = nextConfig
+    config.externals.push({
+      canvas: 'canvas',
+    });
+
+    return config;
+  },
+};
+
+module.exports = nextConfig;
