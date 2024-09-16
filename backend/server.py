@@ -545,49 +545,49 @@ async def generate_diagram(request: DiagramRequest):
 
 #     return {"message": "Environment variables set successfully and app processed"}
 
-@app.post("/upload")
-async def upload_files(files: List[UploadFile] = File(...), task: str = Form(...)):
-    upload_dir = "uploads"
-    if not os.path.isdir(upload_dir):
-        os.makedirs(upload_dir)
+# @app.post("/upload")
+# async def upload_files(files: List[UploadFile] = File(...), task: str = Form(...)):
+#     upload_dir = "uploads"
+#     if not os.path.isdir(upload_dir):
+#         os.makedirs(upload_dir)
 
-    async def handle_file(file):
-        file_location = f"{upload_dir}/{file.filename}"
-        with open(file_location, "wb+") as file_object:
-            content = await file.read()
-            file_object.write(content)
+#     async def handle_file(file):
+#         file_location = f"{upload_dir}/{file.filename}"
+#         with open(file_location, "wb+") as file_object:
+#             content = await file.read()
+#             file_object.write(content)
         
-        if file.filename.endswith(".mp4"):
-            mp3_paths = await mp4_to_mp3(file_location)
-            os.remove(file_location)
-            file_location = mp3_paths[0]
+#         if file.filename.endswith(".mp4"):
+#             mp3_paths = await mp4_to_mp3(file_location)
+#             os.remove(file_location)
+#             file_location = mp3_paths[0]
         
-        return file_location
+#         return file_location
 
-    uploaded_files_info = []
-    for file in files:
-        file_location = await handle_file(file)
-        uploaded_files_info.append({"filename": file.filename, "location": file_location})
-        print(f"Uploaded: {file.filename} to {file_location}")
+#     uploaded_files_info = []
+#     for file in files:
+#         file_location = await handle_file(file)
+#         uploaded_files_info.append({"filename": file.filename, "location": file_location})
+#         print(f"Uploaded: {file.filename} to {file_location}")
 
-    parsed_contents = []
-    for uploaded_file_info in uploaded_files_info:
-        parsed_audio = await parse_text_from_audio()
-        parsed_documents = await process_unstructured()
-        parsed_content = parsed_audio + parsed_documents
-        parsed_contents.extend(parsed_content)
+#     parsed_contents = []
+#     for uploaded_file_info in uploaded_files_info:
+#         parsed_audio = await parse_text_from_audio()
+#         parsed_documents = await process_unstructured()
+#         parsed_content = parsed_audio + parsed_documents
+#         parsed_contents.extend(parsed_content)
 
-    parsed_uploads_path = f"{upload_dir}/parsed_uploads.json"
-    if not os.path.exists(parsed_uploads_path):
-        async with aiofiles.open(parsed_uploads_path, "w") as new_file:
-            await new_file.write("[]")
+#     parsed_uploads_path = f"{upload_dir}/parsed_uploads.json"
+#     if not os.path.exists(parsed_uploads_path):
+#         async with aiofiles.open(parsed_uploads_path, "w") as new_file:
+#             await new_file.write("[]")
 
-    async with aiofiles.open(parsed_uploads_path, "r+") as parsed_uploads_file:
-        existing_content = await parsed_uploads_file.read()
-        existing_data = json.loads(existing_content) if existing_content else []
-        existing_data += parsed_contents
-        await parsed_uploads_file.seek(0)
-        await parsed_uploads_file.write(json.dumps(existing_data))
-        await parsed_uploads_file.truncate()
+#     async with aiofiles.open(parsed_uploads_path, "r+") as parsed_uploads_file:
+#         existing_content = await parsed_uploads_file.read()
+#         existing_data = json.loads(existing_content) if existing_content else []
+#         existing_data += parsed_contents
+#         await parsed_uploads_file.seek(0)
+#         await parsed_uploads_file.write(json.dumps(existing_data))
+#         await parsed_uploads_file.truncate()
 
-    return {"info": f"Files uploaded successfully", "task": task, "parsed_info": f"Data written to {parsed_uploads_path}"}
+#     return {"info": f"Files uploaded successfully", "task": task, "parsed_info": f"Data written to {parsed_uploads_path}"}

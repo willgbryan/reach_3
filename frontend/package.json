@@ -6,6 +6,7 @@
     "start": "next start",
     "types": "tsx src/scripts/sync-db-types.ts",
     "gen:types": "supabase gen types typescript --project-id your_supabase_project_id > src/types/db.ts",
+    "postinstall": "cp ./node_modules/pdfjs-dist/build/pdf.worker.min.js ./public/",
     "format": "prettier --write ."
   },
   "dependencies": {
@@ -64,6 +65,7 @@
     "node-html-markdown": "^1.3.0",
     "openai": "^4.55.4",
     "pdf-parse": "^1.1.1",
+    "pdfjs-dist": "^4.6.82",
     "postcss": "8.4.29",
     "postprocessing": "^6.36.0",
     "pptxgenjs": "^3.12.0",
@@ -73,6 +75,7 @@
     "react-hook-form": "^7.53.0",
     "react-intersection-observer": "^9.5.3",
     "react-markdown": "^8.0.7",
+    "react-pdf": "^9.1.0",
     "react-resizable-panels": "^0.0.55",
     "react-syntax-highlighter": "^15.5.0",
     "react-use-measure": "^2.1.1",
