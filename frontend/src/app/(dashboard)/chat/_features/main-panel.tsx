@@ -65,7 +65,8 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
     "Which cases decided the enforceability of clickwrap licenses under contract law?",
     "Where are federal prosecutors going after PPP loan fraud?",
     "Summarize the repeal of the Chevron doctrine, what are some immediate ramifications.",
-    "Which acts have impacted the strength of the Wagner Act. How have these acts been cited recently."
+    "Recent notable NLRB findings and board decisions.",
+    ""
   ]);
 
   const [allIterations, setAllIterations] = useState<Array<{ content: string; sources: any[]; type?: string }>>([]);
@@ -326,7 +327,7 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
   
     while (currentIteration < maxIterations) {
       setCurrentStep(`dive-${currentIteration + 1}`);
-      setPlaceholders([`Navigating dive number ${currentIteration + 1}`]);
+      setPlaceholders([`Navigating Dive ${currentIteration + 1}`]);
       const result = await handleApiCall(currentPayload, currentIteration);
       console.log(`ITERATION ${currentIteration}`);
       
