@@ -63,7 +63,9 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
   const [placeholders, setPlaceholders] = useState([
     "Brief Roberts v. State of Louisiana 396 So.2d 566 (La. Ct. App. 1981)",
     "Which cases decided the enforceability of clickwrap licenses under contract law?",
-    "Where are federal prosecutors going after PPP loan fraud?"
+    "Where are federal prosecutors going after PPP loan fraud?",
+    "Summarize the repeal of the Chevron doctrine, what are some immediate ramifications.",
+    "Which acts have impacted the strength of the Wagner Act. How have these acts been cited recently."
   ]);
 
   const [allIterations, setAllIterations] = useState<Array<{ content: string; sources: any[]; type?: string }>>([]);
