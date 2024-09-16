@@ -15,7 +15,7 @@ const SimpleInputForm = forwardRef<HTMLDivElement, SimpleInputFormProps>(({
   onSubmit,
   onStartOver,
   inputDisabled,
-  placeholders = ["Ask anything..."],
+  placeholders=[],
   currentStep,
   hasContent
 }, ref) => {

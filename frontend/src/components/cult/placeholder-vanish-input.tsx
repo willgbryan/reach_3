@@ -29,28 +29,32 @@ export function PlaceholdersAndVanishInput({
   const [currentPlaceholder, setCurrentPlaceholder] = useState(0);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const startAnimation = () => {
+  const startPlaceholderAnimation = () => {
+    if (intervalRef.current) return;
     intervalRef.current = setInterval(() => {
       setCurrentPlaceholder((prev) => (prev + 1) % placeholders.length);
-    }, 3000);
+    }, 5000);
   };
 
   const handleVisibilityChange = () => {
-    if (document.visibilityState !== "visible" && intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    } else if (document.visibilityState === "visible") {
-      startAnimation();
+    if (document.visibilityState !== "visible") {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    } else {
+      startPlaceholderAnimation();
     }
   };
 
   useEffect(() => {
-    startAnimation();
+    startPlaceholderAnimation();
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
+        intervalRef.current = null;
       }
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
@@ -233,7 +237,7 @@ export function PlaceholdersAndVanishInput({
   return (
     <form
       className={cn(
-        "w-full relative max-w-xl mx-auto bg-white dark:bg-zinc-800 rounded-lg overflow-hidden shadow transition duration-200",
+        "w-full relative max-w-3xl mx-auto bg-white dark:bg-zinc-800 rounded-lg overflow-hidden shadow transition duration-200",
         value && "bg-gray-50",
         disabled && !hasContent && "opacity-50 cursor-not-allowed"
       )}
@@ -292,7 +296,7 @@ export function PlaceholdersAndVanishInput({
               disabled && "cursor-not-allowed"
             )}
           >
-            {/* submit icon */}
+            {/* Submit Icon */}
             <motion.svg
               xmlns="http://www.w3.org/2000/svg"
               width="24"
@@ -327,6 +331,7 @@ export function PlaceholdersAndVanishInput({
         )}
       </div>
 
+      {/* Placeholder Text */}
       <div className="absolute inset-0 flex items-start pointer-events-none">
         <AnimatePresence mode="wait">
           {(!value || disabled) && (

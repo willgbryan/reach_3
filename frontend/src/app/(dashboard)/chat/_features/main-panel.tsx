@@ -60,7 +60,11 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
   const [originalUserMessage, setOriginalUserMessage] = useState<Message | null>(null);
   const [currentIteration, setCurrentIteration] = useState(0);
   const [currentStep, setCurrentStep] = useState('initial');
-  const [placeholders, setPlaceholders] = useState(['Ask anything...']);
+  const [placeholders, setPlaceholders] = useState([
+    "Brief Roberts v. State of Louisiana 396 So.2d 566 (La. Ct. App. 1981)",
+    "Which cases decided the enforceability of clickwrap licenses under contract law?",
+    "Where are federal prosecutors going after PPP loan fraud?"
+  ]);
 
   const [allIterations, setAllIterations] = useState<Array<{ content: string; sources: any[]; type?: string }>>([]);
   const [condensedFindings, setCondensedFindings] = useState<string | null>(null);
