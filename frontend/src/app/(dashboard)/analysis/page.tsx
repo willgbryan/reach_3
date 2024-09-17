@@ -6,20 +6,27 @@ import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { FileUpload } from '@/components/cult/file-upload';
 import dynamic from 'next/dynamic';
+import { LoaderIcon } from 'lucide-react';
+import AnalysisDisplay from '@/components/analysis-display';
 
-interface PDFViewerProps {
-  fileUrl: string;
-}
-
-const PDFViewer = dynamic<PDFViewerProps>(() => import('@/components/pdf-handler'), {
+const PDFViewer = dynamic(() => import('@/components/pdf-handler'), {
   ssr: false,
-  loading: () => <p>Loading PDF viewer...</p>
+  loading: () => (
+    <div className="flex justify-center items-center h-full">
+      <LoaderIcon className="animate-spin h-10 w-10 text-gray-500" />
+    </div>
+  ),
 });
+
+interface DocumentAnalysis {
+  key_points: Array<{ key_point: string; important_language: string[] }>;
+  ambiguous_clauses: Array<{ clause: string; ambiguous_language: string[] }>;
+}
 
 export default function PdfUploadAndRenderPage() {
   const [file, setFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [analysis, setAnalysis] = useState<string | null>(null);
+  const [analysis, setAnalysis] = useState<DocumentAnalysis | null>(null);
 
   const handleFileUpload = useCallback(async (newFiles: File[]) => {
     if (newFiles.length === 0 || newFiles[0].type !== 'application/pdf') {
@@ -50,7 +57,7 @@ export default function PdfUploadAndRenderPage() {
         throw new Error('Failed to process PDF');
       }
       const result = await response.json();
-      setAnalysis(result.analysis);
+      setAnalysis(result);
       toast.success('File processed successfully');
     } catch (error) {
       console.error('Error processing file:', error);
@@ -62,7 +69,7 @@ export default function PdfUploadAndRenderPage() {
 
   return (
     <div className="flex w-full h-screen">
-      <div className="w-1/2 p-4 overflow-hidden border-r relative">
+      <div className="w-1/2 overflow-hidden border-r relative">
         {!file ? (
           <Card className="border-none shadow-none dark:bg-transparent h-full">
             <CardContent className="flex items-center justify-center h-full">
@@ -72,10 +79,12 @@ export default function PdfUploadAndRenderPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="h-full relative">
-            <PDFViewer fileUrl={URL.createObjectURL(file)} />
-            <div className="absolute top-4 right-4 z-30">
-              <Button onClick={handleProcessFile} disabled={isProcessing}>
+          <div className="h-full relative flex flex-col">
+            <div className="flex-grow relative">
+              <PDFViewer fileUrl={URL.createObjectURL(file)} />
+            </div>
+            <div className="p-4">
+              <Button onClick={handleProcessFile} disabled={isProcessing} className="w-full">
                 {isProcessing ? 'Processing...' : 'Process PDF'}
               </Button>
             </div>
@@ -83,13 +92,12 @@ export default function PdfUploadAndRenderPage() {
         )}
       </div>
       <div className="w-1/2 p-4 overflow-y-auto">
-        {analysis && (
-          <Card className="h-full overflow-y-auto">
-            <CardContent>
-              <h2 className="text-xl font-bold mb-4">Analysis</h2>
-              <pre className="whitespace-pre-wrap">{analysis}</pre>
-            </CardContent>
-          </Card>
+        {analysis ? (
+          <AnalysisDisplay analysis={analysis} />
+        ) : (
+          <div className="flex items-center justify-center h-full text-gray-500">
+            No analysis available. Process a PDF to see results.
+          </div>
         )}
       </div>
     </div>
