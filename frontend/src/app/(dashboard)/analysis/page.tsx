@@ -7,7 +7,6 @@ import { FileUpload } from '@/components/cult/file-upload';
 import dynamic from 'next/dynamic';
 import { LoaderIcon } from 'lucide-react';
 import AnalysisDisplay from '@/components/analysis-display';
-import { Button } from '@/components/cult/moving-border';
 
 const PDFViewer = dynamic(() => import('@/components/pdf-handler'), {
   ssr: false,
@@ -44,23 +43,7 @@ export default function PdfUploadAndRenderPage() {
     return () => window.removeEventListener('resize', updateHeight);
   }, []);
 
-  const handleFileUpload = useCallback(async (newFiles: File[]) => {
-    if (newFiles.length === 0 || newFiles[0].type !== 'application/pdf') {
-      toast.error('Please upload a valid PDF file.');
-      return;
-    }
-    const uploadedFile = newFiles[0];
-    try {
-      setFile(uploadedFile);
-      toast.success('File uploaded successfully');
-    } catch (error) {
-      console.error('Error uploading file:', error);
-      toast.error('Failed to upload file');
-    }
-  }, []);
-
-  const handleProcessFile = useCallback(async () => {
-    if (!file) return;
+  const processFile = async (file: File) => {
     setIsProcessing(true);
     try {
       const formData = new FormData();
@@ -81,7 +64,23 @@ export default function PdfUploadAndRenderPage() {
     } finally {
       setIsProcessing(false);
     }
-  }, [file]);
+  };
+
+  const handleFileUpload = useCallback(async (newFiles: File[]) => {
+    if (newFiles.length === 0 || newFiles[0].type !== 'application/pdf') {
+      toast.error('Please upload a valid PDF file.');
+      return;
+    }
+    const uploadedFile = newFiles[0];
+    try {
+      setFile(uploadedFile);
+      toast.success('File uploaded successfully');
+      await processFile(uploadedFile);
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      toast.error('Failed to upload file');
+    }
+  }, []);
 
   return (
     <div className="flex w-full" style={{ height: containerHeight }} ref={containerRef}>
@@ -99,26 +98,14 @@ export default function PdfUploadAndRenderPage() {
             <div className="flex-grow relative overflow-auto">
               <PDFViewer fileUrl={URL.createObjectURL(file)} />
             </div>
-            <div className="p-4 bg-white dark:bg-transparent border-t">
-              <Button
-                borderRadius="0.5rem"
-                containerClassName="w-full"
-                className={`bg-white dark:bg-zinc-900 dark:text-stone-100 dark:border-transparent ${
-                  isProcessing ? 'opacity-70 cursor-not-allowed' : ''
-                }`}
-                onClick={handleProcessFile}
-                disabled={isProcessing}
-              >
-                <span className="flex items-center justify-center space-x-2 text-black dark:text-white">
-                  <span className={isProcessing ? 'opacity-70' : ''}>
-                    {isProcessing ? 'Processing...' : 'Process PDF'}
-                  </span>
-                  {isProcessing && (
-                    <LoaderIcon className="animate-spin h-4 w-4" />
-                  )}
-                </span>
-              </Button>
-            </div>
+            {isProcessing && (
+              <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                <div className="bg-white dark:bg-zinc-800 p-4 rounded-lg flex items-center space-x-2">
+                  <LoaderIcon className="animate-spin h-5 w-5 text-gray-500" />
+                  <span className="text-sm text-gray-700 dark:text-gray-300">Processing PDF...</span>
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>
@@ -127,7 +114,7 @@ export default function PdfUploadAndRenderPage() {
           <AnalysisDisplay analysis={analysis} />
         ) : (
           <div className="flex items-center justify-center h-full text-gray-500">
-            No analysis available. Process a PDF to see results.
+            {isProcessing ? 'Processing PDF...' : 'No analysis available. Upload a PDF to see results.'}
           </div>
         )}
       </div>
