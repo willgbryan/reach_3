@@ -34,7 +34,6 @@ simsimd==3.7.7
 fastapi==0.103.2
 uvicorn==0.23.2
 openai
-unstructured
 python-pptx==0.6.21
 pydantic==2.4.2
 supabase

@@ -94,27 +94,20 @@ export default function PdfUploadAndRenderPage() {
             </CardContent>
           </Card>
         ) : (
-          <>
-            <div className="flex-grow relative overflow-auto">
-              <PDFViewer fileUrl={URL.createObjectURL(file)} />
-            </div>
-            {isProcessing && (
-              <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                <div className="bg-white dark:bg-zinc-800 p-4 rounded-lg flex items-center space-x-2">
-                  <LoaderIcon className="animate-spin h-5 w-5 text-gray-500" />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">Processing PDF...</span>
-                </div>
-              </div>
-            )}
-          </>
+          <PDFViewer fileUrl={URL.createObjectURL(file)} />
         )}
       </div>
       <div className="w-1/2 p-4 overflow-y-auto">
-        {analysis ? (
+        {isProcessing ? (
+          <div className="flex flex-col items-center justify-center h-full">
+            <LoaderIcon className="animate-spin h-10 w-10 text-gray-500 mb-4" />
+            <span className="text-gray-700 dark:text-gray-300">Analyzing Document...</span>
+          </div>
+        ) : analysis ? (
           <AnalysisDisplay analysis={analysis} />
         ) : (
           <div className="flex items-center justify-center h-full text-gray-500">
-            {isProcessing ? 'Processing PDF...' : 'No analysis available. Upload a PDF to see results.'}
+            No analysis available. Upload a PDF to see results.
           </div>
         )}
       </div>
