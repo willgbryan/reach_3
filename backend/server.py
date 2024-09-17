@@ -1,9 +1,10 @@
 from http.client import HTTPException
 import traceback
 from supabase_utils.pptx_utils import read_pptx_from_supabase
-from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect, UploadFile, File
 from fastapi.responses import Response, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from unstructured.partition.pdf import partition_pdf
 from pydantic import BaseModel
 import json
 import os
@@ -226,6 +227,51 @@ async def generate_powerpoint(request: PowerPointRequest):
         print(f"Error in generate_powerpoint: {str(e)}")
         print(traceback.format_exc())
         return JSONResponse(status_code=500, content={"detail": str(e)})
+
+class AnalysisPoint(BaseModel):
+    key_point: str
+    important_language: List[str]
+
+class AmbiguousClause(BaseModel):
+    clause: str
+    ambiguous_language: List[str]
+
+class DocumentAnalysis(BaseModel):
+    key_points: List[AnalysisPoint]
+    ambiguous_clauses: List[AmbiguousClause]
+
+@app.post("/process-pdf")
+async def process_pdf(file: UploadFile = File(...)):
+    with open(file.filename, "wb") as buffer:
+        buffer.write(await file.read())
+    
+    elements = partition_pdf(file.filename)
+    text_content = "\n".join([str(el) for el in elements])
+    print(f'debugging: {text_content}')
+    
+    os.remove(file.filename)
+    
+    response = client.chat.completions.create(
+        model="gpt-4o-2024-08-06",
+        messages=[
+            {"role": "system", "content": "You are an expert legal assistant that analyzes documents and extracts key information. Format the content by calling the analyze_document function."},
+            {"role": "user", "content": f"Analyze the following document and provide key points with important language, and ambiguous clauses with their language. \n\nDocument content:\n{text_content}"}
+        ],
+        functions=[{
+            "name": "analyze_document",
+            "description": "Analyze the document and provide structured output",
+            "parameters": DocumentAnalysis.schema()
+        }],
+        function_call={"name": "analyze_document"}
+    )
+    
+    function_call = response.choices[0].message.function_call
+    if not function_call or function_call.name != "analyze_document":
+        raise ValueError("Unexpected response from OpenAI API")
+
+    analysis = json.loads(function_call.arguments)
+    
+    return analysis
 
 class ChartRequest(BaseModel):
     tableId: str
