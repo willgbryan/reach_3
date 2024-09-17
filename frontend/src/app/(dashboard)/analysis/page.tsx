@@ -103,7 +103,7 @@ export default function PdfUploadAndRenderPage() {
               <Button
                 borderRadius="0.5rem"
                 containerClassName="w-full"
-                className={`bg-white hover:bg-white/50 dark:bg-zinc-900 dark:text-stone-100 dark:border-transparent ${
+                className={`bg-white dark:bg-zinc-900 dark:text-stone-100 dark:border-transparent ${
                   isProcessing ? 'opacity-70 cursor-not-allowed' : ''
                 }`}
                 onClick={handleProcessFile}
