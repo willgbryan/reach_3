@@ -16,9 +16,10 @@ from reach_core.master.prompts import component_injection, generate_report_promp
 from fastapi.middleware.cors import CORSMiddleware
 from pptx.util import Inches, Pt
 from openai import OpenAI
+from PyPDF2 import PdfReader
+
 import subprocess
 import tempfile
-import os
 
 
 # from reach_core.utils.unstructured_functions import *
@@ -240,38 +241,56 @@ class DocumentAnalysis(BaseModel):
     key_points: List[AnalysisPoint]
     ambiguous_clauses: List[AmbiguousClause]
 
-@app.post("/process-pdf")
-async def process_pdf(file: UploadFile = File(...)):
-    with open(file.filename, "wb") as buffer:
-        buffer.write(await file.read())
-    
-    elements = partition_pdf(file.filename)
-    text_content = "\n".join([str(el) for el in elements])
-    print(f'debugging: {text_content}')
-    
-    os.remove(file.filename)
-    
-    response = client.chat.completions.create(
-        model="gpt-4o-2024-08-06",
-        messages=[
-            {"role": "system", "content": "You are an expert legal assistant that analyzes documents and extracts key information. Format the content by calling the analyze_document function."},
-            {"role": "user", "content": f"Analyze the following document and provide key points with important language, and ambiguous clauses with their language. \n\nDocument content:\n{text_content}"}
-        ],
-        functions=[{
-            "name": "analyze_document",
-            "description": "Analyze the document and provide structured output",
-            "parameters": DocumentAnalysis.schema()
-        }],
-        function_call={"name": "analyze_document"}
-    )
-    
-    function_call = response.choices[0].message.function_call
-    if not function_call or function_call.name != "analyze_document":
-        raise ValueError("Unexpected response from OpenAI API")
+def extract_text_from_pdf(file_path: str) -> str:
+    with open(file_path, 'rb') as file:
+        pdf_reader = PdfReader(file)
+        text_content = ""
+        for page_num, page in enumerate(pdf_reader.pages, 1):
+            text_content += f"\n\n--- Page {page_num} ---\n\n"
+            text_content += page.extract_text()
+    return text_content
 
-    analysis = json.loads(function_call.arguments)
+@app.post("/process-pdf", response_model=DocumentAnalysis)
+async def process_pdf(file: UploadFile = File(...)):
+    print(f"Received file: {file.filename}")
+    temp_file_path = f"/tmp/{file.filename}"
     
-    return analysis
+    try:
+        with open(temp_file_path, "wb") as buffer:
+            content = await file.read()
+            buffer.write(content)
+        
+        text_content = extract_text_from_pdf(temp_file_path)
+        print(f'Extracted text content length: {len(text_content)}')
+        
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": "You are an expert legal assistant that analyzes documents and extracts key information. Format the content by calling the analyze_document function. Ensure you consider all pages of the document in your analysis."},
+                {"role": "user", "content": f"Analyze the following multi-page document and provide key points with important language, and ambiguous clauses with their language. Consider information from all pages in your analysis.\n\nDocument content:\n{text_content}"}
+            ],
+            functions=[{
+                "name": "analyze_document",
+                "description": "Analyze the multi-page document and provide structured output",
+                "parameters": DocumentAnalysis.schema()
+            }],
+            function_call={"name": "analyze_document"}
+        )
+        
+        function_call = response.choices[0].message.function_call
+        if not function_call or function_call.name != "analyze_document":
+            raise ValueError("Unexpected response from OpenAI API")
+        
+        analysis = json.loads(function_call.arguments)
+        return DocumentAnalysis(**analysis)
+    
+    except Exception as e:
+        print(f"Error processing PDF: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error processing PDF: {str(e)}")
+    
+    finally:
+        if os.path.exists(temp_file_path):
+            os.remove(temp_file_path)
 
 class ChartRequest(BaseModel):
     tableId: str

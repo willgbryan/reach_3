@@ -21,14 +21,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
 
-RUN curl -s https://api.github.com/repos/jgm/pandoc/releases/latest \
-    | grep "browser_download_url.*deb" \
-    | cut -d : -f 2,3 \
-    | tr -d \" \
-    | wget -qi - \
-    && dpkg -i pandoc-*.deb \
-    && rm pandoc-*.deb
-
 WORKDIR /usr/src/app
 
 COPY requirements.txt .
