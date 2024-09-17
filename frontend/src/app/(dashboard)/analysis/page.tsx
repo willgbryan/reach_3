@@ -1,35 +1,40 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { toast } from 'sonner';
-import { Document, Page, pdfjs } from 'react-pdf';
 import { IconX } from '@tabler/icons-react';
+import { FileUpload } from '@/components/cult/file-upload';
+import dynamic from 'next/dynamic';
+import { Document, Page } from 'react-pdf';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
-import { FileUpload } from '@/components/cult/file-upload';
-
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
 type PdfFile = {
   file: File;
   id: string;
 };
 
+const PDFViewer = dynamic(() => import('@/components/pdf-handler'), {
+  ssr: false,
+  loading: () => <p>Loading PDF viewer...</p>
+});
+
 export default function PdfUploadAndRenderPage() {
   const [files, setFiles] = useState<PdfFile[]>([]);
   const [selectedText, setSelectedText] = useState('');
   const [showPopover, setShowPopover] = useState(false);
-  const [popoverAnchor, setPopoverAnchor] = useState<HTMLElement | null>(null);
+  const [popoverPosition, setPopoverPosition] = useState({ top: 0, left: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const handleFileUpload = (newFiles: File[]) => {
-    const pdfFiles = newFiles.filter((file) => file.name.endsWith('.pdf'));
+    const pdfFiles = newFiles.filter((file) => file.type === 'application/pdf');
     if (pdfFiles.length < newFiles.length) {
-      alert('Only PDF files are allowed. Non-PDF files were ignored.');
+      toast.error('Only PDF files are allowed. Non-PDF files were ignored.');
     }
     const filesWithId = pdfFiles.map((file) => ({
       file,
@@ -40,33 +45,47 @@ export default function PdfUploadAndRenderPage() {
 
   const removeFile = (id: string) => {
     setFiles((prevFiles) => prevFiles.filter((fileObj) => fileObj.id !== id));
+    URL.revokeObjectURL(id);
   };
 
   const handleAnalyze = (file: File) => {
-    // Placeholder for analyze function
     console.log('Analyzing file:', file.name);
+    toast.info(`Analyzing ${file.name}`);
   };
 
-  const handleTextSelection = useCallback(() => {
+  const handleTextSelection = useCallback((event: MouseEvent) => {
     const selection = window.getSelection();
     if (selection && selection.toString().trim() !== '') {
       setSelectedText(selection.toString());
       setShowPopover(true);
-      setPopoverAnchor(document.activeElement as HTMLElement);
+      
+      const range = selection.getRangeAt(0);
+      const rect = range.getBoundingClientRect();
+      const containerRect = containerRef.current?.getBoundingClientRect();
+
+      if (containerRect) {
+        setPopoverPosition({
+          top: rect.bottom - containerRect.top,
+          left: rect.left - containerRect.left,
+        });
+      }
     } else {
       setShowPopover(false);
     }
   }, []);
 
   useEffect(() => {
-    document.addEventListener('mouseup', handleTextSelection);
-    return () => {
-      document.removeEventListener('mouseup', handleTextSelection);
-    };
+    const container = containerRef.current;
+    if (container) {
+      container.addEventListener('mouseup', handleTextSelection);
+      return () => {
+        container.removeEventListener('mouseup', handleTextSelection);
+      };
+    }
   }, [handleTextSelection]);
 
   return (
-    <div className="flex w-full h-screen">
+    <div ref={containerRef} className="flex w-full h-screen relative">
       <div className="w-1/2 p-4 overflow-y-auto">
         <Card className="border-none shadow-none dark:bg-transparent">
           <CardContent className="px-0">
@@ -83,32 +102,34 @@ export default function PdfUploadAndRenderPage() {
 
         <div className="mt-4 space-y-4">
           {files.map(({ file, id }) => (
-            <PdfPreview
-              key={id}
-              file={file}
-              id={id}
-              onRemove={() => removeFile(id)}
-              onAnalyze={() => handleAnalyze(file)}
-            />
+            <div key={id} className="relative border p-2 rounded">
+              <div className="absolute top-2 right-2 flex space-x-2">
+                <Button variant="outline" size="sm" onClick={() => handleAnalyze(file)}>
+                  Analyze
+                </Button>
+                <Button variant="destructive" size="sm" onClick={() => removeFile(id)}>
+                  <IconX size={16} />
+                </Button>
+              </div>
+              <PDFViewer fileUrl={id} />
+            </div>
           ))}
         </div>
-      </div>
-
-      {/* Right Half (Placeholder) */}
-      <div className="w-1/2 p-4">
-        {/* Your content for the right half goes here */}
       </div>
 
       {showPopover && (
         <Popover open={showPopover} onOpenChange={setShowPopover}>
           <PopoverTrigger asChild>
-            <span style={{ position: 'absolute', left: 0, top: 0 }} />
+            <span style={{
+              position: 'absolute',
+              top: `${popoverPosition.top}px`,
+              left: `${popoverPosition.left}px`,
+            }} />
           </PopoverTrigger>
           <PopoverContent>
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                // Handle form submission
                 console.log('Submitting:', selectedText);
                 toast.success('Form submitted successfully');
                 setShowPopover(false);
@@ -140,54 +161,6 @@ export default function PdfUploadAndRenderPage() {
           </PopoverContent>
         </Popover>
       )}
-    </div>
-  );
-}
-
-function PdfPreview({
-  file,
-  id,
-  onRemove,
-  onAnalyze,
-}: {
-  file: File;
-  id: string;
-  onRemove: () => void;
-  onAnalyze: () => void;
-}) {
-  const [numPages, setNumPages] = useState<number>(0);
-
-  const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
-    setNumPages(numPages);
-  };
-
-  return (
-    <div className="relative border p-2 rounded">
-      <div className="absolute top-2 right-2 flex space-x-2">
-        <Button variant="outline" size="sm" onClick={onAnalyze}>
-          Analyze
-        </Button>
-        <Button variant="destructive" size="sm" onClick={onRemove}>
-          <IconX size={16} />
-        </Button>
-      </div>
-      <Document
-        file={URL.createObjectURL(file)}
-        onLoadError={(error) => {
-          console.error('Error while loading document:', error);
-          toast.error('Failed to load PDF document.');
-        }}
-        onLoadSuccess={onDocumentLoadSuccess}
-      >
-        {Array.from({ length: numPages }, (_, pageIndex) => (
-          <Page
-            key={`page_${pageIndex + 1}`}
-            pageNumber={pageIndex + 1}
-            renderTextLayer
-            renderAnnotationLayer={false}
-          />
-        ))}
-      </Document>
     </div>
   );
 }

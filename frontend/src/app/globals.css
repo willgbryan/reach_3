@@ -351,3 +351,18 @@ input:-webkit-autofill:active {
 .no-border .ql-toolbar {
   border: none !important;
 }
+
+.pdf-viewer,
+.pdf-page {
+  position: relative;
+}
+
+.pdf-page canvas {
+  display: block;
+}
+
+.pdf-page .react-pdf__Page__textContent {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
