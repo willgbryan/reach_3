@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { FileUpload } from '@/components/cult/file-upload';
 import dynamic from 'next/dynamic';
 import { LoaderIcon } from 'lucide-react';
 import AnalysisDisplay from '@/components/analysis-display';
+import { Button } from '@/components/cult/moving-border';
 
 const PDFViewer = dynamic(() => import('@/components/pdf-handler'), {
   ssr: false,
@@ -27,6 +27,22 @@ export default function PdfUploadAndRenderPage() {
   const [file, setFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [analysis, setAnalysis] = useState<DocumentAnalysis | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerHeight, setContainerHeight] = useState('100vh');
+
+  useEffect(() => {
+    const updateHeight = () => {
+      if (containerRef.current) {
+        const viewportHeight = window.innerHeight;
+        setContainerHeight(`${viewportHeight}px`);
+      }
+    };
+
+    window.addEventListener('resize', updateHeight);
+    updateHeight();
+
+    return () => window.removeEventListener('resize', updateHeight);
+  }, []);
 
   const handleFileUpload = useCallback(async (newFiles: File[]) => {
     if (newFiles.length === 0 || newFiles[0].type !== 'application/pdf') {
@@ -49,7 +65,7 @@ export default function PdfUploadAndRenderPage() {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const response = await fetch('/api/process-pdf', {
+      const response = await fetch('/api/analyze-document', {
         method: 'POST',
         body: formData,
       });
@@ -68,8 +84,8 @@ export default function PdfUploadAndRenderPage() {
   }, [file]);
 
   return (
-    <div className="flex w-full h-screen">
-      <div className="w-1/2 overflow-hidden border-r relative">
+    <div className="flex w-full" style={{ height: containerHeight }} ref={containerRef}>
+      <div className="w-1/2 overflow-hidden border-r relative flex flex-col">
         {!file ? (
           <Card className="border-none shadow-none dark:bg-transparent h-full">
             <CardContent className="flex items-center justify-center h-full">
@@ -79,16 +95,31 @@ export default function PdfUploadAndRenderPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="h-full relative flex flex-col">
-            <div className="flex-grow relative">
+          <>
+            <div className="flex-grow relative overflow-auto">
               <PDFViewer fileUrl={URL.createObjectURL(file)} />
             </div>
-            <div className="p-4">
-              <Button onClick={handleProcessFile} disabled={isProcessing} className="w-full">
-                {isProcessing ? 'Processing...' : 'Process PDF'}
+            <div className="p-4 bg-white dark:bg-transparent border-t">
+              <Button
+                borderRadius="0.5rem"
+                containerClassName="w-full"
+                className={`bg-white hover:bg-white/50 dark:bg-zinc-900 dark:text-stone-100 dark:border-transparent ${
+                  isProcessing ? 'opacity-70 cursor-not-allowed' : ''
+                }`}
+                onClick={handleProcessFile}
+                disabled={isProcessing}
+              >
+                <span className="flex items-center justify-center space-x-2 text-black dark:text-white">
+                  <span className={isProcessing ? 'opacity-70' : ''}>
+                    {isProcessing ? 'Processing...' : 'Process PDF'}
+                  </span>
+                  {isProcessing && (
+                    <LoaderIcon className="animate-spin h-4 w-4" />
+                  )}
+                </span>
               </Button>
             </div>
-          </div>
+          </>
         )}
       </div>
       <div className="w-1/2 p-4 overflow-y-auto">

@@ -17,18 +17,20 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ fileUrl }) => {
   const [pageNumber, setPageNumber] = useState<number>(1);
   const [loading, setLoading] = useState<boolean>(true);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
 
   useEffect(() => {
-    const handleResize = () => {
+    const updateDimensions = () => {
       if (containerRef.current) {
-        containerRef.current.style.height = `${window.innerHeight}px`;
+        const { clientWidth, clientHeight } = containerRef.current;
+        setScale(Math.min(clientWidth / 600, clientHeight / 800));
       }
     };
 
-    window.addEventListener('resize', handleResize);
-    handleResize();
+    window.addEventListener('resize', updateDimensions);
+    updateDimensions();
 
-    return () => window.removeEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', updateDimensions);
   }, []);
 
   function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
@@ -45,14 +47,13 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ fileUrl }) => {
   const nextPage = () => changePage(1);
 
   return (
-    <div className="pdf-viewer relative w-full h-full overflow-auto" ref={containerRef}>
+    <div className="pdf-viewer relative w-full h-full flex flex-col" ref={containerRef}>
       {loading && (
         <div className="flex justify-center items-center h-full">
           <LoaderIcon className="animate-spin h-10 w-10 text-gray-500" />
         </div>
       )}
-
-      <div className={`z-10 ${loading ? 'hidden' : 'block'}`}>
+      <div className={`flex-grow overflow-auto ${loading ? 'hidden' : 'block'}`}>
         <Document
           file={fileUrl}
           onLoadSuccess={onDocumentLoadSuccess}
@@ -65,36 +66,34 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ fileUrl }) => {
             pageNumber={pageNumber}
             renderTextLayer={true}
             renderAnnotationLayer={true}
-            width={containerRef.current ? containerRef.current.clientWidth : undefined}
+            scale={scale}
           />
         </Document>
       </div>
-
       {!loading && (
-        <>
-          <div className="absolute inset-0 z-20 pointer-events-none">
-            <div className="h-full w-full flex items-center justify-between px-4">
-              <Button
-                onClick={previousPage}
-                disabled={pageNumber <= 1}
-                variant="outline"
-                size="icon"
-                className="rounded-full bg-zinc-500/50 hover:bg-zinc-500/75 pointer-events-auto text-black"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <Button
-                onClick={nextPage}
-                disabled={pageNumber >= (numPages || 0)}
-                variant="outline"
-                size="icon"
-                className="rounded-full bg-zinc-500/50 hover:bg-zinc-500/75 pointer-events-auto text-black"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </>
+        <div className="flex justify-between items-center p-4 bg-white dark:bg-transparent border-t">
+          <Button
+            onClick={previousPage}
+            disabled={pageNumber <= 1}
+            variant="outline"
+            size="sm"
+            className="rounded-full"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <span className="text-sm">
+            Page {pageNumber || (numPages ? 1 : '--')} of {numPages || '--'}
+          </span>
+          <Button
+            onClick={nextPage}
+            disabled={pageNumber >= (numPages || 0)}
+            variant="outline"
+            size="sm"
+            className="rounded-full"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
       )}
     </div>
   );
