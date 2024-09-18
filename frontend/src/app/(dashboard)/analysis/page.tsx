@@ -17,15 +17,10 @@ const PDFViewer = dynamic(() => import('@/components/pdf-handler'), {
   ),
 });
 
-interface DocumentAnalysis {
-  key_points: Array<{ key_point: string; important_language: string[] }>;
-  ambiguous_clauses: Array<{ clause: string; ambiguous_language: string[] }>;
-}
-
 export default function PdfUploadAndRenderPage() {
   const [file, setFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [analysis, setAnalysis] = useState<DocumentAnalysis | null>(null);
+  const [analysisData, setAnalysisData] = useState<string>('');
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerHeight, setContainerHeight] = useState('100vh');
 
@@ -43,9 +38,28 @@ export default function PdfUploadAndRenderPage() {
     return () => window.removeEventListener('resize', updateHeight);
   }, []);
 
+  const uploadToSupabase = async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch('/api/upload-pdf', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Failed to upload to Supabase: ${errorText}`);
+    }
+
+    return await response.json();
+  };
+
   const processFile = async (file: File) => {
     setIsProcessing(true);
     try {
+      await uploadToSupabase(file);
+
       const formData = new FormData();
       formData.append('file', file);
   
@@ -59,9 +73,28 @@ export default function PdfUploadAndRenderPage() {
         throw new Error(`Failed to process PDF: ${errorText}`);
       }
   
-      const result = await response.json();
-      setAnalysis(result);
-      toast.success('File processed successfully');
+      const reader = response.body!.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value);
+        const events = chunk.split('\n\n').filter(Boolean);
+        for (const event of events) {
+          try {
+            const data = JSON.parse(event);
+            if (data.type === 'report') {
+              setAnalysisData(data.accumulatedOutput || data.output);
+            }
+          } catch (error) {
+            console.error('Error parsing JSON:', error);
+          }
+        }
+      }
+
+      toast.success('File processing completed');
+      console.log(`analysis data ${analysisData}`)
     } catch (error) {
       console.error('Error processing file:', error);
       toast.error('Failed to process file');
@@ -107,8 +140,8 @@ export default function PdfUploadAndRenderPage() {
             <LoaderIcon className="animate-spin h-10 w-10 text-gray-500 mb-4" />
             <span className="text-gray-700 dark:text-gray-300">Analyzing Document...</span>
           </div>
-        ) : analysis ? (
-          <AnalysisDisplay analysis={analysis} />
+        ) : analysisData ? (
+          <AnalysisDisplay analysis={analysisData} />
         ) : (
           <div className="flex items-center justify-center h-full text-gray-500">
             No analysis available. Upload a PDF to see results.

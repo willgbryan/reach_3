@@ -1,11 +1,12 @@
 from http.client import HTTPException
 import traceback
-from supabase_utils.pptx_utils import read_pptx_from_supabase
+from supabase_utils.pptx_utils import read_pptx_from_supabase, extract_text_from_pdf
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect, UploadFile, File
 from fastapi.responses import Response, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from unstructured.partition.pdf import partition_pdf
 from pydantic import BaseModel
+import requests
 import json
 import os
 import io
@@ -91,21 +92,34 @@ def startup_event():
 async def websocket_endpoint(websocket: WebSocket):
     await manager.connect(websocket)
     logger.info("WebSocket connected")
-    # logger.info(f"Received WebSocket data: {data}")
+
     try:
         while True:
             data = await websocket.receive_text()
             try:
                 json_data = json.loads(data)
                 print(f"raw data {json_data}")
+
                 task = json_data.get("task")
                 report_type = json_data.get("report_type")
                 sources = json_data.get("sources", [])
-                edits = json_data.get("edits")  #None if not present
+                edits = json_data.get("edits")  # None if not present
                 cadence = json_data.get("cadence")
+                file_url = json_data.get("file_url", "")
+
                 print(f"ws edits {edits}")
+                print(f"file_url: {file_url}")
+
                 if task and report_type:
-                    await manager.start_streaming(task, report_type, sources, websocket, cadence, edits)
+                    await manager.start_streaming(
+                        task, 
+                        report_type, 
+                        sources, 
+                        websocket, 
+                        cadence, 
+                        edits,
+                        file_url,
+                    )
                     await websocket.send_json({"type": "complete"})
                 else:
                     await websocket.send_json({"type": "error", "message": "Missing required parameters"})
@@ -231,38 +245,33 @@ async def generate_powerpoint(request: PowerPointRequest):
 
 class AnalysisPoint(BaseModel):
     key_point: str
-    important_language: List[str]
+    important_language: list[str]
 
 class AmbiguousClause(BaseModel):
     clause: str
-    ambiguous_language: List[str]
+    ambiguous_language: list[str]
 
 class DocumentAnalysis(BaseModel):
-    key_points: List[AnalysisPoint]
-    ambiguous_clauses: List[AmbiguousClause]
+    key_points: list[AnalysisPoint]
+    ambiguous_clauses: list[AmbiguousClause]
 
-def extract_text_from_pdf(file_path: str) -> str:
-    with open(file_path, 'rb') as file:
-        pdf_reader = PdfReader(file)
-        text_content = ""
-        for page_num, page in enumerate(pdf_reader.pages, 1):
-            text_content += f"\n\n--- Page {page_num} ---\n\n"
-            text_content += page.extract_text()
-    return text_content
+class PDFProcessRequest(BaseModel):
+    filePath: str
+    signedUrl: str
 
 @app.post("/process-pdf", response_model=DocumentAnalysis)
-async def process_pdf(file: UploadFile = File(...)):
-    print(f"Received file: {file.filename}")
-    temp_file_path = f"/tmp/{file.filename}"
+async def process_pdf(request: PDFProcessRequest):
+    print(f"Received file path: {request.filePath}")
+    print(f"Received signed URL: {request.signedUrl}")
     
     try:
-        with open(temp_file_path, "wb") as buffer:
-            content = await file.read()
-            buffer.write(content)
-        
-        text_content = extract_text_from_pdf(temp_file_path)
+        response = requests.get(request.signedUrl)
+        response.raise_for_status()
+        pdf_content = response.content
+
+        text_content = extract_text_from_pdf(pdf_content)
         print(f'Extracted text content length: {len(text_content)}')
-        
+
         response = client.chat.completions.create(
             model="gpt-4",
             messages=[
@@ -276,22 +285,17 @@ async def process_pdf(file: UploadFile = File(...)):
             }],
             function_call={"name": "analyze_document"}
         )
-        
+
         function_call = response.choices[0].message.function_call
         if not function_call or function_call.name != "analyze_document":
             raise ValueError("Unexpected response from OpenAI API")
-        
+
         analysis = json.loads(function_call.arguments)
         return DocumentAnalysis(**analysis)
-    
     except Exception as e:
         print(f"Error processing PDF: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error processing PDF: {str(e)}")
     
-    finally:
-        if os.path.exists(temp_file_path):
-            os.remove(temp_file_path)
-
 class ChartRequest(BaseModel):
     tableId: str
     tableContent: str

@@ -23,9 +23,7 @@ export async function POST(req: NextRequest) {
   const actualChatId = chatId || nanoid()
 
   const isProduction = process.env.NODE_ENV === 'production';
-  const ws_protocol = isProduction ? 'wss://' : 'ws://';
-  const ws_host = isProduction ? 'heighliner.tech' : 'localhost:8000';
-
+  
   // PROD
   const ws_uri = `wss://heighliner.tech/ws`;
 

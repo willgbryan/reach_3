@@ -12,7 +12,8 @@ class BasicReport():
             websocket: WebSocket,
             cadence,
             retained_text,
-            deleted_text
+            deleted_text,
+            file_url
         ):
         self.query = query
         self.report_type = report_type
@@ -23,6 +24,7 @@ class BasicReport():
         self.cadence = cadence
         self.retained_text = retained_text
         self.deleted_text = deleted_text
+        self.file_url = file_url
 
     async def run(self):
         # Initialize researcher
@@ -34,8 +36,9 @@ class BasicReport():
             self.config_path, 
             self.websocket,
             cadence = self.cadence,
-            retained_text=self.retained_text,
-            deleted_text=self.deleted_text
+            retained_text = self.retained_text,
+            deleted_text = self.deleted_text,
+            file_url = self.file_url
         )
 
         # Run research

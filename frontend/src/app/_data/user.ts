@@ -78,6 +78,7 @@ export async function checkAndInsertUserConfig() {
       console.log('New user config inserted:', insertData)
       await createUserThemeFolder(userId, supabase)
       await createUserUploadFolder(userId, supabase)
+
     } else {
       console.log('User config already exists')
     }
