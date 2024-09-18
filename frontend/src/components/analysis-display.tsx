@@ -268,7 +268,7 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis }) => {
               />
             </div>
             <div className="space-y-2">
-              <h4 className="font-medium leading-none">Prompt</h4>
+              <h4 className="font-medium leading-none">Query</h4>
               <Input
                 id="prompt"
                 placeholder="Enter your prompt"
