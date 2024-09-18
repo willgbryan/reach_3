@@ -354,7 +354,7 @@ export function PlaceholdersAndVanishInput({
                 ease: "linear",
               }}
               className={cn(
-                "dark:text-stone-100 text-sm sm:text-base font-normal text-neutral-500 p-4 sm:pl-12 text-left w-[calc(100%-2rem)] truncate",
+                "dark:text-neutral-500 text-sm sm:text-base font-normal text-neutral-500 p-4 sm:pl-12 text-left w-[calc(100%-2rem)] truncate",
                 disabled && !hasContent && "text-stone-900 dark:text-stone-100"
               )}
             >
