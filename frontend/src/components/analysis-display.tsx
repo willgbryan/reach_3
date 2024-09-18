@@ -207,7 +207,6 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis }) => {
         for (const event of events) {
           try {
             const data = JSON.parse(event);
-            console.log('Received event:', data);  // Debug log
 
             if (data.type === 'report') {
               setSections(prevSections => 
@@ -218,12 +217,11 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis }) => {
                 )
               );
             } else if (data.type === 'complete') {
-              console.log('Received complete message');  // Debug log
               if (socketRef.current) {
                 socketRef.current.close();
                 socketRef.current = null;
               }
-              return;  // Exit the function after handling 'complete'
+              return;
             }
           } catch (error) {
             console.error('Error parsing JSON:', error);
@@ -289,8 +287,8 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis }) => {
           <AccordionItem key={section.id} value={section.id}>
             <AccordionTrigger>{section.title}</AccordionTrigger>
             <AccordionContent>
-              <Card>
-                <CardContent className="pt-6">
+              <Card className="pt-6 bg-transparent">
+                <CardContent className="">
                   {section.content ? (
                     <div 
                       dangerouslySetInnerHTML={{ __html: formatContentToHTML(section.content) }}
