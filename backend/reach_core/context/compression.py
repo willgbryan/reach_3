@@ -36,8 +36,6 @@ class ContextCompressor:
         formatted_string = []
         docs_list = []
         
-        print(f'docs: {docs}')
-
         for i, d in enumerate(docs):
             if i < top_n:
                 source = d.metadata.get('source')
@@ -60,8 +58,5 @@ class ContextCompressor:
 
     def get_context(self, query, max_results=5):
         compressed_docs = self._get_contextual_retriever()
-        print('hit 1')
         relevant_docs = compressed_docs.get_relevant_documents(query)
-        print('hit 2')
-        print(relevant_docs)
         return self._pretty_print_docs(relevant_docs, max_results)

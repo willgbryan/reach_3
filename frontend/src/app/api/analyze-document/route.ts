@@ -75,6 +75,8 @@ export async function POST(req: NextRequest) {
           } else {
             controller.enqueue(new TextEncoder().encode(JSON.stringify(data) + '\n\n'))
           }
+        } else if (data.type === 'complete') {
+          socket.close()
         }
       }
 

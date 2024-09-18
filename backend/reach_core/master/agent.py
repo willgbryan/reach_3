@@ -171,13 +171,12 @@ class Reach:
                 text = page.extract_text()
                 all_text += text
                 parsed_content.append({
-                    "source": '',
-                    "content": text
+                    "url": '',
+                    "raw_content": text
                 })
 
             first_1000_chars = all_text[:1000]
             enhanced_query = f"{query}\n\nFirst 1000 characters of the document: {first_1000_chars}"
-            print(f'First 1000 characters: {first_1000_chars}')
 
             sub_queries = await get_sub_queries(enhanced_query, self.role, self.cfg, self.parent_query, self.report_type,
                                                 self.websocket, self.cadence, self.retained_text, self.deleted_text)
@@ -305,7 +304,6 @@ class Reach:
     async def get_similar_content_by_query(self, query, pages):
         # await stream_output("logs", f"Getting relevant content based on query: {query}...", self.websocket)
         # Summarize Raw Data
-        print(f"PAGES: {pages}")
         context_compressor = ContextCompressor(documents=pages, embeddings=self.memory.get_embeddings())
         # Run Tasks
         return context_compressor.get_context(query, max_results=8)

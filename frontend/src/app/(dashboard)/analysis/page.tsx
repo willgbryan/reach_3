@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { FileUpload } from '@/components/cult/file-upload';
@@ -85,7 +85,7 @@ export default function PdfUploadAndRenderPage() {
           try {
             const data = JSON.parse(event);
             if (data.type === 'report') {
-              setAnalysisData(data.accumulatedOutput || data.output);
+              setAnalysisData(prevData => data.accumulatedOutput || data.output);
             }
           } catch (error) {
             console.error('Error parsing JSON:', error);
@@ -94,7 +94,6 @@ export default function PdfUploadAndRenderPage() {
       }
 
       toast.success('File processing completed');
-      console.log(`analysis data ${analysisData}`)
     } catch (error) {
       console.error('Error processing file:', error);
       toast.error('Failed to process file');
@@ -119,6 +118,10 @@ export default function PdfUploadAndRenderPage() {
     }
   }, []);
 
+  const memoizedPDFViewer = useMemo(() => {
+    return file ? <PDFViewer fileUrl={URL.createObjectURL(file)} /> : null;
+  }, [file]);
+
   return (
     <div className="flex w-full" style={{ height: containerHeight }} ref={containerRef}>
       <div className="w-1/2 overflow-hidden border-r relative flex flex-col">
@@ -131,7 +134,7 @@ export default function PdfUploadAndRenderPage() {
             </CardContent>
           </Card>
         ) : (
-          <PDFViewer fileUrl={URL.createObjectURL(file)} />
+          memoizedPDFViewer
         )}
       </div>
       <div className="w-1/2 p-4 overflow-y-auto">
