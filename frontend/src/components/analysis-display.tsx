@@ -8,28 +8,39 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
+import { LoaderIcon } from 'lucide-react';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
-import { CheckIcon, LoaderIcon } from 'lucide-react';
 
 interface AnalysisDisplayProps {
-    analysis: string;
-  }
-  
-  const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis }) => {
-    const [selectedText, setSelectedText] = useState('');
-    const [prompt, setPrompt] = useState('');
-    const [isPopoverOpen, setIsPopoverOpen] = useState(false);
-    const [popoverPosition, setPopoverPosition] = useState({ top: 0, left: 0 });
-    const contentRef = useRef<HTMLDivElement>(null);
-    const popoverRef = useRef<HTMLDivElement>(null);
-    const [isAnalyzing, setIsAnalyzing] = useState(false);
-    const [isComplete, setIsComplete] = useState(false);
-    const [response, setResponse] = useState('');
-    const socketRef = useRef<WebSocket | null>(null);
+  analysis: string;
+}
 
-  
-    const handleSelection = useCallback(() => {
+interface AnalysisSection {
+  id: string;
+  title: string;
+  content: string;
+}
+
+const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis }) => {
+  const [selectedText, setSelectedText] = useState('');
+  const [prompt, setPrompt] = useState('');
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  const [popoverPosition, setPopoverPosition] = useState({ top: 0, left: 0 });
+  const contentRef = useRef<HTMLDivElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
+  const [sections, setSections] = useState<AnalysisSection[]>([
+    { id: 'initial-analysis', title: 'Initial Analysis', content: analysis }
+  ]);
+  const socketRef = useRef<WebSocket | null>(null);
+
+  const handleSelection = useCallback(() => {
     const selection = window.getSelection();
     if (selection && !selection.isCollapsed) {
       const newSelectedText = selection.toString().trim();
@@ -43,6 +54,7 @@ interface AnalysisDisplayProps {
         let top = rect.bottom + scrollTop;
         let left = rect.left + scrollLeft;
 
+        // Adjust position if it would go off screen
         if (popoverRef.current) {
           const popoverRect = popoverRef.current.getBoundingClientRect();
           if (left + popoverRect.width > window.innerWidth) {
@@ -157,8 +169,13 @@ interface AnalysisDisplayProps {
   };
 
   const handleSubmit = async () => {
-    setIsAnalyzing(true);
-    setIsComplete(false);
+    setIsPopoverOpen(false);
+    const newSectionId = `section-${Date.now()}`;
+    setSections(prevSections => [
+      ...prevSections,
+      { id: newSectionId, title: prompt, content: '' }
+    ]);
+
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
@@ -181,7 +198,6 @@ interface AnalysisDisplayProps {
 
       const reader = response.body!.getReader();
       const decoder = new TextDecoder();
-      let accumulatedResponse = '';
 
       while (true) {
         const { done, value } = await reader.read();
@@ -191,19 +207,23 @@ interface AnalysisDisplayProps {
         for (const event of events) {
           try {
             const data = JSON.parse(event);
+            console.log('Received event:', data);  // Debug log
+
             if (data.type === 'report') {
-              accumulatedResponse += data.output;
-              setResponse(accumulatedResponse);
+              setSections(prevSections => 
+                prevSections.map(section => 
+                  section.id === newSectionId
+                    ? { ...section, content: section.content + data.output }
+                    : section
+                )
+              );
             } else if (data.type === 'complete') {
+              console.log('Received complete message');  // Debug log
               if (socketRef.current) {
                 socketRef.current.close();
                 socketRef.current = null;
               }
-              setIsComplete(true);
-              setTimeout(() => {
-                setIsPopoverOpen(false);
-              }, 2000);
-              break;
+              return;  // Exit the function after handling 'complete'
             }
           } catch (error) {
             console.error('Error parsing JSON:', error);
@@ -212,9 +232,13 @@ interface AnalysisDisplayProps {
       }
     } catch (error) {
       console.error('Error submitting prompt:', error);
-      setResponse('An error occurred while processing your request.');
-    } finally {
-      setIsAnalyzing(false);
+      setSections(prevSections => 
+        prevSections.map(section => 
+          section.id === newSectionId
+            ? { ...section, content: 'An error occurred while processing your request.' }
+            : section
+        )
+      );
     }
   };
 
@@ -223,21 +247,11 @@ interface AnalysisDisplayProps {
     if (!open) {
       setSelectedText('');
       setPrompt('');
-      setIsComplete(false);
     }
   };
 
   return (
     <div className="space-y-6">
-      <Card className="mb-4 bg-transparent border-transparent">
-        <CardContent className="pt-6">
-          <div
-            ref={contentRef}
-            dangerouslySetInnerHTML={{ __html: formatContentToHTML(analysis) }}
-            className="prose dark:prose-invert max-w-none"
-          />
-        </CardContent>
-      </Card>
       <Popover open={isPopoverOpen} onOpenChange={handlePopoverOpenChange}>
         <PopoverTrigger asChild>
           <div style={{ position: 'absolute', top: popoverPosition.top, left: popoverPosition.left }}>
@@ -264,38 +278,36 @@ interface AnalysisDisplayProps {
                 onChange={handlePromptChange}
               />
             </div>
-            <Button 
-              onClick={handleSubmit} 
-              disabled={isAnalyzing || isComplete}
-              className={isComplete ? "bg-green-500 hover:bg-green-600" : ""}
-            >
-              {isAnalyzing ? (
-                <span className="flex items-center">
-                  Analyzing...
-                  <LoaderIcon className="ml-2 h-4 w-4 animate-spin" />
-                </span>
-              ) : isComplete ? (
-                <span className="flex items-center">
-                  Analysis Complete
-                  <CheckIcon className="ml-2 h-4 w-4" />
-                </span>
-              ) : (
-                'Submit'
-              )}
+            <Button onClick={handleSubmit}>
+              Submit
             </Button>
           </div>
         </PopoverContent>
       </Popover>
-      {response && (
-        <Card className="mt-4 bg-transparent">
-          <CardContent>
-            <div 
-              dangerouslySetInnerHTML={{ __html: formatContentToHTML(response) }}
-              className="prose dark:prose-invert max-w-none"
-            />
-          </CardContent>
-        </Card>
-      )}
+      <Accordion type="single" collapsible className="w-full">
+        {sections.map((section) => (
+          <AccordionItem key={section.id} value={section.id}>
+            <AccordionTrigger>{section.title}</AccordionTrigger>
+            <AccordionContent>
+              <Card>
+                <CardContent className="pt-6">
+                  {section.content ? (
+                    <div 
+                      dangerouslySetInnerHTML={{ __html: formatContentToHTML(section.content) }}
+                      className="prose dark:prose-invert max-w-none"
+                    />
+                  ) : (
+                    <div className="flex items-center space-x-2">
+                      <LoaderIcon className="animate-spin h-5 w-5" />
+                      <span>Analyzing...</span>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </AccordionContent>
+          </AccordionItem>
+        ))}
+      </Accordion>
     </div>
   );
 };
