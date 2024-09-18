@@ -297,9 +297,8 @@ def generate_document_analysis_prompt(question, context, report_format="Bluebook
            "You must write the analysis with markdown syntax. Use headings, bulleted lists, tables, block quotes, and other markdown formatted features.\n " \
            f"Use an unbiased and legal tone as if you were a legal professional interpreting this information. \n" \
            f"You MUST call out key findings, precedents set, intentionally ambiguous language, or anything that might be of professional legal importance to a practicing legal professional.\n" \
-            f"You MUST write the report in {report_format} format.\n " \
-            f"'You MUST include all relevant source urls.'\
-             'Every case must be cited according to Bluebook rules'\n"\
+            f"You MUST write the report in {report_format} format.\
+             'Every case must be cited according to Bluebook rules. Do not mention adherence to this format in your response.'\n"\
             f"Please do your best, this is very important to my career." \
 
 def get_report_by_type(report_type, retained_text="", deleted_text="", cadence=""):

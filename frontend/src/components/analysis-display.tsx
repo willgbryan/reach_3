@@ -130,7 +130,7 @@ const formatContentToHTML = (content: string): string => {
     const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis }) => {
         return (
           <div className="space-y-6">
-            <Card className="mb-4">
+            <Card className="mb-4 bg-transparent border-transparent">
               <CardContent className="pt-6">
                 <div 
                   dangerouslySetInnerHTML={{ __html: formatContentToHTML(analysis) }} 

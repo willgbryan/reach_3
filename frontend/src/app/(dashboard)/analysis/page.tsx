@@ -102,20 +102,17 @@ export default function PdfUploadAndRenderPage() {
     }
   };
 
-  const handleFileUpload = useCallback(async (newFiles: File[]) => {
-    if (newFiles.length === 0 || newFiles[0].type !== 'application/pdf') {
+  const handleFileUpload = useCallback((uploadedFiles: File[]) => {
+    const pdfFiles = uploadedFiles.filter(file => file.type === 'application/pdf');
+    if (pdfFiles.length === 0) {
       toast.error('Please upload a valid PDF file.');
       return;
     }
-    const uploadedFile = newFiles[0];
-    try {
-      setFile(uploadedFile);
-      toast.success('File uploaded successfully');
-      await processFile(uploadedFile);
-    } catch (error) {
-      console.error('Error uploading file:', error);
-      toast.error('Failed to upload file');
+    if (pdfFiles.length < uploadedFiles.length) {
+      toast.warning('Only PDF files are allowed. Non-PDF files were removed.');
     }
+    setFile(pdfFiles[0]);
+    processFile(pdfFiles[0]);
   }, []);
 
   const memoizedPDFViewer = useMemo(() => {
@@ -129,7 +126,9 @@ export default function PdfUploadAndRenderPage() {
           <Card className="border-none shadow-none dark:bg-transparent h-full">
             <CardContent className="flex items-center justify-center h-full">
               <div className="w-full max-w-md">
-                <FileUpload onChange={handleFileUpload} />
+                <FileUpload 
+                  onChange={handleFileUpload} 
+                />
               </div>
             </CardContent>
           </Card>
@@ -147,7 +146,7 @@ export default function PdfUploadAndRenderPage() {
           <AnalysisDisplay analysis={analysisData} />
         ) : (
           <div className="flex items-center justify-center h-full text-gray-500">
-            No analysis available. Upload a PDF to see results.
+            Upload a PDF to get started.
           </div>
         )}
       </div>
