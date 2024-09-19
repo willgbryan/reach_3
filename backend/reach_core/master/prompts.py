@@ -165,9 +165,9 @@ def generate_report_prompt(question, context, report_format="apa", total_words=4
                 
                 This is a sample text. ([url website](url))
             """\
-            f"You MUST write the report in {report_format} format.\n " \
+            f"You MUST write the report in Bluebook format for legal questions, and APA format otherwise.\n " \
             f"'You MUST include all relevant source urls.'\
-             'Every url should be hyperlinked: [url website](url)'\n"\
+             'Every url should be hyperlinked: [url website](url), and all legal content must be appropriately cited by the provided jurisdictions standard or Bluebook.'\n"\
             f"Please do your best, this is very important to my career." \
             f"Assume that the current date is {datetime.now().strftime('%B %d, %Y')}"
 
