@@ -3,10 +3,6 @@ import { processLifetimePayment, processSubscriptionPayment } from '@/app/_data/
 import { adminConfig, dbAdmin } from '@/db/admin';
 import { stripe } from '@/lib/stripe';
 
-export const config = {
-  runtime: 'nodejs', // Ensure the Node.js runtime is used
-};
-
 export async function POST(req: NextRequest) {
   try {
     validateEnvironment(adminConfig);
