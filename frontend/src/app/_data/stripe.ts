@@ -1,34 +1,17 @@
 'use server'
 
-// Ensure these functions only ever run on the server so we dont leak dbAdmin
 import 'server-only'
-
 import { dbAdmin } from '@/db/admin'
 import { stripe } from '@/lib/stripe'
 
-// PaymentHandler.js
-/**
- * This module contains functions to handle lifetime payments in a Next.js application using Supabase.
- */
-
-/**
- * Processes a lifetime payment session.
- *
- * @param {object} session - The Stripe session object.
- * @param {object} db - The database object to interact with your database.
- */
-async function processLifetimePayment(session, db) {
+async function processLifetimePayment(session, db, isLiveMode) {
+  console.log(`Processing ${isLiveMode ? 'live' : 'test'} lifetime payment for session:`, session.id)
   validateSession(session)
   const userEmail = getUserEmailFromSession(session)
-  const userId = await ensureUserExists(userEmail)
-  await recordPaymentIfNotExists(userId, session, db)
+  const userId = isLiveMode ? await ensureUserExists(userEmail) : `test_user_${session.id}`
+  await recordLifetimePayment(userId, session, db, isLiveMode)
 }
 
-/**
- * Validates the Stripe session.
- *
- * @param {object} session - The Stripe session object.
- */
 function validateSession(session) {
   if (session.mode !== 'payment') {
     throw new Error('Called with a non-payment session')
@@ -39,12 +22,6 @@ function validateSession(session) {
   }
 }
 
-/**
- * Extracts the user's email from the Stripe session.
- *
- * @param {object} session - The Stripe session object.
- * @returns {string} The user's email address.
- */
 function getUserEmailFromSession(session) {
   const userEmail = session.customer_details.email
   if (!userEmail) {
@@ -53,28 +30,14 @@ function getUserEmailFromSession(session) {
   return userEmail
 }
 
-/**
- * Ensures that a user exists in the database, either by finding an existing user or creating a new one.
- *
- * @param {string} userEmail - The email address of the user.
- * @returns {string} The user ID.
- */
 async function ensureUserExists(userEmail) {
   const existingUser = await getUserByEmail(userEmail)
-
   if (existingUser) {
     return existingUser
   }
-
   return await createUser(userEmail)
 }
 
-/**
- * Fetches a user by email.
- *
- * @param {string} userEmail - The email address of the user.
- * @returns {string|null} The user ID if exists, or null.
- */
 async function getUserByEmail(userEmail) {
   const { data: existingUser, error } = await dbAdmin.rpc('get_user_id_by_email', {
     user_email: userEmail,
@@ -87,12 +50,6 @@ async function getUserByEmail(userEmail) {
   return existingUser
 }
 
-/**
- * Creates a new user in the database.
- *
- * @param {string} userEmail - The email address of the user.
- * @returns {string} The new user ID.
- */
 async function createUser(userEmail) {
   const { data, error } = await dbAdmin.auth.admin.createUser({
     email: userEmail,
@@ -109,64 +66,37 @@ async function createUser(userEmail) {
   return data.user.id
 }
 
-/**
- * Records the payment in the database if the user has not already made a lifetime payment.
- *
- * @param {string} userId - The user ID.
- * @param {object} session - The Stripe session object.
- * @param {object} db - The database object.
- */
-async function recordPaymentIfNotExists(userId, session, db) {
-  const hasLifetimePayment = await checkLifetimePaymentExists(userId, db)
-
-  if (!hasLifetimePayment) {
-    await insertPaymentRecord(userId, session, db)
-  }
-}
-
-/**
- * Checks if a lifetime payment already exists for a user.
- *
- * @param {string} userId - The user ID.
- * @param {object} db - The database object.
- * @returns {boolean} True if a lifetime payment exists, false otherwise.
- */
-async function checkLifetimePaymentExists(userId, db) {
-  const { data } = await db
-    .from('payments')
-    .select('*')
-    .eq('user_id', userId)
-    .eq('metadata', 'lifetime')
-    .eq('status', 'completed')
-    .single()
-
-  return !!data
-}
-
-/**
- * Inserts a new payment record into the database.
- *
- * @param {string} userId - The user ID.
- * @param {object} session - The Stripe session object.
- * @param {object} db - The database object.
- */
-async function insertPaymentRecord(userId, session, db) {
-  const { error } = await db.from('payments').insert({
-    id: session.payment_intent,
+async function recordLifetimePayment(userId, session, db, isLiveMode) {
+  const paymentData = {
+    id: isLiveMode ? session.payment_intent : `test_${session.payment_intent}`,
     user_id: userId,
     price_id: session.metadata.price_id,
     status: 'completed',
     amount: session.amount_total,
     currency: session.currency,
-    metadata: { oneTimePaymentType: 'lifetime', paymentType: 'one-time' },
-  })
+    metadata: { 
+      oneTimePaymentType: 'lifetime', 
+      paymentType: 'one-time',
+      isTestEvent: !isLiveMode
+    },
+  }
+
+  const { error } = await db.from('payments').insert(paymentData)
 
   if (error) {
-    throw error
+    throw new Error(`Error inserting lifetime payment: ${error.message}`)
   }
+
+  console.log(`${isLiveMode ? 'Live' : 'Test'} lifetime payment recorded successfully`)
 }
 
-export { processLifetimePayment }
+async function processSubscriptionPayment(session, db, isLiveMode) {
+  console.log(`Processing ${isLiveMode ? 'live' : 'test'} subscription payment for session:`, session.id)
+  validateSubscriptionSession(session)
+  const userEmail = getUserEmailFromSession(session)
+  const userId = isLiveMode ? await ensureUserExists(userEmail) : `test_user_${session.id}`
+  await recordSubscriptionPayment(userId, session, db, isLiveMode)
+}
 
 function validateSubscriptionSession(session) {
   if (session.mode !== 'subscription') {
@@ -178,32 +108,38 @@ function validateSubscriptionSession(session) {
   }
 }
 
-async function processSubscriptionPayment(session, db) {
-  validateSubscriptionSession(session)
-  const userEmail = getUserEmailFromSession(session)
-  const userId = await ensureUserExists(userEmail)
-  await recordSubscriptionPayment(userId, session, db)
-}
+async function recordSubscriptionPayment(userId, session, db, isLiveMode) {
+  let subscription, customer
 
-async function recordSubscriptionPayment(userId, session, db) {
-  const subscription = await stripe.subscriptions.retrieve(session.subscription)
-  const customer = await stripe.customers.retrieve(session.customer)
+  if (isLiveMode) {
+    subscription = await stripe.subscriptions.retrieve(session.subscription)
+    customer = await stripe.customers.retrieve(session.customer)
+  } else {
+    subscription = {
+      id: `test_sub_${session.id}`,
+      status: 'active',
+      items: { data: [{ price: { id: 'test_price', product: 'Test Product' } }] },
+      created: Date.now() / 1000
+    }
+    customer = { id: `test_cus_${session.id}` }
+  }
 
   const paymentData = {
-    id: session.id,
+    id: isLiveMode ? session.id : `test_${session.id}`,
     user_id: userId,
     price_id: subscription.items.data[0].price.id,
     status: subscription.status,
-    amount: subscription.items.data[0].price.unit_amount,
-    currency: subscription.currency,
+    amount: session.amount_total, // Use session amount as subscription might not have this for test events
+    currency: session.currency,
     stripe_customer_id: customer.id,
     metadata: {
       subscriptionId: session.subscription,
       customerId: session.customer,
-      paymentType: 'subscription'
+      paymentType: 'subscription',
+      isTestEvent: !isLiveMode
     },
     created: new Date(subscription.created * 1000).toISOString(),
-    description: `Subscription to ${subscription.items.data[0].price.product}`
+    description: `${isLiveMode ? '' : 'Test '}Subscription to ${subscription.items.data[0].price.product}`
   }
 
   const { error } = await db.from('payments').insert(paymentData)
@@ -211,6 +147,8 @@ async function recordSubscriptionPayment(userId, session, db) {
   if (error) {
     throw new Error(`Error inserting subscription payment: ${error.message}`)
   }
+
+  console.log(`${isLiveMode ? 'Live' : 'Test'} subscription payment recorded successfully`)
 }
 
-export { processSubscriptionPayment }
+export { processLifetimePayment, processSubscriptionPayment }
