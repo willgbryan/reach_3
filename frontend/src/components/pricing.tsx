@@ -29,11 +29,12 @@ const pricingTiers = [
   },
   {
     title: "Pro",
-    price: 29,
+    price: 39,
     description: "Accelerate your work",
     features: [
       "Basic tier features",
-      { text: "Unlimited queries", subtext: "Rate limit: 10 /hour"},
+      "Document Analysis",
+      { text: "Unlimited queries", subtext: "Rate limit: 20 /hour"},
       "Static file export customization",
       "24/7 support"
     ],
@@ -41,12 +42,12 @@ const pricingTiers = [
   },
   {
     title: "Team",
-    price: 49,
+    price: "Coming Soon",
     description: "Collaborative tools for teams",
     features: [
       "Pro tier features",
-      { text: "Unlimited queries", subtext: "Rate limit: 50 /hour"},
-      "In app collaboration and shared outputs",
+      { text: "Unlimited queries", subtext: "Rate limit: 100 /hour"},
+      "Session sharing",
       "Export sharing via Slack",
       "24/7 support"
     ],
@@ -98,6 +99,7 @@ const PricingCard = ({ tier, session, emphasized, index, totalCards }) => {
               paymentType="subscription"
               price={typeof tier.price === 'number' ? tier.price * 100 : 0}
               className="w-full"
+              tierDescription={tier.description}
             >
               <Button className="relative mb-4 text-stone-100 dark:text-stone-900 bg-stone-900 dark:bg-stone-100 from-neutral-800 via-neutral-800 to-black px-6 py-2 rounded-lg group transition-[width] duration-100 ease-[cubic-bezier(0.64_0.57_0.67_1.53)] text-lg flex items-center mx-auto w-auto shadow-[0_1px_5px_rgba(0,0,0,0.2)]">
                 Get started
@@ -105,13 +107,13 @@ const PricingCard = ({ tier, session, emphasized, index, totalCards }) => {
                   →
                 </div>
               </Button>
-            </StripeCheckout>
+          </StripeCheckout>
           )}
-          {isComingSoon && (
+          {/* {isComingSoon && (
             <div className="text-center text-lg font-semibold text-primary dark:text-white">
               Coming Soon
             </div>
-          )}
+          )} */}
           {isEnterprise && <EnterpriseFormPopover />}
           <div className="flex items-baseline justify-center gap-x-2">
             <span className="text-3xl font-bold">

@@ -41,8 +41,13 @@ export function HeaderAccountDropdown({ user }: any) {
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem>
+            <Link href="/billing" className="flex w-full items-center justify-between gap-2">
+              <span>Billing</span>
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem>
             <Link href="/pricing" className="flex w-full items-center justify-between gap-2">
-              <span>Try Pro</span>
+              <span>Pricing</span>
             </Link>
           </DropdownMenuItem>
         </div>

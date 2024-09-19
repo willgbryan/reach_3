@@ -252,6 +252,7 @@ export interface Database {
           price_id: string | null
           status: string | null
           user_id: string
+          stripe_customer_id: string
         }
         Insert: {
           amount?: number | null
@@ -263,6 +264,7 @@ export interface Database {
           price_id?: string | null
           status?: string | null
           user_id: string
+          stripe_customer_id: string
         }
         Update: {
           amount?: number | null
@@ -274,6 +276,7 @@ export interface Database {
           price_id?: string | null
           status?: string | null
           user_id?: string
+          stripe_customer_id: string
         }
         Relationships: [
           {
