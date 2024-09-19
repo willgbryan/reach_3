@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { LoaderIcon } from "lucide-react";
+import { Textarea } from "../ui/textarea";
 
 interface PixelData {
   x: number;
@@ -11,46 +12,49 @@ interface PixelData {
 }
 
 export function PlaceholdersAndVanishInput({
-    placeholders,
-    onChange,
-    onSubmit,
-    onStartOver,
-    disabled = false,
-    currentStep,
-    hasContent = false,
-  }: {
-    placeholders: string[];
-    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
-    onStartOver: () => void;
-    disabled?: boolean;
-    currentStep: string;
-    hasContent?: boolean;
-  }) {
-    const [currentPlaceholder, setCurrentPlaceholder] = useState(0);
-
+  placeholders,
+  onSubmit,
+  onStartOver,
+  disabled = false,
+  currentStep,
+  hasContent = false,
+}: {
+  placeholders: string[];
+  onSubmit: (value: string) => void;
+  onStartOver: () => void;
+  disabled?: boolean;
+  currentStep: string;
+  hasContent?: boolean;
+}) {
+  const [currentPlaceholder, setCurrentPlaceholder] = useState(0);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const startAnimation = () => {
+
+  const startPlaceholderAnimation = () => {
+    if (intervalRef.current) return;
     intervalRef.current = setInterval(() => {
       setCurrentPlaceholder((prev) => (prev + 1) % placeholders.length);
-    }, 3000);
+    }, 5000);
   };
+
   const handleVisibilityChange = () => {
-    if (document.visibilityState !== "visible" && intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    } else if (document.visibilityState === "visible") {
-      startAnimation();
+    if (document.visibilityState !== "visible") {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    } else {
+      startPlaceholderAnimation();
     }
   };
 
   useEffect(() => {
-    startAnimation();
+    startPlaceholderAnimation();
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
+        intervalRef.current = null;
       }
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
@@ -58,40 +62,59 @@ export function PlaceholdersAndVanishInput({
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const newDataRef = useRef<PixelData[]>([]);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const [value, setValue] = useState("");
   const [animating, setAnimating] = useState(false);
 
+  const adjustTextareaHeight = () => {
+    if (inputRef.current && !animating) {
+      inputRef.current.style.height = "auto";
+      inputRef.current.style.height = `${inputRef.current.scrollHeight}px`;
+    }
+  };
+
   const draw = useCallback(() => {
-    if (!inputRef.current) return;
+    if (!inputRef.current || !canvasRef.current) return;
     const canvas = canvasRef.current;
-    if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    canvas.width = 800;
-    canvas.height = 800;
-    ctx.clearRect(0, 0, 800, 800);
+    const rect = inputRef.current.getBoundingClientRect();
     const computedStyles = getComputedStyle(inputRef.current);
 
-    const fontSize = parseFloat(computedStyles.getPropertyValue("font-size"));
-    ctx.font = `${fontSize * 2}px ${computedStyles.fontFamily}`;
-    ctx.fillStyle = "#FFF";
-    ctx.fillText(value, 16, 40);
+    const width = rect.width;
+    const height = inputRef.current.scrollHeight;
 
-    const imageData = ctx.getImageData(0, 0, 800, 800);
+    canvas.width = width;
+    canvas.height = height;
+    ctx.clearRect(0, 0, width, height);
+
+    const fontSize = parseFloat(computedStyles.getPropertyValue("font-size"));
+    const fontFamily = computedStyles.getPropertyValue("font-family");
+    const fontWeight = computedStyles.getPropertyValue("font-weight");
+    const lineHeight = parseFloat(computedStyles.getPropertyValue("line-height"));
+    const color = computedStyles.getPropertyValue("color");
+    const paddingLeft = parseFloat(computedStyles.getPropertyValue("padding-left"));
+    const paddingTop = parseFloat(computedStyles.getPropertyValue("padding-top"));
+
+    ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
+    ctx.fillStyle = color;
+
+    const lines = value.split("\n");
+
+    lines.forEach((line, index) => {
+      ctx.fillText(line, paddingLeft, paddingTop + (index + 0.8) * lineHeight);
+    });
+
+    const imageData = ctx.getImageData(0, 0, width, height);
     const pixelData = imageData.data;
     const newData: PixelData[] = [];
 
-    for (let t = 0; t < 800; t++) {
-      let i = 4 * t * 800;
-      for (let n = 0; n < 800; n++) {
+    for (let t = 0; t < height; t++) {
+      let i = 4 * t * width;
+      for (let n = 0; n < width; n++) {
         let e = i + 4 * n;
-        if (
-          pixelData[e] !== 0 &&
-          pixelData[e + 1] !== 0 &&
-          pixelData[e + 2] !== 0
-        ) {
+        if (pixelData[e + 3] !== 0) {
           newData.push({
             x: n,
             y: t,
@@ -107,9 +130,10 @@ export function PlaceholdersAndVanishInput({
 
   useEffect(() => {
     draw();
+    adjustTextareaHeight();
   }, [value, draw]);
 
-  const animate = (start: number) => {
+  const animate = (start: number, currentValue: string) => {
     const animateFrame = (pos: number = 0) => {
       requestAnimationFrame(() => {
         const newArr: PixelData[] = [];
@@ -129,56 +153,77 @@ export function PlaceholdersAndVanishInput({
           }
         }
         newDataRef.current = newArr;
-        const ctx = canvasRef.current?.getContext("2d");
-        if (ctx) {
-          ctx.clearRect(pos, 0, 800, 800);
-          newDataRef.current.forEach((t) => {
-            const { x: n, y: i, r: s, color } = t;
-            if (n > pos) {
-              ctx.beginPath();
-              ctx.rect(n, i, s, s);
-              ctx.fillStyle = color;
-              ctx.strokeStyle = color;
-              ctx.stroke();
-            }
-          });
+        const canvas = canvasRef.current;
+        if (canvas) {
+          const ctx = canvas.getContext("2d");
+          if (ctx) {
+            ctx.clearRect(pos, 0, canvas.width, canvas.height);
+            newDataRef.current.forEach((t) => {
+              const { x: n, y: i, r: s, color } = t;
+              if (n > pos) {
+                ctx.beginPath();
+                ctx.rect(n, i, s, s);
+                ctx.fillStyle = color;
+                ctx.strokeStyle = color;
+                ctx.stroke();
+              }
+            });
+          }
         }
         if (newDataRef.current.length > 0) {
           animateFrame(pos - 8);
         } else {
           setValue("");
           setAnimating(false);
+          if (inputRef.current) {
+            inputRef.current.style.height = "auto";
+            inputRef.current.style.minHeight = "";
+            inputRef.current.style.maxHeight = "";
+            adjustTextareaHeight();
+          }
+          onSubmit && onSubmit(currentValue);
         }
       });
     };
     animateFrame(start);
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     if (!disabled && !animating) {
       setValue(e.target.value);
-      onChange && onChange(e);
+      adjustTextareaHeight();
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !animating && !disabled) {
-      vanishAndSubmit();
+      if (e.shiftKey) {
+      } else {
+        e.preventDefault();
+        vanishAndSubmit();
+      }
     }
   };
 
   const vanishAndSubmit = () => {
     if (disabled) return;
+
+    if (inputRef.current) {
+      inputRef.current.style.height = `${inputRef.current.scrollHeight}px`;
+      inputRef.current.style.minHeight = inputRef.current.style.height;
+      inputRef.current.style.maxHeight = inputRef.current.style.height;
+    }
+
     setAnimating(true);
     draw();
 
-    const value = inputRef.current?.value || "";
-    if (value && inputRef.current) {
+    const currentValue = inputRef.current?.value || value;
+    if (currentValue && inputRef.current) {
       const maxX = newDataRef.current.reduce(
         (prev, current) => (current.x > prev ? current.x : prev),
         0
       );
-      animate(maxX);
+      animate(maxX, currentValue);
     }
   };
 
@@ -186,104 +231,108 @@ export function PlaceholdersAndVanishInput({
     e.preventDefault();
     if (!disabled) {
       vanishAndSubmit();
-      onSubmit && onSubmit(e);
     }
   };
+
   return (
     <form
       className={cn(
-        "w-full relative max-w-xl mx-auto bg-white dark:bg-zinc-800 h-12 rounded-full overflow-hidden shadow-[0px_2px_3px_-1px_rgba(0,0,0,0.1),_0px_1px_0px_0px_rgba(25,28,33,0.02),_0px_0px_0px_1px_rgba(25,28,33,0.08)] transition duration-200",
+        "w-full relative max-w-3xl mx-auto bg-white dark:bg-zinc-800 rounded-lg overflow-hidden shadow transition duration-200",
         value && "bg-gray-50",
         disabled && !hasContent && "opacity-50 cursor-not-allowed"
       )}
       onSubmit={handleSubmit}
     >
-      <canvas
-        className={cn(
-          "absolute pointer-events-none text-base transform scale-50 top-[20%] left-2 sm:left-8 origin-top-left filter invert dark:invert-0 pr-20",
-          !animating ? "opacity-0" : "opacity-100"
-        )}
-        ref={canvasRef}
-      />
-      <input
-        onChange={handleInputChange}
-        onKeyDown={handleKeyDown}
-        ref={inputRef}
-        value={value}
-        type="text"
-        disabled={disabled}
-        className={cn(
-          "w-full relative text-sm sm:text-base border-none dark:text-white bg-transparent text-black h-full rounded-full focus:outline-none focus:ring-0 pl-4 sm:pl-10 pr-20",
-          animating && "text-transparent dark:text-transparent",
-          disabled && "cursor-not-allowed"
-        )}
-      />
-
-      {currentStep !== 'initial' ? (
-        <div className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 flex items-center justify-center">
-          <LoaderIcon className="mr-2 animate-spin" />
-        </div>
-      ) : hasContent ? (
-        <button
-          onClick={(e) => {
-            e.preventDefault();
-            onStartOver();
-          }}
+      <div className="relative">
+        <Textarea
+          onChange={handleInputChange}
+          onKeyDown={handleKeyDown}
+          ref={inputRef}
+          value={value}
+          disabled={disabled}
           className={cn(
-            "absolute right-2 top-1/2 -translate-y-1/2 h-8 px-4 rounded-full",
-            "bg-stone-100 dark:bg-zinc-900 text-stone-900 dark:text-stone-100",
-            "transition duration-200 flex items-center justify-center",
-            "hover:bg-gray-800 dark:hover:bg-zinc-700 hover:text-stone-100",
-            "active:bg-gray-700 dark:active:bg-zinc-600"
-          )}
-        >
-          Start over
-        </button>
-      ) : (
-        <button
-          disabled={!value || disabled}
-          type="submit"
-          className={cn(
-            "absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full",
-            "disabled:bg-gray-100 bg-black dark:bg-zinc-900 dark:disabled:bg-zinc-800",
-            "transition duration-200 flex items-center justify-center",
+            "w-full text-sm sm:text-base border-none dark:text-white bg-transparent text-black focus:outline-none focus:ring-0 p-4 pr-12 resize-none overflow-hidden",
+            animating && "text-transparent dark:text-transparent",
             disabled && "cursor-not-allowed"
           )}
-        >
-          <motion.svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="text-gray-300 h-4 w-4"
+          rows={1}
+          placeholder=""
+        />
+        <canvas
+          className={cn(
+            "absolute top-0 left-0 w-full h-full pointer-events-none",
+            !animating ? "opacity-0" : "opacity-100"
+          )}
+          ref={canvasRef}
+        />
+        {currentStep !== "initial" ? (
+          <div className="absolute top-4 right-4 h-6 w-6 flex items-center justify-center">
+            <LoaderIcon className="animate-spin" />
+          </div>
+        ) : hasContent ? (
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              onStartOver();
+            }}
+            className={cn(
+              "absolute top-4 right-4 h-8 px-4 rounded-full",
+              "bg-stone-100 dark:bg-zinc-900 text-stone-900 dark:text-stone-100",
+              "transition duration-200 flex items-center justify-center",
+              "hover:bg-gray-800 dark:hover:bg-zinc-700 hover:text-stone-100",
+              "active:bg-gray-700 dark:active:bg-zinc-600"
+            )}
           >
-            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-            <motion.path
-              d="M5 12l14 0"
-              initial={{
-                strokeDasharray: "50%",
-                strokeDashoffset: "50%",
-              }}
-              animate={{
-                strokeDashoffset: value && !disabled ? 0 : "50%",
-              }}
-              transition={{
-                duration: 0.3,
-                ease: "linear",
-              }}
-            />
-            <path d="M13 18l6 -6" />
-            <path d="M13 6l6 6" />
-          </motion.svg>
-        </button>
-      )}
+            Start over
+          </button>
+        ) : (
+          <button
+            disabled={!value || disabled}
+            type="submit"
+            className={cn(
+              "absolute top-4 right-4 h-8 w-8 rounded-full",
+              "disabled:bg-gray-100 bg-black dark:bg-zinc-900 dark:disabled:bg-zinc-800",
+              "transition duration-200 flex items-center justify-center",
+              disabled && "cursor-not-allowed"
+            )}
+          >
+            {/* Submit Icon */}
+            <motion.svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="text-gray-300 h-4 w-4"
+            >
+              <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+              <motion.path
+                d="M5 12l14 0"
+                initial={{
+                  strokeDasharray: "50%",
+                  strokeDashoffset: "50%",
+                }}
+                animate={{
+                  strokeDashoffset: value && !disabled ? 0 : "50%",
+                }}
+                transition={{
+                  duration: 0.3,
+                  ease: "linear",
+                }}
+              />
+              <path d="M13 18l6 -6" />
+              <path d="M13 6l6 6" />
+            </motion.svg>
+          </button>
+        )}
+      </div>
 
-      <div className="absolute inset-0 flex items-center rounded-full pointer-events-none">
+      {/* Placeholder Text */}
+      <div className="absolute inset-0 flex items-start pointer-events-none">
         <AnimatePresence mode="wait">
           {(!value || disabled) && (
             <motion.p
@@ -305,7 +354,7 @@ export function PlaceholdersAndVanishInput({
                 ease: "linear",
               }}
               className={cn(
-                "dark:text-stone-100 text-sm sm:text-base font-normal text-neutral-500 pl-4 sm:pl-12 text-left w-[calc(100%-2rem)] truncate",
+                "dark:text-neutral-500 text-sm sm:text-base font-normal text-neutral-500 p-4 sm:pl-12 text-left w-[calc(100%-2rem)] truncate",
                 disabled && !hasContent && "text-stone-900 dark:text-stone-100"
               )}
             >

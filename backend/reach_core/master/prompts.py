@@ -288,8 +288,22 @@ def generate_table_prompt(question, context, report_format="csv", total_words=20
            f' The table should be detailed, informative, in-depth, and a minimum of {total_words} rows.' \
            'It is REQUIRED that the output only be valid .csv format. Commas that are not used to separate discrete values (like commas in sentences) should be replaced with a blank space.'
 
+def generate_document_analysis_prompt(question, context, report_format="Bluebook", total_words=4000, retained_text="", deleted_text="", cadence=""):
+    return f'Information: """{context}""".\n' \
+           f'Using ONLY the above information, answer the following' \
+           f' query or task: "{question}" in a concise analysis --' \
+           " The analysis should focus on the answer to the query, should be well structured, informative," \
+           f" in depth and comprehensive, with facts and Bluebook citations.\n" \
+           "You must write the analysis with markdown syntax. Use headings, bulleted lists, tables, block quotes, and other markdown formatted features.\n " \
+           f"Use an unbiased and legal tone as if you were a legal professional interpreting this information. \n" \
+           f"You MUST call out key findings, precedents set, intentionally ambiguous language, or anything that might be of professional legal importance to a practicing legal professional.\n" \
+            f"You MUST write the report in {report_format} format.\
+             'Every case must be cited according to Bluebook rules. Do not mention adherence to this format in your response.'\n"\
+            f"Please do your best, this is very important to my career." \
+
 def get_report_by_type(report_type, retained_text="", deleted_text="", cadence=""):
     report_type_mapping = {
+        ReportType.DocumentAnalysis.value: generate_document_analysis_prompt,
         ReportType.LongNewsletterReport.value: generate_long_newsletter_report_prompt,
         ReportType.NewsletterReport.value: generate_newsletter_report_prompt,
         ReportType.NewsletterParagraph.value: generate_newsletter_paragraph_prompt,

@@ -1,5 +1,8 @@
+import io
+import requests
 import time
 import aiofiles
+from PyPDF2 import PdfReader
 from typing import List, Dict
 from reach_core.config import Config
 from reach_core.master.functions import *
@@ -28,6 +31,7 @@ class Reach:
          visited_urls=set(),
          retained_text="",
          deleted_text="",
+         file_url=""
      ):
         """
         Initialize the Reach class.
@@ -52,6 +56,7 @@ class Reach:
         self.visited_urls = visited_urls
         self.retained_text = retained_text
         self.deleted_text = deleted_text
+        self.file_url = file_url
 
         # Only relevant for DETAILED REPORTS
         # --------------------------------------
@@ -146,37 +151,47 @@ class Reach:
 
         return web_results
 
-    async def get_context_by_file_uploads(self, query):
+    async def get_context_by_file_uploads(self, query: str) -> List[str]:
         """
-           Generates the context for the research task by searching the query and scraping the results
-           from the uploaded files
+        Generates the context for the research task by searching the query and scraping the results
+        from the uploaded files
         Returns:
-            context: List of context
+        context: List of context
         """
         content = []
-        sub_queries = await get_sub_queries(query, self.role, self.cfg, self.parent_query, self.report_type, self.websocket) + [query]
-        # await stream_output("logs",
-        #                     f"I will conduct my research based on the following queries: {sub_queries}...",
-        #                     self.websocket)
-        
-        for sub_query in sub_queries:
-            # await stream_output("logs", f"\nRunning research for '{sub_query}'...", self.websocket)
-
+        try:
+            response = requests.get(self.file_url)
+            response.raise_for_status()
+            file_content = response.content
+            pdf_reader = PdfReader(io.BytesIO(file_content))
             parsed_content: List[Dict[str, str]] = []
-            parsed_uploads_path = "uploads/parsed_uploads.json"
-            async with aiofiles.open(parsed_uploads_path, "r") as file:
-                read_content = await file.read()
-                if read_content:
-                    parsed_content = json.loads(read_content)
-                    
-            document_content = await self.get_similar_content_by_query(sub_query, parsed_content)
+            all_text = ""
 
-            if document_content:
-                # await stream_output("logs", f"{content}", self.websocket)
-                content.append(document_content)
-            else:
-                # await stream_output("logs", f"No content found for '{sub_query}'...", self.websocket)
-                pass
+            for page in pdf_reader.pages:
+                text = page.extract_text()
+                all_text += text
+                parsed_content.append({
+                    "url": '',
+                    "raw_content": text
+                })
+
+            first_1000_chars = all_text[:1000]
+            enhanced_query = f"{query}\n\nFirst 1000 characters of the document: {first_1000_chars}"
+
+            sub_queries = await get_sub_queries(enhanced_query, self.role, self.cfg, self.parent_query, self.report_type,
+                                                self.websocket, self.cadence, self.retained_text, self.deleted_text)
+
+            for sub_query in sub_queries:
+                document_content = await self.get_similar_content_by_query(sub_query, parsed_content)
+                if document_content:
+                    content.append(document_content)
+                else:
+                    await stream_output("logs", f"No content found for '{sub_query}'...", self.websocket)
+
+        except Exception as e:
+            await stream_output("logs", f"Error processing file: {str(e)}", self.websocket)
+            raise
+
         return content
     
     async def get_context_by_systems(self, query):
@@ -289,7 +304,6 @@ class Reach:
     async def get_similar_content_by_query(self, query, pages):
         # await stream_output("logs", f"Getting relevant content based on query: {query}...", self.websocket)
         # Summarize Raw Data
-        print(f"PAGES: {pages}")
         context_compressor = ContextCompressor(documents=pages, embeddings=self.memory.get_embeddings())
         # Run Tasks
         return context_compressor.get_context(query, max_results=8)

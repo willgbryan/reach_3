@@ -77,6 +77,8 @@ export async function checkAndInsertUserConfig() {
 
       console.log('New user config inserted:', insertData)
       await createUserThemeFolder(userId, supabase)
+      await createUserUploadFolder(userId, supabase)
+
     } else {
       console.log('User config already exists')
     }
@@ -113,6 +115,23 @@ async function createUserThemeFolder(userId: string, supabase: any) {
     console.log(`Base template copied to user ${userId}'s folder`)
   } catch (error) {
     console.error('Error in createUserThemeFolder:', error)
+  }
+}
+
+async function createUserUploadFolder(userId: string, supabase: any) {
+  try {
+    const { data: folderData, error: folderError } = await supabase
+      .storage
+      .from('user_uploads')
+      .upload(`${userId}/.folder`, new Uint8Array())
+
+    if (folderError) {
+      throw folderError
+    }
+
+    console.log(`Successfully created user upload folder for ${userId}`)
+  } catch (error) {
+    console.error('Error in createUserUploadFolder:', error)
   }
 }
 

@@ -60,7 +60,14 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
   const [originalUserMessage, setOriginalUserMessage] = useState<Message | null>(null);
   const [currentIteration, setCurrentIteration] = useState(0);
   const [currentStep, setCurrentStep] = useState('initial');
-  const [placeholders, setPlaceholders] = useState(['Ask anything...']);
+  const [placeholders, setPlaceholders] = useState([
+    "Brief Roberts v. State of Louisiana 396 So.2d 566 (La. Ct. App. 1981)",
+    "Which cases decided the enforceability of clickwrap licenses under contract law?",
+    "Where are federal prosecutors going after PPP loan fraud?",
+    "Summarize the repeal of the Chevron doctrine, what are some immediate ramifications.",
+    "Recent notable NLRB findings and board decisions.",
+    ""
+  ]);
 
   const [allIterations, setAllIterations] = useState<Array<{ content: string; sources: any[]; type?: string }>>([]);
   const [condensedFindings, setCondensedFindings] = useState<string | null>(null);
@@ -84,7 +91,7 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
   const tutorialSteps = [
   {
     title: "Welcome to Heighliner",
-    description: "Heighliner is purpose-built for professional work, accelerating competitive analysis and deep internet research.",
+    description: "Heighliner is purpose-built for professional work with a strong focus on legal research.",
     highlightId: ""
   },
   {
@@ -93,8 +100,8 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
     highlightId: ""
   },
   {
-    title: "Need frequent updates?",
-    description: "Heighliner allows you to schedule research and analysis. Whether its keeping up with competitor publishings or curating a custom newsfeed, head over to the 'Newsletter' section to get started with scheduling.",
+    title: "Legal Document Analysis",
+    description: "The 'Document Analysis' tab allows you to easily analyze legal documents of any size. Following the initial analysis, highlight text anywhere on the page to ask follow up questions.",
     highlightId: ""
   },
   {
@@ -320,7 +327,7 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
   
     while (currentIteration < maxIterations) {
       setCurrentStep(`dive-${currentIteration + 1}`);
-      setPlaceholders([`Navigating dive number ${currentIteration + 1}`]);
+      setPlaceholders([`Navigating Dive ${currentIteration + 1}`]);
       const result = await handleApiCall(currentPayload, currentIteration);
       console.log(`ITERATION ${currentIteration}`);
       
