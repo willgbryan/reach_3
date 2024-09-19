@@ -4,6 +4,7 @@
 import 'server-only'
 
 import { dbAdmin } from '@/db/admin'
+import { stripe } from '@/lib/stripe'
 
 // PaymentHandler.js
 /**
@@ -166,3 +167,50 @@ async function insertPaymentRecord(userId, session, db) {
 }
 
 export { processLifetimePayment }
+
+function validateSubscriptionSession(session) {
+  if (session.mode !== 'subscription') {
+    throw new Error('Called with a non-subscription session')
+  }
+
+  if (!session.subscription || !session.customer || !session.metadata) {
+    throw new Error('Required session data is missing')
+  }
+}
+
+async function processSubscriptionPayment(session, db) {
+  validateSubscriptionSession(session)
+  const userEmail = getUserEmailFromSession(session)
+  const userId = await ensureUserExists(userEmail)
+  await recordSubscriptionPayment(userId, session, db)
+}
+
+async function recordSubscriptionPayment(userId, session, db) {
+  const subscription = await stripe.subscriptions.retrieve(session.subscription)
+  const customer = await stripe.customers.retrieve(session.customer)
+
+  const paymentData = {
+    id: session.id,
+    user_id: userId,
+    price_id: subscription.items.data[0].price.id,
+    status: subscription.status,
+    amount: subscription.items.data[0].price.unit_amount,
+    currency: subscription.currency,
+    stripe_customer_id: customer.id,
+    metadata: {
+      subscriptionId: session.subscription,
+      customerId: session.customer,
+      paymentType: 'subscription'
+    },
+    created: new Date(subscription.created * 1000).toISOString(),
+    description: `Subscription to ${subscription.items.data[0].price.product}`
+  }
+
+  const { error } = await db.from('payments').insert(paymentData)
+
+  if (error) {
+    throw new Error(`Error inserting subscription payment: ${error.message}`)
+  }
+}
+
+export { processSubscriptionPayment }

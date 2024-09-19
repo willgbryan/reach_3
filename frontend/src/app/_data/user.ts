@@ -1,10 +1,48 @@
 'use server'
 
 import 'server-only'
-
 import { cookies } from 'next/headers'
-
 import { createClient } from '@/db/server'
+
+export async function getSubscriptionStatus() {
+  const cookieStore = cookies()
+  const supabase = createClient(cookieStore)
+  
+  try {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
+      return null
+    }
+
+    const { data: subscription, error } = await supabase
+      .from('payments')
+      .select('*')
+      .eq('user_id', session.user.id)
+      .eq('metadata->paymentType', 'subscription')
+      .order('created', { ascending: false })
+      .limit(1)
+      .single()
+
+    if (error) {
+      console.error('Error fetching subscription:', error)
+      return null
+    }
+
+    if (!subscription) {
+      return null
+    }
+
+    const isActive = subscription.status === 'active' || subscription.status === 'trialing'
+
+    return {
+      ...subscription,
+      isActive,
+    }
+  } catch (error) {
+    console.error('Error in getSubscriptionStatus:', error)
+    return null
+  }
+}
 
 export async function getSession() {
   const cookieStore = cookies()
