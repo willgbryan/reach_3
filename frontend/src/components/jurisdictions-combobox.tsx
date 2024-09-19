@@ -86,7 +86,7 @@ interface JurisdictionSelectorProps {
             variant="outline"
             role="combobox"
             aria-expanded={open}
-            className="w-[250px] justify-between"
+            className="w-full justify-between"
           >
             {value
               ? jurisdictions.find((jurisdiction) => jurisdiction.value === value)?.label
