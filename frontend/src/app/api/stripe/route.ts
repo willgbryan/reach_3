@@ -85,7 +85,7 @@ async function handleSubscriptionChange(subscription: any, db: any, isLiveMode: 
   const { data: payment, error } = await db
     .from('payments')
     .select('*')
-    .eq('metadata->stripeSubscriptionId', subscription.id)
+    .eq('metadata->subscriptionId', subscription.id)
     .single()
 
   if (error) {

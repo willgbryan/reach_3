@@ -129,10 +129,10 @@ async function recordSubscriptionPayment(userId, session, db, isLiveMode) {
     user_id: userId,
     price_id: subscription.items.data[0].price.id,
     status: subscription.status,
-    amount: session.amount_total, // Use session amount as subscription might not have this for test events
+    amount: session.amount_total,
     currency: session.currency,
     stripe_customer_id: customer.id,
-    metadata: {
+    metadata: {  // This should be a plain JavaScript object for JSONB
       subscriptionId: session.subscription,
       customerId: session.customer,
       paymentType: 'subscription',
@@ -142,13 +142,17 @@ async function recordSubscriptionPayment(userId, session, db, isLiveMode) {
     description: `${isLiveMode ? '' : 'Test '}Subscription to ${subscription.items.data[0].price.product}`
   }
 
-  const { error } = await db.from('payments').insert(paymentData)
+  console.log('Inserting payment data:', JSON.stringify(paymentData, null, 2));
+
+  const { data, error } = await db.from('payments').insert(paymentData);
 
   if (error) {
+    console.error('Error inserting subscription payment:', error);
     throw new Error(`Error inserting subscription payment: ${error.message}`)
   }
 
-  console.log(`${isLiveMode ? 'Live' : 'Test'} subscription payment recorded successfully`)
+  console.log(`${isLiveMode ? 'Live' : 'Test'} subscription payment recorded successfully`, data);
+  return data;
 }
 
 export { processLifetimePayment, processSubscriptionPayment }
