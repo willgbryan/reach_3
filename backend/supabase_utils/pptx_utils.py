@@ -2,6 +2,7 @@ import os
 from dotenv import load_dotenv
 from supabase import create_client, Client
 import requests
+from PyPDF2 import PdfReader
 from pptx import Presentation
 import io
 from pptx.slide import Slide
@@ -37,3 +38,11 @@ def read_pptx_from_supabase(file_path: str, signed_url: str) -> Presentation:
     except Exception as e:
         print(f"Error reading PowerPoint from Supabase: {str(e)}")
         raise
+
+def extract_text_from_pdf(pdf_content: bytes) -> str:
+    pdf_reader = PdfReader(io.BytesIO(pdf_content))
+    text_content = ""
+    for page_num, page in enumerate(pdf_reader.pages, 1):
+        text_content += f"\n\n--- Page {page_num} ---\n\n"
+        text_content += page.extract_text()
+    return text_content
