@@ -91,7 +91,7 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
   const tutorialSteps = [
   {
     title: "Welcome to Heighliner",
-    description: "Heighliner is purpose-built for professional work, accelerating competitive analysis and deep internet research.",
+    description: "Heighliner is purpose-built for professional work with a strong focus on legal research.",
     highlightId: ""
   },
   {
@@ -100,8 +100,8 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
     highlightId: ""
   },
   {
-    title: "Need frequent updates?",
-    description: "Heighliner allows you to schedule research and analysis. Whether its keeping up with competitor publishings or curating a custom newsfeed, head over to the 'Newsletter' section to get started with scheduling.",
+    title: "Legal Document Analysis",
+    description: "The 'Document Analysis' tab allows you to easily analyze legal documents of any size. Following the initial analysis, highlight text anywhere on the page to ask follow up questions.",
     highlightId: ""
   },
   {

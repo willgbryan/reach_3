@@ -17,6 +17,7 @@ import {
 import { LoaderIcon } from 'lucide-react';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
+import { JurisdictionSelector } from './jurisdictions-combobox';
 
 interface AnalysisDisplayProps {
   analysis: string;
@@ -31,6 +32,7 @@ interface AnalysisSection {
 const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis }) => {
   const [selectedText, setSelectedText] = useState('');
   const [prompt, setPrompt] = useState('');
+  const [jurisdiction, setJurisdiction] = useState('');
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [popoverPosition, setPopoverPosition] = useState({ top: 0, left: 0 });
   const contentRef = useRef<HTMLDivElement>(null);
@@ -39,6 +41,7 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis }) => {
     { id: 'initial-analysis', title: 'Initial Analysis', content: analysis }
   ]);
   const socketRef = useRef<WebSocket | null>(null);
+  const [openAccordion, setOpenAccordion] = useState<string | undefined>('initial-analysis');
 
   const handleSelection = useCallback(() => {
     const selection = window.getSelection();
@@ -175,6 +178,7 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis }) => {
       ...prevSections,
       { id: newSectionId, title: prompt, content: '' }
     ]);
+    setOpenAccordion(newSectionId);
 
     try {
       const response = await fetch('/api/chat', {
@@ -185,7 +189,7 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis }) => {
         body: JSON.stringify({
           messages: [
             {
-              content: `User provided context: ${selectedText}\n\nUser question: ${prompt}`,
+              content: `User provided context: ${selectedText}\n\nUser question: ${prompt}\n\nLegal Jurisdiction: ${jurisdiction}`,
               role: 'user',
             },
           ],
@@ -276,13 +280,23 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis }) => {
                 onChange={handlePromptChange}
               />
             </div>
-            <Button onClick={handleSubmit}>
+            <div className="space-y-2">
+              <h4 className="font-medium leading-none">Jurisdiction</h4>
+              <JurisdictionSelector onSelect={setJurisdiction} />
+            </div>
+            <Button onClick={handleSubmit} disabled={!jurisdiction}>
               Submit
             </Button>
           </div>
         </PopoverContent>
       </Popover>
-      <Accordion type="single" collapsible className="w-full">
+      <Accordion 
+        type="single" 
+        collapsible 
+        className="w-full"
+        value={openAccordion}
+        onValueChange={setOpenAccordion}
+      >
         {sections.map((section) => (
           <AccordionItem key={section.id} value={section.id}>
             <AccordionTrigger>{section.title}</AccordionTrigger>
