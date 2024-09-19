@@ -1,45 +1,45 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { processLifetimePayment, processSubscriptionPayment } from '@/app/_data/stripe'
-import { adminConfig, dbAdmin } from '@/db/admin'
-import { stripe } from '@/lib/stripe'
+import { NextRequest, NextResponse } from 'next/server';
+import { processLifetimePayment, processSubscriptionPayment } from '@/app/_data/stripe';
+import { adminConfig, dbAdmin } from '@/db/admin';
+import { stripe } from '@/lib/stripe';
+
+export const config = {
+  runtime: 'nodejs', // Ensure the Node.js runtime is used
+};
 
 export async function POST(req: NextRequest) {
   try {
-    validateEnvironment(adminConfig)
-    const event = await validateAndConstructStripeEvent(req)
-    await processStripeEvent(event, dbAdmin)
-    return NextResponse.json({ status: 200, message: 'success' })
+    validateEnvironment(adminConfig);
+    const event = await validateAndConstructStripeEvent(req);
+    await processStripeEvent(event, dbAdmin);
+    return NextResponse.json({ status: 200, message: 'success' });
   } catch (error) {
-    console.error('Error processing webhook:', error)
+    console.error('Error processing webhook:', error);
     return NextResponse.json(
       { error: 'Internal Server Error' },
       { status: 500 }
-    )
+    );
   }
 }
 
 function validateEnvironment(config: any) {
   if (!config.url || !config.serviceRoleKey || !config.webhookSecret) {
-    throw new Error('Required environment variables are missing')
+    throw new Error('Required environment variables are missing');
   }
 }
 
 async function validateAndConstructStripeEvent(req: NextRequest) {
-  const body = await req.text()
-  const signature = req.headers.get('stripe-signature')
-  console.log('Raw body:', body)
-  console.log('Stripe-Signature:', signature)
-  if (!signature) throw new Error('Stripe signature is missing')
-  
+  const buf = Buffer.from(await req.arrayBuffer());
+  const signature = req.headers.get('stripe-signature');
+  console.log('Raw body length:', buf.length);
+  console.log('Stripe-Signature:', signature);
+  if (!signature) throw new Error('Stripe signature is missing');
+
   try {
-    return stripe.webhooks.constructEvent(
-      body,
-      signature,
-      adminConfig.webhookSecret
-    )
+    return stripe.webhooks.constructEvent(buf, signature, adminConfig.webhookSecret);
   } catch (error) {
-    console.error('Error constructing Stripe event:', error)
-    throw error
+    console.error('Error constructing Stripe event:', error);
+    throw error;
   }
 }
 
