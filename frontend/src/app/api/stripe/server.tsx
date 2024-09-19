@@ -99,7 +99,7 @@ export async function StripeCheckout({
         ],
         metadata: { ...metadata, userId: session.user.id },
         mode: paymentType === 'subscription' ? 'subscription' : 'payment',
-        success_url: `${headersList.get('origin')}/auth/sign-in`,
+        success_url: `${headersList.get('origin')}/chat`,
         cancel_url: `${headersList.get('origin')}/`,
       })
 

@@ -27,6 +27,8 @@ function validateEnvironment(config: any) {
 async function validateAndConstructStripeEvent(req: NextRequest) {
   const body = await req.text()
   const signature = req.headers.get('stripe-signature')
+  console.log('Raw body:', body)
+  console.log('Stripe-Signature:', signature)
   if (!signature) throw new Error('Stripe signature is missing')
   
   try {
