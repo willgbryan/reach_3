@@ -358,6 +358,8 @@ export interface Database {
           full_name: string | null
           id: string
           payment_method: Json | null
+          stripe_customer_id?: string
+          free_searches_remaining: number
         }
         Insert: {
           avatar_url?: string | null
@@ -365,6 +367,8 @@ export interface Database {
           full_name?: string | null
           id: string
           payment_method?: Json | null
+          stripe_customer_id?: string
+          free_searches_remaining: number
         }
         Update: {
           avatar_url?: string | null
@@ -372,6 +376,8 @@ export interface Database {
           full_name?: string | null
           id?: string
           payment_method?: Json | null
+          stripe_customer_id?: string
+          free_searches_remaining: number
         }
         Relationships: [
           {

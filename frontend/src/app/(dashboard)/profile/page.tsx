@@ -1,90 +1,22 @@
-"use client";
-import React from "react";
-import { LayoutGrid } from "@/components/cult/layout-grid";
-import { ProfileForm } from "@/components/ui/profile-form";
-import { SlidesForm } from "@/components/ui/slides-form";
-import { ReportsForm } from "@/components/ui/reports-form";
-import { MetricsShowcase } from "@/components/ui/metrics-showcase";
-import { ChartsForm } from "@/components/ui/charts-form";
+import { getSession } from '@/app/_data/user'
+import { getStripeCustomerId, getSubscriptionStatus } from '@/app/_data/stripe'
+import ConfigGrid from './client'
 
-export default function ConfigGrid() {
-  return (
-    <div className="min-h-screen w-full bg-gray-100 dark:bg-zinc-950">
-      <LayoutGrid cards={cards} />
-    </div>
-  );
+export default async function ConfigGridPage() {
+  const session = await getSession()
+  let isProUser = false
+
+  if (session?.user?.id) {
+    try {
+      const customerId = await getStripeCustomerId(session.user.id)
+      if (customerId) {
+        const subscription = await getSubscriptionStatus(customerId)
+        isProUser = subscription?.status === 'active' && subscription?.items?.data[0]?.price.id === 'price_id_for_pro_tier' // Replace with your actual Pro tier price ID
+      }
+    } catch (error) {
+      console.error('Error fetching subscription status:', error)
+    }
+  }
+
+  return <ConfigGrid isProUser={isProUser} />
 }
-
-const SkeletonOne = () => (
-  <div className="w-full">
-    <div className="mt-4">
-      <ProfileForm />
-    </div>
-  </div>
-);
-
-const SkeletonTwo = () => (
-  <div className="w-full">
-    <div className="mt-4">
-      <SlidesForm />
-    </div>
-  </div>
-);
-
-const SkeletonThree = () => (
-  <div className="w-full">
-    <div className="mt-4">
-      <ReportsForm />
-    </div>
-  </div>
-);
-
-const SkeletonFour = () => (
-  <div className="w-full">
-    <div className="mt-4">
-      <ChartsForm />
-    </div>
-  </div>
-);
-
-const SkeletonFive = () => (
-  <div className="w-full">
-    <div className="mt-4">
-      <MetricsShowcase />
-    </div>
-  </div>
-);
-
-const cards = [
-  {
-    id: 1,
-    content: <SkeletonOne />,
-    className: "md:col-span-2",
-    title: "Profile",
-  },
-  {
-    id: 2,
-    content: <SkeletonTwo />,
-    className: "col-span-1",
-    title: "Slides",
-  },
-  {
-    id: 3,
-    content: <SkeletonThree />,
-    className: "col-span-1",
-    title: "Reports",
-  },
-  {
-    id: 4,
-    content: <SkeletonFour />,
-    className: "md:col-span-2",
-    title: "Charts",
-  },
-  {
-    id: 5,
-    content: <SkeletonFive />,
-    className: "md:col-span-2 opacity-75",
-    title: "Diagrams Coming Soon",
-    disabled: true
-  },
-];

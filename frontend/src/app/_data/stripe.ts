@@ -3,6 +3,50 @@
 import 'server-only'
 import { dbAdmin } from '@/db/admin'
 import { stripe } from '@/lib/stripe'
+import { createClient } from '@/db/server'
+import { cookies } from 'next/headers'
+
+
+async function getStripeCustomerId(userId: string) {
+  const cookieStore = cookies()
+  const supabase = createClient(cookieStore)
+  
+  const { data, error } = await supabase
+    .from('users')
+    .select('stripe_customer_id')
+    .eq('id', userId)
+    .single()
+
+  if (error) throw error
+  return data.stripe_customer_id
+}
+
+async function getSubscriptionStatus(customerId: string) {
+  const subscriptions = await stripe.subscriptions.list({
+    customer: customerId,
+    status: 'all',
+    expand: ['data.default_payment_method']
+  })
+
+  return subscriptions.data[0] || null
+}
+
+async function getPaymentHistory(customerId: string) {
+  const charges = await stripe.charges.list({
+    customer: customerId,
+    expand: ['data.invoice']
+  })
+
+  return charges.data.map(charge => ({
+    id: charge.id,
+    amount: charge.amount,
+    currency: charge.currency,
+    created: new Date(charge.created * 1000).toISOString(),
+    status: charge.status,
+    description: charge.description,
+    invoice: charge.invoice
+  }))
+}
 
 async function processLifetimePayment(session, db, isLiveMode) {
   console.log(`Processing ${isLiveMode ? 'live' : 'test'} lifetime payment for session:`, session.id)
@@ -155,4 +199,4 @@ async function recordSubscriptionPayment(userId, session, db, isLiveMode) {
   return data;
 }
 
-export { processLifetimePayment, processSubscriptionPayment }
+export { processLifetimePayment, processSubscriptionPayment, getStripeCustomerId, getSubscriptionStatus, getPaymentHistory }

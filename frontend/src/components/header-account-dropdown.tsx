@@ -11,7 +11,15 @@ import { User } from 'lucide-react'
 import { Separator } from './ui/separator'
 import { Button } from './cult/moving-border'
 
-export function HeaderAccountDropdown({ user }: any) {
+type UserProps = {
+  name?: string;
+  email: string;
+  customerId?: string;
+}
+
+export function HeaderAccountDropdown({ user }: { user: UserProps }) {
+  const hasBillingAccess = !!user.customerId;
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger className="outline-none">
@@ -41,15 +49,19 @@ export function HeaderAccountDropdown({ user }: any) {
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem>
-            <Link href="/billing" className="flex w-full items-center justify-between gap-2">
-              <span>Billing</span>
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            <Link href="/pricing" className="flex w-full items-center justify-between gap-2">
-              <span>Pricing</span>
-            </Link>
-          </DropdownMenuItem>
+                <Link href="/pricing" className="flex w-full items-center justify-between gap-2">
+                  <span>Pricing</span>
+                </Link>
+              </DropdownMenuItem>
+          {hasBillingAccess && (
+            <>
+              <DropdownMenuItem>
+                <Link href="/billing" className="flex w-full items-center justify-between gap-2">
+                  <span>Billing</span>
+                </Link>
+              </DropdownMenuItem>
+            </>
+          )}
         </div>
         <Separator />
         <div className="py-1">

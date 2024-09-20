@@ -44,7 +44,7 @@ export function ClearHistory({ isEnabled = false, clearChats }: ClearHistoryProp
             {isGlobalCollapsed ? (
               <Trash className="h-5 w-5 text-neutral-500 group-hover:text-red-50" />
             ) : (
-              'Clear history'
+              'Clear'
             )}
           </Button>
         </AlertDialogTrigger>

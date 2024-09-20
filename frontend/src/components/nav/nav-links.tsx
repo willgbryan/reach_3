@@ -25,23 +25,23 @@ export function NavLinks({ isCollapsed }) {
             variant: 'ghost', 
             href: `/analysis`, 
             disabled: false, 
-            // label: 'Coming soon'
+            label: 'Pro'
           },
-          { 
-            title: 'Newsletter', 
-            icon: Newspaper, 
-            variant: 'ghost', 
-            href: `/newsletter`, 
-            disabled: true, 
-            label: 'Coming soon'
-          },
+          // { 
+          //   title: 'Newsletter', 
+          //   icon: Newspaper, 
+          //   variant: 'ghost', 
+          //   href: `/newsletter`, 
+          //   disabled: true, 
+          //   label: 'Coming soon'
+          // },
           {
             title: 'Configure', 
             icon: Settings, 
             variant: 'ghost', 
             href: `/profile`, 
             disabled: false, 
-            // label: 'Coming soon'
+            label: 'Pro'
           },
           // { 
           //   title: 'Library', 

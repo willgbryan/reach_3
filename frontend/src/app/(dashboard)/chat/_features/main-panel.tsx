@@ -31,6 +31,8 @@ import createEditableDocument from '@/components/word-doc-functions'
 import TableDownloader from '@/components/table-downloader'
 import { IconLoader2, IconPresentation } from '@tabler/icons-react'
 import { LoaderIcon } from 'lucide-react'
+import { UpgradeAlert } from '@/components/upgrade-alert'
+import { FreeSearchCounter } from '@/components/free-search-counter'
 
 interface MainVectorPanelProps {
   id?: string | undefined
@@ -75,6 +77,9 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
   const [isTutorialActive, setIsTutorialActive] = useState(false)
   const [currentTutorialStep, setCurrentTutorialStep] = useState(0)
   const [dontShowAgain, setDontShowAgain] = useState(true)
+  const [freeSearches, setFreeSearches] = useState(null);
+  const [showUpgradeAlert, setShowUpgradeAlert] = useState(false);
+  const [isPro, setIsPro] = useState(false);
 
   const router = useRouter()
   const socketRef = useRef<WebSocket | null>(null);
@@ -439,8 +444,36 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
     setPlaceholders(['Research complete.']);
   };
 
+  useEffect(() => {
+    const fetchUserStatus = async () => {
+      try {
+        const response = await fetch('/api/user-status');
+        if (response.ok) {
+          const data = await response.json();
+          setIsPro(data.isPro);
+          if (!data.isPro) {
+            setFreeSearches(data.freeSearches);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching user status:', error);
+      }
+    };
+
+    fetchUserStatus();
+  }, []);
+
   const handleInputClick = async (value: string) => {
     if (value.length >= 1 && !inputDisabled) {
+      if (!isPro) {
+        const currentFreeSearches = await fetchFreeSearches();
+        
+        if (currentFreeSearches === 0) {
+          setShowUpgradeAlert(true);
+          return;
+        }
+      }
+
       setInitialValue(value);
       const newMessage: Message = {
         id: nanoid(),
@@ -450,12 +483,46 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
       };
       setOriginalUserMessage(newMessage);
       setMessages(prevMessages => [...prevMessages, newMessage]);
+      
       await handleMultipleIterations({
         messages: [...messages, newMessage],
         id: currentChatId,
-        edits: '', // deprecated, need to remove downstream dependencies
+        edits: '',
         originalMessage: newMessage,
       });
+
+      if (!isPro) {
+        const updatedFreeSearches = await updateFreeSearches();
+        setFreeSearches(updatedFreeSearches);
+      }
+    }
+  };
+
+  const fetchFreeSearches = async () => {
+    try {
+      const response = await fetch('/api/free-searches');
+      if (!response.ok) {
+        throw new Error('Failed to fetch free searches');
+      }
+      const data = await response.json();
+      return data.freeSearches;
+    } catch (error) {
+      console.error('Error fetching free searches:', error);
+      return null;
+    }
+  };
+
+  const updateFreeSearches = async () => {
+    try {
+      const response = await fetch('/api/free-searches', { method: 'POST' });
+      if (!response.ok) {
+        throw new Error('Failed to update free searches');
+      }
+      const data = await response.json();
+      return data.freeSearches;
+    } catch (error) {
+      console.error('Error updating free searches:', error);
+      return null;
     }
   };
 
@@ -472,7 +539,11 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
 
   return (
     <div className="h-full w-full">
-      <TopSection onTriggerTutorial={handleTriggerTutorial} docSetName={docSetName} documentSets={documentSets} />
+      <TopSection 
+        onTriggerTutorial={handleTriggerTutorial} 
+        docSetName={docSetName} 
+        documentSets={documentSets}
+      />
       <div className="w-full px-4">
         <ChatSection 
           messages={updatedMessages}
@@ -498,6 +569,9 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
         </div>
       )}
       <AnimatePresence>
+        {showUpgradeAlert && (
+          <UpgradeAlert onClose={() => setShowUpgradeAlert(false)} />
+        )}
         {isTutorialActive && (
           <TutorialOverlay isFirstOrLastStep={currentTutorialStep === 0 || currentTutorialStep === tutorialSteps.length - 1}>
             <TutorialStep
@@ -519,18 +593,19 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
 
 const TopSection = ({ docSetName, documentSets, onTriggerTutorial }) => {
   return (
-    <div className="flex justify-between items-center pt-8 px-8">
-      <div>
+    <div className="flex justify-between items-center pt-4 px-4">
+      <div className="flex items-center space-x-4">
+        <FreeSearchCounter />
         {/* <SelectScrollable prevDocSets={documentSets} /> */}
       </div>
       <div id="profile" className="flex items-center space-x-2">
         <InfoButton onTriggerTutorial={onTriggerTutorial} />
-        <ModeToggle/>
-        <UserProvider id="profile"/>
+        <ModeToggle />
+        <UserProvider id="profile" />
       </div>
     </div>
-  )
-}
+  );
+};
 
 const ChatSection = ({ 
   messages, 
