@@ -1,10 +1,11 @@
 import { PricingPage } from '@/components/pricing';
 import { getSession } from '@/app/_data/user';
 import { getStripeCustomerId, getSubscriptionStatus } from '@/app/_data/stripe';
+import { Stripe } from 'stripe';
 
 export default async function Page() {
   const session = await getSession();
-  let userSubscription = null;
+  let userSubscription: Stripe.Subscription | null = null;
 
   if (session?.user?.id) {
     try {
