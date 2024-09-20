@@ -3,8 +3,6 @@ import { processLifetimePayment, processSubscriptionPayment } from '@/app/_data/
 import { adminConfig, dbAdmin } from '@/db/admin'
 import { stripe } from '@/lib/stripe'
 
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-
 export async function POST(req: NextRequest) {
   try {
     validateEnvironment(adminConfig)
@@ -131,6 +129,15 @@ async function handleCheckoutSessionCompleted(session: any, db: any, isLiveMode:
   console.log(`Handling ${isLiveMode ? 'live' : 'test'} checkout session completed:`, session.id)
 
   try {
+    const userId = session.metadata?.userId
+    const customerId = session.customer
+
+    if (!userId || !customerId) {
+      throw new Error('Missing userId or customerId in session metadata')
+    }
+
+    await updateUserStripeCustomerId(userId, customerId, db)
+
     switch (session.mode) {
       case 'subscription':
         await processSubscriptionPayment(session, db, isLiveMode)
@@ -233,6 +240,19 @@ async function handleInvoicePaymentFailed(invoice: any, db: any, isLiveMode: boo
   }
 
   console.log('Invoice payment failed handled successfully')
+}
+
+async function updateUserStripeCustomerId(userId: string, customerId: string, db: any) {
+  const { error } = await db
+    .from('users')
+    .update({ stripe_customer_id: customerId })
+    .eq('id', userId)
+
+  if (error) {
+    throw new Error(`Error updating user's Stripe customer ID: ${error.message}`)
+  }
+
+  console.log(`Updated Stripe customer ID for user ${userId}`)
 }
 
 async function createTestPaymentRecord(data: any, db: any, status: string = 'active') {

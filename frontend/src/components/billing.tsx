@@ -1,4 +1,4 @@
-'use client'
+"use client"
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
@@ -29,14 +29,23 @@ type Subscription = {
   isActive?: boolean;
 };
 
+type PaymentHistoryItem = {
+  id: string;
+  amount: number | null;
+  currency: string | null;
+  created: string;
+  status: string | null;
+  description: string | null;
+};
+
 type BillingPageClientProps = {
   user: any;
   subscription: Subscription | null;
-  paymentHistory: Subscription[];
+  paymentHistory: PaymentHistoryItem[];
 }
 
 export const BillingPageClient: React.FC<BillingPageClientProps> = ({ user, subscription, paymentHistory }) => {
-  const router = useRouter();
+ const router = useRouter();
 
   const handleManageSubscription = async () => {
     if (subscription) {

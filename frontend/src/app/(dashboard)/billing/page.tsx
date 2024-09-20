@@ -1,7 +1,7 @@
-import { createClient } from '@/db/server'
-import { cookies } from 'next/headers'
 import { BillingPageClient } from "@/components/billing"
-import { getCurrentUserId, getSession, getSubscriptionStatus, getUserDetails } from '@/app/_data/user'
+import { getCurrentUserId, getSession, getUserDetails } from '@/app/_data/user'
+import { getPaymentHistory, getStripeCustomerId, getSubscriptionStatus } from "@/app/_data/stripe";
+import { Stripe } from 'stripe';
 
 type Json = any;
 
@@ -24,39 +24,74 @@ type Subscription = {
   isActive?: boolean;
 };
 
+type PaymentHistoryItem = {
+  id: string;
+  amount: number | null;
+  currency: string | null;
+  created: string;
+  status: string | null;
+  description: string | null;
+};
+
+function mapStripeSubscriptionToSubscription(stripeSubscription: Stripe.Subscription | null): Subscription | null {
+  if (!stripeSubscription) return null;
+  return {
+    id: stripeSubscription.id,
+    user_id: stripeSubscription.customer as string,
+    price_id: stripeSubscription.items.data[0]?.price.id || null,
+    status: stripeSubscription.status,
+    amount: stripeSubscription.items.data[0]?.price.unit_amount,
+    currency: stripeSubscription.currency,
+    created: new Date(stripeSubscription.created * 1000).toISOString(),
+    metadata: stripeSubscription.metadata,
+    description: null,
+    stripe_customer_id: stripeSubscription.customer as string,
+    isActive: stripeSubscription.status === 'active',
+  };
+}
+
+function mapStripeChargeToPaymentHistoryItem(charge: {
+  id: string;
+  amount: number;
+  currency: string;
+  created: string | number;
+  status: string;
+  description: string | null;
+}): PaymentHistoryItem {
+  return {
+    id: charge.id,
+    amount: charge.amount,
+    currency: charge.currency,
+    created: typeof charge.created === 'number' 
+      ? new Date(charge.created * 1000).toISOString()
+      : charge.created,
+    status: charge.status,
+    description: charge.description,
+  };
+}
+
 export default async function Page() {
   const session = await getSession()
   if (!session) {
     return <div>Please log in to access billing information.</div>
   }
-
-  const cookieStore = cookies()
-  const supabase = createClient(cookieStore)
-  const userDetails = await getUserDetails()
+  
   const userId = await getCurrentUserId()
-  const subscription = await getSubscriptionStatus()
-  let paymentHistory: Subscription[] = []
-
-  if (userId) {
-    const { data: paymentHistoryData, error } = await supabase
-      .from('payments')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created', { ascending: false })
-
-    if (error) {
-      console.error('Error fetching payment history:', error)
-    } else {
-      paymentHistory = paymentHistoryData || []
-    }
+  if (!userId) {
+    throw new Error('User ID not found')
   }
-
-  console.log('Payment History:', paymentHistory)
-
+  
+  const stripeCustomerId = await getStripeCustomerId(userId)
+  const stripeSubscription = await getSubscriptionStatus(stripeCustomerId)
+  const stripePaymentHistory = await getPaymentHistory(stripeCustomerId)
+  
+  const subscription = mapStripeSubscriptionToSubscription(stripeSubscription)
+  const paymentHistory = stripePaymentHistory.map(mapStripeChargeToPaymentHistoryItem)
+  
   return (
     <BillingPageClient
-      user={userDetails}
-      subscription={subscription as Subscription | null}
+      user={session.user}
+      subscription={subscription}
       paymentHistory={paymentHistory}
     />
   )
