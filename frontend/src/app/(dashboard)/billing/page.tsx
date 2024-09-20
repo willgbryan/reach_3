@@ -62,7 +62,7 @@ function mapStripeChargeToPaymentHistoryItem(charge: {
     id: charge.id,
     amount: charge.amount,
     currency: charge.currency,
-    created: typeof charge.created === 'number' 
+    created: typeof charge.created === 'number'
       ? new Date(charge.created * 1000).toISOString()
       : charge.created,
     status: charge.status,
@@ -75,19 +75,23 @@ export default async function Page() {
   if (!session) {
     return <div>Please log in to access billing information.</div>
   }
-  
+
   const userId = await getCurrentUserId()
   if (!userId) {
     throw new Error('User ID not found')
   }
-  
+
   const stripeCustomerId = await getStripeCustomerId(userId)
+  if (!stripeCustomerId) {
+    throw new Error('Stripe Customer ID not found')
+  }
+
   const stripeSubscription = await getSubscriptionStatus(stripeCustomerId)
   const stripePaymentHistory = await getPaymentHistory(stripeCustomerId)
-  
+
   const subscription = mapStripeSubscriptionToSubscription(stripeSubscription)
   const paymentHistory = stripePaymentHistory.map(mapStripeChargeToPaymentHistoryItem)
-  
+
   return (
     <BillingPageClient
       user={session.user}
