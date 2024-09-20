@@ -8,10 +8,31 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { createStripePortalSession } from '@/app/_actions/stripe';
 import { Tabs } from "@/components/cult/tabs";
 
+type Json = any;
+
+type Subscription = {
+  id: string;
+  user_id: string;
+  price_id: string | null;
+  status: string | null;
+  amount: number | null;
+  currency: string | null;
+  created: string;
+  metadata: {
+    customerId?: string;
+    isTestEvent?: boolean;
+    paymentType?: string;
+    subscriptionId?: string;
+  } | Json;
+  description: string | null;
+  stripe_customer_id: string;
+  isActive?: boolean;
+};
+
 type BillingPageClientProps = {
   user: any;
-  subscription: any;
-  paymentHistory: any[];
+  subscription: Subscription | null;
+  paymentHistory: Subscription[];
 }
 
 export const BillingPageClient: React.FC<BillingPageClientProps> = ({ user, subscription, paymentHistory }) => {
@@ -23,7 +44,7 @@ export const BillingPageClient: React.FC<BillingPageClientProps> = ({ user, subs
         const { url } = await createStripePortalSession(user.id);
         window.location.href = url;
       } catch (error) {
-        alert('Failed to open Stripe portal: ' + error.message);
+        alert('Failed to open Stripe portal: ' + (error as Error).message);
       }
     } else {
       router.push('/pricing');
@@ -34,8 +55,9 @@ export const BillingPageClient: React.FC<BillingPageClientProps> = ({ user, subs
     return new Date(dateString).toLocaleDateString();
   };
 
-  const formatCurrency = (amount: number, currency: string) => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: currency || 'USD' }).format(amount / 100);
+  const formatCurrency = (amount: number | null, currency: string | null) => {
+    if (amount === null || currency === null) return 'N/A';
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: currency.toUpperCase() }).format(amount / 100);
   };
 
   const tabs = [
@@ -48,18 +70,15 @@ export const BillingPageClient: React.FC<BillingPageClientProps> = ({ user, subs
             <CardTitle>Current Subscription</CardTitle>
           </CardHeader>
           <CardContent>
-          {subscription ? (
-            <div>
-                <p>Plan: {subscription.metadata?.plan || 'Unknown'}</p>
-                <p>Status: Active</p>
+            {subscription ? (
+              <div>
+                <p>Plan: {subscription.status === 'active' ? 'Pro' : 'Basic'}</p>
+                <p>Status: {subscription.status || 'N/A'}</p>
                 <p>Amount: {formatCurrency(subscription.amount, subscription.currency)}</p>
                 <p>Last Payment: {formatDate(subscription.created)}</p>
-                {subscription.metadata?.cancelAtPeriodEnd && (
-                <p className="text-red-500">Your subscription will be canceled at the end of the current period.</p>
-                )}
-            </div>
+              </div>
             ) : (
-            <p>You don't have an active subscription.</p>
+              <p>You don't have an active subscription.</p>
             )}
           </CardContent>
         </Card>
@@ -80,17 +99,16 @@ export const BillingPageClient: React.FC<BillingPageClientProps> = ({ user, subs
                   <TableHead>Date</TableHead>
                   <TableHead>Amount</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Description</TableHead>
+                  {/* <TableHead>Description</TableHead> */}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {paymentHistory.map((payment, index) => (
-                  <TableRow key={index}>
+                  <TableRow key={payment.id}>
                     <TableCell>{formatDate(payment.created)}</TableCell>
                     <TableCell>{formatCurrency(payment.amount, payment.currency)}</TableCell>
                     <TableCell>{payment.status}</TableCell>
-                    {/* gonna need to paramaterize this if we introduce teams/enterprise */}
-                    <TableCell>{'Pro Subscription' || 'Subscription Payment'}</TableCell>
+                    {/* <TableCell>{payment.description || 'Subscription Payment'}</TableCell> */}
                   </TableRow>
                 ))}
               </TableBody>

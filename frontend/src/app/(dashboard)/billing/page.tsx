@@ -3,17 +3,26 @@ import { cookies } from 'next/headers'
 import { BillingPageClient } from "@/components/billing"
 import { getCurrentUserId, getSession, getSubscriptionStatus, getUserDetails } from '@/app/_data/user'
 
-type Payment = {
-  amount: number | null;
-  created: string;
-  currency: string | null;
-  description: string | null;
+type Json = any;
+
+type Subscription = {
   id: string;
-  metadata: any;
+  user_id: string;
   price_id: string | null;
   status: string | null;
-  user_id: string;
-}
+  amount: number | null;
+  currency: string | null;
+  created: string;
+  metadata: {
+    customerId?: string;
+    isTestEvent?: boolean;
+    paymentType?: string;
+    subscriptionId?: string;
+  } | Json;
+  description: string | null;
+  stripe_customer_id: string;
+  isActive?: boolean;
+};
 
 export default async function Page() {
   const session = await getSession()
@@ -26,8 +35,7 @@ export default async function Page() {
   const userDetails = await getUserDetails()
   const userId = await getCurrentUserId()
   const subscription = await getSubscriptionStatus()
-  console.log(subscription)
-  let paymentHistory: Payment[] = []
+  let paymentHistory: Subscription[] = []
 
   if (userId) {
     const { data: paymentHistoryData, error } = await supabase
@@ -42,12 +50,13 @@ export default async function Page() {
       paymentHistory = paymentHistoryData || []
     }
   }
-  console.log(paymentHistory)
+
+  console.log('Payment History:', paymentHistory)
 
   return (
     <BillingPageClient
       user={userDetails}
-      subscription={subscription}
+      subscription={subscription as Subscription | null}
       paymentHistory={paymentHistory}
     />
   )
