@@ -48,18 +48,18 @@ export const BillingPageClient: React.FC<BillingPageClientProps> = ({ user, subs
             <CardTitle>Current Subscription</CardTitle>
           </CardHeader>
           <CardContent>
-            {subscription ? (
-              <div>
+          {subscription ? (
+            <div>
                 <p>Plan: {subscription.metadata?.plan || 'Unknown'}</p>
-                <p>Status: {subscription.isActive ? 'Active' : 'Inactive'}</p>
+                <p>Status: Active</p>
                 <p>Amount: {formatCurrency(subscription.amount, subscription.currency)}</p>
                 <p>Last Payment: {formatDate(subscription.created)}</p>
                 {subscription.metadata?.cancelAtPeriodEnd && (
-                  <p className="text-red-500">Your subscription will be canceled at the end of the current period.</p>
+                <p className="text-red-500">Your subscription will be canceled at the end of the current period.</p>
                 )}
-              </div>
+            </div>
             ) : (
-              <p>You don't have an active subscription.</p>
+            <p>You don't have an active subscription.</p>
             )}
           </CardContent>
         </Card>
@@ -89,7 +89,8 @@ export const BillingPageClient: React.FC<BillingPageClientProps> = ({ user, subs
                     <TableCell>{formatDate(payment.created)}</TableCell>
                     <TableCell>{formatCurrency(payment.amount, payment.currency)}</TableCell>
                     <TableCell>{payment.status}</TableCell>
-                    <TableCell>{payment.description || 'Subscription Payment'}</TableCell>
+                    {/* gonna need to paramaterize this if we introduce teams/enterprise */}
+                    <TableCell>{'Pro Subscription' || 'Subscription Payment'}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

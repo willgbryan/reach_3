@@ -7,18 +7,16 @@ import { createClient } from '@/db/server'
 export async function getSubscriptionStatus() {
   const cookieStore = cookies()
   const supabase = createClient(cookieStore)
-  
   try {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) {
       return null
     }
-
     const { data: subscription, error } = await supabase
       .from('payments')
       .select('*')
       .eq('user_id', session.user.id)
-      .eq('metadata->paymentType', 'subscription')
+      .eq('status', 'active')
       .order('created', { ascending: false })
       .limit(1)
       .single()
@@ -27,16 +25,23 @@ export async function getSubscriptionStatus() {
       console.error('Error fetching subscription:', error)
       return null
     }
-
     if (!subscription) {
       return null
     }
-
-    const isActive = subscription.status === 'active' || subscription.status === 'trialing'
-
+    
+    let parsedMetadata = subscription.metadata
+    if (typeof subscription.metadata === 'string') {
+      try {
+        parsedMetadata = JSON.parse(subscription.metadata)
+      } catch (e) {
+        console.error('Error parsing metadata:', e)
+      }
+    }
+    
     return {
       ...subscription,
-      isActive,
+      metadata: parsedMetadata,
+      isActive: true,
     }
   } catch (error) {
     console.error('Error in getSubscriptionStatus:', error)

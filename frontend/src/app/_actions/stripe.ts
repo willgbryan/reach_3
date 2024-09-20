@@ -7,21 +7,26 @@ import { stripe } from '@/lib/stripe'
 export async function createStripePortalSession(userId: string) {
   const cookieStore = cookies()
   const supabase = createClient(cookieStore)
-  
+
   try {
-    const { data: user, error: userError } = await supabase
+    const { data: payment, error: paymentError } = await supabase
       .from('payments')
       .select('stripe_customer_id')
-      .eq('id', userId)
+      .eq('user_id', userId)
+      .eq('status', 'active')
+      .order('created', { ascending: false })
+      .limit(1)
       .single()
 
-    if (userError || !user?.stripe_customer_id) {
+    if (paymentError || !payment?.stripe_customer_id) {
+      console.log(`customer id data= ${payment}`)
+      console.error('Error fetching stripe_customer_id:', paymentError)
       throw new Error('Unable to find Stripe customer ID for user')
     }
 
     const session = await stripe.billingPortal.sessions.create({
-      customer: user.stripe_customer_id,
-      return_url: `${process.env.NEXT_PUBLIC_BASE_URL}/billing`,
+      customer: payment.stripe_customer_id,
+      return_url: `https://heighliner.tech/billing`,
     })
 
     return { url: session.url }

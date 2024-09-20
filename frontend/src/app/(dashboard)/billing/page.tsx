@@ -26,6 +26,7 @@ export default async function Page() {
   const userDetails = await getUserDetails()
   const userId = await getCurrentUserId()
   const subscription = await getSubscriptionStatus()
+  console.log(subscription)
   let paymentHistory: Payment[] = []
 
   if (userId) {
@@ -41,6 +42,7 @@ export default async function Page() {
       paymentHistory = paymentHistoryData || []
     }
   }
+  console.log(paymentHistory)
 
   return (
     <BillingPageClient
