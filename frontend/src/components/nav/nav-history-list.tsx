@@ -29,11 +29,11 @@ export async function NavHistoryList({ mobile, user }: SidebarListProps) {
           </div>
         ) : (
           <div className="p-4 text-center">
-            <p className="text-sm text-muted-foreground">Empty</p>
+            <p className="text-sm text-muted-foreground"></p>
           </div>
         )}
       </div>
-      <div className="flex items-start justify-between p-4 pl-2">
+      <div className="flex items-center justify-center p-4 pl-2">
         <ClearHistory clearChats={clearChats} isEnabled={chats?.length > 10} />
       </div>
     </div>
