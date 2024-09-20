@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { createStripePortalSession } from '@/app/_actions/stripe';
 import { Tabs } from "@/components/cult/tabs";
+import { ModeToggle } from './theme-toggle';
+import UserProvider from './user-provider';
 
 type Json = any;
 
@@ -150,10 +152,14 @@ export const BillingPageClient: React.FC<BillingPageClientProps> = ({ user, subs
   ];
 
   return (
-    <div className="container mx-auto p-4">
+    <div className="container mx-auto p-4 relative">
+      <div className="absolute top-4 right-4 flex items-center space-x-2">
+        <ModeToggle />
+        <UserProvider id="profile" />
+      </div>
       <div className="h-[40rem] [perspective:1000px] relative flex flex-col max-w-5xl mx-auto w-full items-start justify-start my-10">
         <Tabs tabs={tabs} />
       </div>
     </div>
   );
-};
+}

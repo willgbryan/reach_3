@@ -16,6 +16,9 @@ import { Separator } from "@/components/ui/separator";
 import { Meteors } from '@/components/cult/meteors';
 import EnterpriseFormPopover from '@/components/enterprise-popover';
 import { toast } from 'sonner';
+import InfoButton from './tutorial/info-button';
+import UserProvider from './user-provider';
+import { ModeToggle } from './theme-toggle';
 
 const pricingTiers = [
   {
@@ -161,28 +164,34 @@ const PricingCard = ({ tier, session, emphasized, index, totalCards, userSubscri
 
 export function PricingPage({ session, userSubscription }) {
   return (
-    <div className="py-18 sm:py-36">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <div className="mx-auto max-w-2xl sm:text-center">
-          <Heading weight="base" variant="default" size="xl">
-            Choose Your Plan
-          </Heading>
-          <p className="mt-6 text-lg leading-8 text-stone-900 dark:text-stone-100">
-            Select the perfect plan for your needs. Upgrade or downgrade at any time.
-          </p>
-        </div>
-        <div className="mx-auto mt-16 grid max-w-lg grid-cols-1 sm:mt-20 lg:max-w-none lg:grid-cols-4">
-          {pricingTiers.map((tier, index) => (
-            <PricingCard 
-              key={index} 
-              tier={tier} 
-              session={session} 
-              emphasized={tier.title === "Pro"}
-              index={index}
-              totalCards={pricingTiers.length}
-              userSubscription={userSubscription}
-            />
-          ))}
+    <div className="relative">
+      <div className="absolute top-0 right-0 pt-4 pr-4 flex items-center space-x-2">
+        <ModeToggle />
+        <UserProvider id="profile" />
+      </div>
+      <div className="py-18 sm:py-36">
+        <div className="mx-auto max-w-7xl px-6 lg:px-8">
+          <div className="mx-auto max-w-2xl sm:text-center">
+            <Heading weight="base" variant="default" size="xl">
+              Choose Your Plan
+            </Heading>
+            <p className="mt-6 text-lg leading-8 text-stone-900 dark:text-stone-100">
+              Select the perfect plan for your needs. Upgrade or downgrade at any time.
+            </p>
+          </div>
+          <div className="mx-auto mt-16 grid max-w-lg grid-cols-1 sm:mt-20 lg:max-w-none lg:grid-cols-4">
+            {pricingTiers.map((tier, index) => (
+              <PricingCard
+                key={index}
+                tier={tier}
+                session={session}
+                emphasized={tier.title === "Pro"}
+                index={index}
+                totalCards={pricingTiers.length}
+                userSubscription={userSubscription}
+              />
+            ))}
+          </div>
         </div>
       </div>
     </div>

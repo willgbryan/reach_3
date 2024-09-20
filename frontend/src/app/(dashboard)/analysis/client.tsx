@@ -15,6 +15,8 @@ import Cookies from 'js-cookie';
 import { AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { ModeToggle } from '@/components/theme-toggle';
+import UserProvider from '@/components/user-provider';
 
 const PDFViewer = dynamic(() => import('@/components/pdf-handler'), {
   ssr: false,
@@ -181,6 +183,10 @@ export default function PdfUploadAndRenderPage({ isProUser }: PdfUploadAndRender
 
   return (
     <>
+      <div className="absolute top-4 right-4 z-50 flex items-center space-x-2">
+        <ModeToggle />
+        <UserProvider id="profile" />
+      </div>
       <AnimatePresence>
         {isTutorialActive && (
           <TutorialOverlay isFirstOrLastStep={currentTutorialStep === 0 || currentTutorialStep === tutorialSteps.length - 1}>
@@ -204,14 +210,14 @@ export default function PdfUploadAndRenderPage({ isProUser }: PdfUploadAndRender
           </TutorialOverlay>
         )}
       </AnimatePresence>
-      <div className="flex w-full" style={{ height: containerHeight }} ref={containerRef}>
+      <div className="flex w-full relative" style={{ height: containerHeight }} ref={containerRef}>
         <div className="w-1/2 overflow-hidden border-r relative flex flex-col">
           {!file ? (
             <Card className="border-none shadow-none dark:bg-transparent h-full">
               <CardContent className="flex items-center justify-center h-full">
                 <div className="w-full max-w-md">
-                  <FileUpload 
-                    onChange={handleFileUpload} 
+                  <FileUpload
+                    onChange={handleFileUpload}
                   />
                 </div>
               </CardContent>

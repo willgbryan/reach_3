@@ -519,7 +519,7 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
 
 const TopSection = ({ docSetName, documentSets, onTriggerTutorial }) => {
   return (
-    <div className="flex justify-between items-center pt-8 px-8">
+    <div className="flex justify-between items-center pt-4 px-4">
       <div>
         {/* <SelectScrollable prevDocSets={documentSets} /> */}
       </div>

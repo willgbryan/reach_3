@@ -9,6 +9,8 @@ import { MetricsShowcase } from "@/components/ui/metrics-showcase";
 import { ChartsForm } from "@/components/ui/charts-form";
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { ModeToggle } from "@/components/theme-toggle";
+import UserProvider from "@/components/user-provider";
 
 interface ConfigGridProps {
   isProUser: boolean;
@@ -28,7 +30,11 @@ export default function ConfigGrid({ isProUser }: ConfigGridProps) {
   }
 
   return (
-    <div className="min-h-screen w-full bg-gray-100 dark:bg-zinc-950">
+    <div className="min-h-screen w-full bg-gray-100 dark:bg-zinc-950 relative">
+      <div className="absolute top-4 right-4 flex items-center space-x-2">
+        <ModeToggle />
+        <UserProvider id="profile" />
+      </div>
       <LayoutGrid cards={cards} />
     </div>
   );
