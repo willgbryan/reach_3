@@ -18,5 +18,5 @@ export default async function DocumentAnalysisPage() {
     }
   }
 
-  return <PdfUploadAndRenderPage isProUser={isProUser} />
+  return <PdfUploadAndRenderPage/>
 }

@@ -1,7 +1,5 @@
 'use client';
 
-'use client';
-
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
@@ -17,6 +15,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ModeToggle } from '@/components/theme-toggle';
 import UserProvider from '@/components/user-provider';
+import { UpgradeAlert } from '@/components/upgrade-alert';
 
 const PDFViewer = dynamic(() => import('@/components/pdf-handler'), {
   ssr: false,
@@ -27,11 +26,7 @@ const PDFViewer = dynamic(() => import('@/components/pdf-handler'), {
   ),
 });
 
-interface PdfUploadAndRenderPageProps {
-  isProUser: boolean;
-}
-
-export default function PdfUploadAndRenderPage({ isProUser }: PdfUploadAndRenderPageProps) {
+export default function PdfUploadAndRenderPage() {
   const [file, setFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [analysisData, setAnalysisData] = useState<string>('');
@@ -40,11 +35,14 @@ export default function PdfUploadAndRenderPage({ isProUser }: PdfUploadAndRender
   const [isTutorialActive, setIsTutorialActive] = useState(false);
   const [currentTutorialStep, setCurrentTutorialStep] = useState(0);
   const [dontShowTutorial, setDontShowTutorial] = useState(false);
+  const [freeSearches, setFreeSearches] = useState<number | null>(null);
+  const [isPro, setIsPro] = useState<boolean>(false);
+  const [showUpgradeAlert, setShowUpgradeAlert] = useState(false);
 
   const tutorialSteps = [
     {
       title: "Document Analysis",
-      description: "Upload a legal document to analyze. Following the initial analysis, you can highlight text anywhere on the page to ask follow-up questions. Results are not saved quite yet, we're working to ship that functioniality soon. This is still experimental but analysis shouldn't take more than 5 minutes. If it lasts longer than that, feel free to refresh the page.",
+      description: "Upload a legal document to analyze. Following the initial analysis, you can highlight text anywhere on the page to ask follow-up questions. Results are not saved quite yet, we're working to ship that functionality soon. This is still experimental but analysis shouldn't take more than 5 minutes. If it lasts longer than that, feel free to refresh the page.",
       highlightId: ""
     },
     {
@@ -53,18 +51,6 @@ export default function PdfUploadAndRenderPage({ isProUser }: PdfUploadAndRender
       highlightId: ""
     }
   ];
-
-  if (!isProUser) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-4 text-center">
-        <h1 className="text-6xl font-base mb-2">Pro Tier Required</h1>
-        <p className="mb-6">Heighliner document analysis is only available for Pro tier users.</p>
-        <Link href="/pricing">
-          <Button>Upgrade to Pro</Button>
-        </Link>
-      </div>
-    );
-  }
 
   useEffect(() => {
     const hasSeenTutorial = Cookies.get('hasSeenDocumentAnalysisTutorial');
@@ -81,6 +67,23 @@ export default function PdfUploadAndRenderPage({ isProUser }: PdfUploadAndRender
 
     window.addEventListener('resize', updateHeight);
     updateHeight();
+
+    const fetchUserStatus = async () => {
+      try {
+        const response = await fetch('/api/user-status');
+        if (response.ok) {
+          const data = await response.json();
+          setIsPro(data.isPro);
+          if (!data.isPro) {
+            setFreeSearches(data.freeSearches);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching user status:', error);
+      }
+    };
+
+    fetchUserStatus();
 
     return () => window.removeEventListener('resize', updateHeight);
   }, []);
@@ -117,7 +120,25 @@ export default function PdfUploadAndRenderPage({ isProUser }: PdfUploadAndRender
     return await response.json();
   };
 
+  const updateFreeSearches = async () => {
+    try {
+      const response = await fetch('/api/free-searches', { method: 'POST' });
+      if (!response.ok) {
+        throw new Error('Failed to update free searches');
+      }
+      const data = await response.json();
+      setFreeSearches(data.freeSearches);
+    } catch (error) {
+      console.error('Error updating free searches:', error);
+    }
+  };
+
   const processFile = async (file: File) => {
+    if (!isPro && freeSearches === 0) {
+      setShowUpgradeAlert(true);
+      return;
+    }
+
     setIsProcessing(true);
     try {
       await uploadToSupabase(file);
@@ -155,6 +176,10 @@ export default function PdfUploadAndRenderPage({ isProUser }: PdfUploadAndRender
         }
       }
 
+      if (!isPro) {
+        await updateFreeSearches();
+      }
+
       toast.success('File processing completed');
     } catch (error) {
       console.error('Error processing file:', error);
@@ -175,7 +200,7 @@ export default function PdfUploadAndRenderPage({ isProUser }: PdfUploadAndRender
     }
     setFile(pdfFiles[0]);
     processFile(pdfFiles[0]);
-  }, []);
+  }, [isPro, freeSearches]);
 
   const memoizedPDFViewer = useMemo(() => {
     return file ? <PDFViewer fileUrl={URL.createObjectURL(file)} /> : null;
@@ -183,6 +208,9 @@ export default function PdfUploadAndRenderPage({ isProUser }: PdfUploadAndRender
 
   return (
     <>
+      <div className="absolute top-4 left-4 z-50">
+        <FreeSearchCounter isPro={isPro} freeSearches={freeSearches} />
+      </div>
       <div className="absolute top-4 right-4 z-50 flex items-center space-x-2">
         <ModeToggle />
         <UserProvider id="profile" />
@@ -208,6 +236,9 @@ export default function PdfUploadAndRenderPage({ isProUser }: PdfUploadAndRender
               }}
             />
           </TutorialOverlay>
+        )}
+        {showUpgradeAlert && (
+          <UpgradeAlert onClose={() => setShowUpgradeAlert(false)} />
         )}
       </AnimatePresence>
       <div className="flex w-full relative" style={{ height: containerHeight }} ref={containerRef}>
@@ -242,5 +273,21 @@ export default function PdfUploadAndRenderPage({ isProUser }: PdfUploadAndRender
         </div>
       </div>
     </>
+  );
+}
+
+function FreeSearchCounter({ isPro, freeSearches }: { isPro: boolean, freeSearches: number | null }) {
+  if (isPro) {
+    return (
+      <div className="text-sm font-medium text-gray-500 dark:text-gray-400">
+        Pro
+      </div>
+    );
+  }
+
+  return (
+    <div className="text-sm font-medium text-gray-500 dark:text-gray-400">
+      Free analyses remaining: {freeSearches !== null ? freeSearches : 'Loading...'}
+    </div>
   );
 }

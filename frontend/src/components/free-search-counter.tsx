@@ -16,7 +16,7 @@ export function FreeSearchCounter() {
       if (data.isPro) {
         setStatus('Pro')
       } else {
-        setStatus(`Free searches remaining: ${data.freeSearches}`)
+        setStatus(`Free analyses remaining: ${data.freeSearches}`)
       }
     } catch (error) {
       console.error('Error fetching user status:', error)
