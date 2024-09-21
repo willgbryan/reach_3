@@ -18,7 +18,6 @@ type UserProps = {
 }
 
 export function HeaderAccountDropdown({ user }: { user: UserProps }) {
-  const hasBillingAccess = !!user.customerId;
 
   return (
     <DropdownMenu>
@@ -49,19 +48,16 @@ export function HeaderAccountDropdown({ user }: { user: UserProps }) {
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem>
-                <Link href="/pricing" className="flex w-full items-center justify-between gap-2">
-                  <span>Pricing</span>
-                </Link>
-              </DropdownMenuItem>
-          {hasBillingAccess && (
-            <>
-              <DropdownMenuItem>
-                <Link href="/billing" className="flex w-full items-center justify-between gap-2">
-                  <span>Billing</span>
-                </Link>
-              </DropdownMenuItem>
-            </>
-          )}
+            <Link href="/pricing" className="flex w-full items-center justify-between gap-2">
+              <span>Pricing</span>
+            </Link>
+          </DropdownMenuItem>
+      
+          <DropdownMenuItem>
+            <Link href="/billing" className="flex w-full items-center justify-between gap-2">
+              <span>Billing</span>
+            </Link>
+          </DropdownMenuItem>
         </div>
         <Separator />
         <div className="py-1">
