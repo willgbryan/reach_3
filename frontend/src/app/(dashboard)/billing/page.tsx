@@ -82,21 +82,24 @@ export default async function Page() {
   }
 
   const stripeCustomerId = await getStripeCustomerId(userId)
-  if (!stripeCustomerId) {
-    throw new Error('Stripe Customer ID not found')
+  
+  let subscription: Subscription | null = null;
+  let paymentHistory: PaymentHistoryItem[] = [];
+
+  if (stripeCustomerId) {
+    const stripeSubscription = await getSubscriptionStatus(stripeCustomerId)
+    const stripePaymentHistory = await getPaymentHistory(stripeCustomerId)
+    
+    subscription = mapStripeSubscriptionToSubscription(stripeSubscription)
+    paymentHistory = stripePaymentHistory.map(mapStripeChargeToPaymentHistoryItem)
   }
-
-  const stripeSubscription = await getSubscriptionStatus(stripeCustomerId)
-  const stripePaymentHistory = await getPaymentHistory(stripeCustomerId)
-
-  const subscription = mapStripeSubscriptionToSubscription(stripeSubscription)
-  const paymentHistory = stripePaymentHistory.map(mapStripeChargeToPaymentHistoryItem)
 
   return (
     <BillingPageClient
       user={session.user}
       subscription={subscription}
       paymentHistory={paymentHistory}
+      isFreeTier={!stripeCustomerId}
     />
   )
 }

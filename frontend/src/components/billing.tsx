@@ -41,26 +41,27 @@ type PaymentHistoryItem = {
 };
 
 type BillingPageClientProps = {
-  user: any;
-  subscription: Subscription | null;
-  paymentHistory: PaymentHistoryItem[];
-}
-
-export const BillingPageClient: React.FC<BillingPageClientProps> = ({ user, subscription, paymentHistory }) => {
- const router = useRouter();
-
-  const handleManageSubscription = async () => {
-    if (subscription) {
-      try {
-        const { url } = await createStripePortalSession(user.id);
-        window.location.href = url;
-      } catch (error) {
-        alert('Failed to open Stripe portal: ' + (error as Error).message);
+    user: any;
+    subscription: Subscription | null;
+    paymentHistory: PaymentHistoryItem[];
+    isFreeTier: boolean;
+  }
+  
+  export const BillingPageClient: React.FC<BillingPageClientProps> = ({ user, subscription, paymentHistory, isFreeTier }) => {
+    const router = useRouter();
+  
+    const handleManageSubscription = async () => {
+      if (subscription) {
+        try {
+          const { url } = await createStripePortalSession(user.id);
+          window.location.href = url;
+        } catch (error) {
+          alert('Failed to open Stripe portal: ' + (error as Error).message);
+        }
+      } else {
+        router.push('/pricing');
       }
-    } else {
-      router.push('/pricing');
-    }
-  };
+    };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString();
@@ -81,7 +82,9 @@ export const BillingPageClient: React.FC<BillingPageClientProps> = ({ user, subs
             <CardTitle>Current Subscription</CardTitle>
           </CardHeader>
           <CardContent>
-            {subscription ? (
+            {isFreeTier ? (
+              <p>You are currently on the free tier.</p>
+            ) : subscription ? (
               <div>
                 <p>Plan: {subscription.status === 'active' ? 'Pro' : 'Basic'}</p>
                 <p>Status: {subscription.status || 'N/A'}</p>
@@ -104,26 +107,28 @@ export const BillingPageClient: React.FC<BillingPageClientProps> = ({ user, subs
             <CardTitle>Payment History</CardTitle>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Status</TableHead>
-                  {/* <TableHead>Description</TableHead> */}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {paymentHistory.map((payment, index) => (
-                  <TableRow key={payment.id}>
-                    <TableCell>{formatDate(payment.created)}</TableCell>
-                    <TableCell>{formatCurrency(payment.amount, payment.currency)}</TableCell>
-                    <TableCell>{payment.status}</TableCell>
-                    {/* <TableCell>{payment.description || 'Subscription Payment'}</TableCell> */}
+            {isFreeTier ? (
+              <p>No payment history available for free tier users.</p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Status</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {paymentHistory.map((payment) => (
+                    <TableRow key={payment.id}>
+                      <TableCell>{formatDate(payment.created)}</TableCell>
+                      <TableCell>{formatCurrency(payment.amount, payment.currency)}</TableCell>
+                      <TableCell>{payment.status}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
         </Card>
       ),
@@ -137,13 +142,15 @@ export const BillingPageClient: React.FC<BillingPageClientProps> = ({ user, subs
             <CardTitle>Manage Subscription</CardTitle>
           </CardHeader>
           <CardContent>
-            {subscription ? (
+            {isFreeTier ? (
+              <p>You are currently on the free tier. Click the button below to view our pricing plans and upgrade your account.</p>
+            ) : subscription ? (
               <p>Click the button below to manage your subscription, update payment methods, or change your plan.</p>
             ) : (
               <p>You don't have an active subscription. Click the button below to view our pricing plans and subscribe.</p>
             )}
             <Button onClick={handleManageSubscription} className="mt-4">
-              {subscription ? 'Manage Subscription' : 'View Pricing Plans'}
+              {isFreeTier ? 'View Pricing Plans' : (subscription ? 'Manage Subscription' : 'View Pricing Plans')}
             </Button>
           </CardContent>
         </Card>
