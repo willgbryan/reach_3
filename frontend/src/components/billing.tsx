@@ -83,7 +83,7 @@ type BillingPageClientProps = {
           </CardHeader>
           <CardContent>
             {isFreeTier ? (
-              <p>You are currently on the free tier.</p>
+              <p>You are currently on the Basic plan.</p>
             ) : subscription ? (
               <div>
                 <p>Plan: {subscription.status === 'active' ? 'Pro' : 'Basic'}</p>
@@ -108,7 +108,7 @@ type BillingPageClientProps = {
           </CardHeader>
           <CardContent>
             {isFreeTier ? (
-              <p>No payment history available for free tier users.</p>
+              <p>No payment history available for Basic plan users.</p>
             ) : (
               <Table>
                 <TableHeader>
@@ -143,7 +143,7 @@ type BillingPageClientProps = {
           </CardHeader>
           <CardContent>
             {isFreeTier ? (
-              <p>You are currently on the free tier. Click the button below to view our pricing plans and upgrade your account.</p>
+              <p>You are currently on the Basic plan. Click the button below to view our pricing plans and upgrade your account.</p>
             ) : subscription ? (
               <p>Click the button below to manage your subscription, update payment methods, or change your plan.</p>
             ) : (
