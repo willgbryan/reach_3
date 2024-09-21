@@ -159,14 +159,14 @@ type BillingPageClientProps = {
   ];
 
   return (
-    <div className="container mx-auto p-4 relative">
-      <div className="absolute top-4 right-4 flex items-center space-x-2">
-        <ModeToggle />
-        <UserProvider id="profile" />
+    <>
+    <div className="absolute top-4 right-4 flex items-center space-x-2">
+          <ModeToggle />
+          <UserProvider id="profile" />
       </div>
       <div className="h-[40rem] [perspective:1000px] relative flex flex-col max-w-5xl mx-auto w-full items-start justify-start my-10">
         <Tabs tabs={tabs} />
-      </div>
     </div>
+    </>
   );
 }
