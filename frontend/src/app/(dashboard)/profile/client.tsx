@@ -1,5 +1,4 @@
 "use client";
-
 import React from "react";
 import { LayoutGrid } from "@/components/cult/layout-grid";
 import { ProfileForm } from "@/components/ui/profile-form";
@@ -86,30 +85,35 @@ const cards = [
     content: <SkeletonOne />,
     className: "md:col-span-2",
     title: "Profile",
+    category: "",
   },
   {
     id: 2,
     content: <SkeletonTwo />,
     className: "col-span-1",
     title: "Slides",
+    category: "",
   },
   {
     id: 3,
     content: <SkeletonThree />,
     className: "col-span-1",
     title: "Reports",
+    category: "",
   },
   {
     id: 4,
     content: <SkeletonFour />,
     className: "md:col-span-2",
     title: "Charts",
+    category: "",
   },
   {
     id: 5,
     content: <SkeletonFive />,
     className: "md:col-span-2 opacity-75",
-    title: "Diagrams Coming Soon",
+    title: "Diagrams",
+    category: "Coming Soon",
     disabled: true
   },
 ];
