@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { Heading } from "@/components/cult/gradient-heading";
 import { Meteors } from './meteors';
 
 type Card = {
@@ -41,9 +42,7 @@ export const LayoutGrid = ({ cards }: { cards: Card[] }) => {
                 ? "cursor-pointer absolute inset-0 w-full md:w-3/4 lg:w-2/3 xl:w-1/2 m-auto z-50 flex justify-center items-center"
                 : "bg-gray-100 dark:bg-zinc-800",
               card.disabled && "cursor-not-allowed opacity-75",
-              "group/feature transition-all duration-300",
-              "lg:border-r lg:border-b dark:border-zinc-800",
-              i % 3 === 0 && "lg:border-l"
+              "group/feature transition-all duration-300"
             )}
             layoutId={`card-${card.id}`}
           >
