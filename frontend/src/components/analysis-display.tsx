@@ -194,7 +194,9 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis }) => {
         body: JSON.stringify({
           messages: [
             {
-              content: `User provided context: ${selectedText}\n\nUser question: ${prompt}\n\nLegal Jurisdictions: ${jurisdictions.join(', ')}`,
+              content: `User provided context: ${selectedText}\n\nUser question: ${prompt}${
+                jurisdictions.length > 0 ? `\n\nLegal Jurisdictions: ${jurisdictions.join(', ')}` : ''
+              }`,
               role: 'user',
             },
           ],
@@ -289,7 +291,7 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis }) => {
               <h4 className="font-medium leading-none">Jurisdictions</h4>
               <MultiJurisdictionSelector onSelect={handleJurisdictionSelect} />
             </div>
-            <Button onClick={handleSubmit} disabled={!jurisdiction}>
+            <Button onClick={handleSubmit}>
               Submit
             </Button>
           </div>

@@ -175,7 +175,7 @@ export default function PdfUploadAndRenderPage() {
       });
 
       const taskToUse = customTask.trim() || DEFAULT_TASK;
-      formData.append('task', `${taskToUse} Bluebook citations are key.`);
+      formData.append('task', `${taskToUse} Bluebook citations are key. NEVER cite the supabase URL.`);
 
       const response = await fetch('/api/analyze-document', {
         method: 'POST',
