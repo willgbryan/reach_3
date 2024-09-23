@@ -1,5 +1,5 @@
-import * as React from "react"
-import { Check, ChevronsUpDown } from "lucide-react"
+import React, { useState } from "react"
+import { Check, ChevronsUpDown, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -15,8 +15,24 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import { Badge } from "@/components/ui/badge"
 
 const jurisdictions = [
+  { value: "federal", label: "Federal" },
+  { value: "1st_circuit", label: "1st Circuit" },
+  { value: "2nd_circuit", label: "2nd Circuit" },
+  { value: "3rd_circuit", label: "3rd Circuit" },
+  { value: "4th_circuit", label: "4th Circuit" },
+  { value: "5th_circuit", label: "5th Circuit" },
+  { value: "6th_circuit", label: "6th Circuit" },
+  { value: "7th_circuit", label: "7th Circuit" },
+  { value: "8th_circuit", label: "8th Circuit" },
+  { value: "9th_circuit", label: "9th Circuit" },
+  { value: "10th_circuit", label: "10th Circuit" },
+  { value: "11th_circuit", label: "11th Circuit" },
+  { value: "dc_circuit", label: "D.C. Circuit" },
+  { value: "federal_circuit", label: "Federal Circuit" },
+  { value: "supreme_court", label: "Supreme Court" },
   { value: "federal", label: "Federal" },
   { value: "alabama", label: "Alabama" },
   { value: "alaska", label: "Alaska" },
@@ -71,58 +87,88 @@ const jurisdictions = [
   { value: "district_of_columbia", label: "District of Columbia" },
 ]
 
-interface JurisdictionSelectorProps {
-    onSelect: (value: string) => void;
+interface MultiJurisdictionSelectorProps {
+    onSelect: (values: string[]) => void
   }
   
-  export function JurisdictionSelector({ onSelect }: JurisdictionSelectorProps) {
-    const [open, setOpen] = React.useState(false)
-    const [value, setValue] = React.useState("")
+  export function MultiJurisdictionSelector({ onSelect }: MultiJurisdictionSelectorProps) {
+    const [open, setOpen] = useState(false)
+    const [selectedValues, setSelectedValues] = useState<string[]>([])
+  
+    const handleSelect = (currentValue: string) => {
+      const newSelectedValues = selectedValues.includes(currentValue)
+        ? selectedValues.filter((value) => value !== currentValue)
+        : [...selectedValues, currentValue]
+      setSelectedValues(newSelectedValues)
+      onSelect(newSelectedValues)
+    }
+  
+    const removeJurisdiction = (valueToRemove: string) => {
+      const newSelectedValues = selectedValues.filter((value) => value !== valueToRemove)
+      setSelectedValues(newSelectedValues)
+      onSelect(newSelectedValues)
+    }
   
     return (
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            role="combobox"
-            aria-expanded={open}
-            className="w-full justify-between"
-          >
-            {value
-              ? jurisdictions.find((jurisdiction) => jurisdiction.value === value)?.label
-              : "Select jurisdiction..."}
-            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-[250px] p-0">
-          <Command>
-            <CommandInput placeholder="Search jurisdiction..." />
-            <CommandList>
-              <CommandEmpty>No jurisdiction found.</CommandEmpty>
-              <CommandGroup>
-                {jurisdictions.map((jurisdiction) => (
-                  <CommandItem
-                    key={jurisdiction.value}
-                    value={jurisdiction.value}
-                    onSelect={(currentValue) => {
-                      setValue(currentValue === value ? "" : currentValue)
-                      onSelect(currentValue === value ? "" : currentValue)
-                      setOpen(false)
-                    }}
-                  >
-                    <Check
-                      className={cn(
-                        "mr-2 h-4 w-4",
-                        value === jurisdiction.value ? "opacity-100" : "opacity-0"
-                      )}
-                    />
-                    {jurisdiction.label}
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            </CommandList>
-          </Command>
-        </PopoverContent>
-      </Popover>
+      <div className="flex flex-col items-start">
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              role="combobox"
+              aria-expanded={open}
+              className="w-full justify-between"
+            >
+              {selectedValues.length > 0
+                ? `${selectedValues.length} selected`
+                : "Select jurisdictions..."}
+              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent side="right" align="start" className="w-[400px] p-0">
+            <Command>
+              <CommandInput placeholder="Search jurisdiction..." />
+              <CommandList>
+                <CommandEmpty>No jurisdiction found.</CommandEmpty>
+                <CommandGroup>
+                  {jurisdictions.map((jurisdiction) => (
+                    <CommandItem
+                      key={jurisdiction.value}
+                      value={jurisdiction.value}
+                      onSelect={() => handleSelect(jurisdiction.value)}
+                    >
+                      <Check
+                        className={cn(
+                          "mr-2 h-4 w-4",
+                          selectedValues.includes(jurisdiction.value) ? "opacity-100" : "opacity-0"
+                        )}
+                      />
+                      {jurisdiction.label}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
+        <div className="flex flex-wrap gap-2 mt-2">
+          {selectedValues.map((value) => {
+            const jurisdiction = jurisdictions.find((j) => j.value === value)
+            return (
+              <Badge key={value} variant="secondary" className="text-sm font-base">
+                {jurisdiction?.label}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="ml-1 h-4 w-4 p-0"
+                  onClick={() => removeJurisdiction(value)}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </Badge>
+            )
+          })}
+        </div>
+      </div>
     )
   }

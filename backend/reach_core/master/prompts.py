@@ -298,7 +298,7 @@ def generate_document_analysis_prompt(question, context, report_format="Bluebook
            f"Use an unbiased and legal tone as if you were a legal professional interpreting this information. \n" \
            f"You MUST call out key findings, precedents set, intentionally ambiguous language, or anything that might be of professional legal importance to a practicing legal professional.\n" \
             f"You MUST write the report in {report_format} format.\
-             'Every case must be cited according to Bluebook rules. Do not mention adherence to this format in your response.'\n"\
+             'Every case must be cited according to Bluebook rules. Do not mention adherence to this format in your response and NEVER include supabase url's as citations.'\n"\
             f"Please do your best, this is very important to my career." \
 
 def get_report_by_type(report_type, retained_text="", deleted_text="", cadence=""):
