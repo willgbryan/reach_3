@@ -98,17 +98,17 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ files }) => {
 
   return (
     <div className="pdf-viewer relative w-full h-full flex flex-col" ref={containerRef}>
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full h-full flex flex-col">
-        <TabsList className="w-full overflow-x-auto">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full h-full flex flex-col mt-4">
+        <TabsList className="w-full overflow-x-auto bg-transparent">
           {files.map(file => (
-            <TabsTrigger key={file.name} value={file.name} className="whitespace-nowrap">
+            <TabsTrigger key={file.name} value={file.name} className="">
               {file.name}
             </TabsTrigger>
           ))}
         </TabsList>
         <div className="flex-grow relative overflow-hidden">
           {loading && (
-            <div className="absolute inset-0 flex justify-center items-center bg-white dark:bg-gray-800 bg-opacity-75 dark:bg-opacity-75 z-10">
+            <div className="absolute inset-0 flex justify-center items-center bg-white dark:bg-transparent bg-opacity-75 dark:bg-opacity-75 z-10">
               <LoaderIcon className="animate-spin h-10 w-10 text-gray-500" />
             </div>
           )}

@@ -220,6 +220,13 @@ export default function PdfUploadAndRenderPage() {
     }
   };
 
+  const handleClearAndUpload = () => {
+    setFilesToProcess([]);
+    setSelectedFiles([]);
+    setAnalysisData('');
+    setCustomTask('');
+  };
+
   const memoizedPDFViewer = useMemo(() => {
     return filesToProcess.length > 0 ? (
       <div className="h-full w-full">
@@ -297,36 +304,34 @@ export default function PdfUploadAndRenderPage() {
           ) : (
             <>
               {memoizedPDFViewer}
-              {!isProcessing && (
-                <div className="mt-4 flex justify-center">
-                  <Button
-                    onClick={() => {
-                      setFilesToProcess([]);
-                      setSelectedFiles([]);
-                      setAnalysisData('');
-                      setCustomTask('');
-                    }}
-                  >
-                    Clear and Upload New Files
-                  </Button>
-                </div>
-              )}
             </>
           )}
         </div>
-        <div className="w-1/2 p-4 overflow-y-auto">
-          {isProcessing ? (
-            <div className="flex flex-col items-center justify-center h-full">
-              <LoaderIcon className="animate-spin h-10 w-10 text-gray-500 mb-4" />
-              <span className="text-gray-700 dark:text-gray-300">Analyzing Documents...</span>
-            </div>
-          ) : analysisData ? (
-            <AnalysisDisplay analysis={analysisData} />
-          ) : (
-            <div className="flex items-center justify-center h-full text-gray-500">
-              {selectedFiles.length > 0 
-                ? "Click 'Analyze' to get started."
-                : "Upload PDF's and click 'Analyze' to get started."}
+        <div className="w-1/2 flex flex-col">
+          <div className="flex-grow p-4 overflow-y-auto">
+            {isProcessing ? (
+              <div className="flex flex-col items-center justify-center h-full">
+                <LoaderIcon className="animate-spin h-10 w-10 text-gray-500 mb-4" />
+                <span className="text-gray-700 dark:text-gray-300">Analyzing Documents...</span>
+              </div>
+            ) : analysisData ? (
+              <AnalysisDisplay analysis={analysisData} />
+            ) : (
+              <div className="flex items-center justify-center h-full text-gray-500">
+                {selectedFiles.length > 0 
+                  ? "Click 'Analyze' to get started."
+                  : "Upload PDF's and click 'Analyze' to get started."}
+              </div>
+            )}
+          </div>
+          {filesToProcess.length > 0 && !isProcessing && (
+            <div className="p-4 border-t">
+              <Button
+                onClick={handleClearAndUpload}
+                className="w-full"
+              >
+                Clear and Upload New Files
+              </Button>
             </div>
           )}
         </div>
@@ -334,6 +339,7 @@ export default function PdfUploadAndRenderPage() {
     </>
   );
 }
+
 
 function FreeSearchCounter({ isPro, freeSearches }: { isPro: boolean, freeSearches: number | null }) {
   if (isPro) {
