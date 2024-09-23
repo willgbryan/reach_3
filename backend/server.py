@@ -105,20 +105,20 @@ async def websocket_endpoint(websocket: WebSocket):
                 sources = json_data.get("sources", [])
                 edits = json_data.get("edits")  # None if not present
                 cadence = json_data.get("cadence")
-                file_url = json_data.get("file_url", "")
+                file_urls = json_data.get("file_urls", "")
 
                 print(f"ws edits {edits}")
-                print(f"file_url: {file_url}")
+                print(f"file_url: {file_urls}")
 
                 if task and report_type:
                     await manager.start_streaming(
                         task, 
-                        report_type, 
+                        report_type,
                         sources, 
                         websocket, 
                         cadence, 
                         edits,
-                        file_url,
+                        file_urls,
                     )
                     await websocket.send_json({"type": "complete"})
                 else:

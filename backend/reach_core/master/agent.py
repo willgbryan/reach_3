@@ -31,7 +31,7 @@ class Reach:
          visited_urls=set(),
          retained_text="",
          deleted_text="",
-         file_url=""
+         file_urls=[]
      ):
         """
         Initialize the Reach class.
@@ -56,7 +56,7 @@ class Reach:
         self.visited_urls = visited_urls
         self.retained_text = retained_text
         self.deleted_text = deleted_text
-        self.file_url = file_url
+        self.file_urls = file_urls
 
         # Only relevant for DETAILED REPORTS
         # --------------------------------------
@@ -160,38 +160,45 @@ class Reach:
         """
         content = []
         try:
-            response = requests.get(self.file_url)
-            response.raise_for_status()
-            file_content = response.content
-            pdf_reader = PdfReader(io.BytesIO(file_content))
             parsed_content: List[Dict[str, str]] = []
-            all_text = ""
-
-            for page in pdf_reader.pages:
-                text = page.extract_text()
-                all_text += text
+            first_1000_chars_list = []
+            
+            for file_url in self.file_urls:
+                await stream_output("logs", f'Processing file: {file_url}', self.websocket)
+                response = requests.get(file_url)
+                response.raise_for_status()
+                file_content = response.content
+                pdf_reader = PdfReader(io.BytesIO(file_content))
+                
+                file_text = ""
+                for page in pdf_reader.pages:
+                    file_text += page.extract_text()
+                
                 parsed_content.append({
-                    "url": '',
-                    "raw_content": text
+                    "url": file_url,
+                    "raw_content": file_text
                 })
-
-            first_1000_chars = all_text[:1000]
-            enhanced_query = f"{query}\n\nFirst 1000 characters of the document: {first_1000_chars}"
-
+                
+                first_1000_chars_list.append(file_text[:1000])
+            
+            all_first_1000_chars = "\n\n".join(first_1000_chars_list)
+            
+            enhanced_query = f"{query}\n\nFirst 1000 characters of each document:\n{all_first_1000_chars}"
             sub_queries = await get_sub_queries(enhanced_query, self.role, self.cfg, self.parent_query, self.report_type,
                                                 self.websocket, self.cadence, self.retained_text, self.deleted_text)
-
+            
             for sub_query in sub_queries:
+                await stream_output("logs", f"Processing sub-query: {sub_query}", self.websocket)
                 document_content = await self.get_similar_content_by_query(sub_query, parsed_content)
                 if document_content:
                     content.append(document_content)
                 else:
                     await stream_output("logs", f"No content found for '{sub_query}'...", self.websocket)
-
+        
         except Exception as e:
-            await stream_output("logs", f"Error processing file: {str(e)}", self.websocket)
+            await stream_output("logs", f"Error processing files: {str(e)}", self.websocket)
             raise
-
+        
         return content
     
     async def get_context_by_systems(self, query):
