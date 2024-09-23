@@ -13,7 +13,6 @@
 #   backend:
 #     build: 
 #       context: ./backend
-#     volumes:
 #       - ./backend:/usr/src/app
 #       # - ./reach_core:/usr/src/app/reach_core
 #     environment:

@@ -1,4 +1,4 @@
-'use client';
+'use client'
 
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -11,11 +11,11 @@ import { TutorialOverlay } from '@/components/tutorial/tutorial-overlay';
 import { TutorialStep } from '@/components/tutorial/tutorial-step';
 import Cookies from 'js-cookie';
 import { AnimatePresence } from 'framer-motion';
-import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ModeToggle } from '@/components/theme-toggle';
 import UserProvider from '@/components/user-provider';
 import { UpgradeAlert } from '@/components/upgrade-alert';
+import { Textarea } from '@/components/ui/textarea';
 
 const PDFViewer = dynamic(() => import('@/components/pdf-handler'), {
   ssr: false,
@@ -26,10 +26,14 @@ const PDFViewer = dynamic(() => import('@/components/pdf-handler'), {
   ),
 });
 
+const DEFAULT_TASK = "The following are legal documents that I would like analyzed. I need to understand the key important pieces with the relevant cited language as well as any language that can be loosely interpreted.";
+
 export default function PdfUploadAndRenderPage() {
-  const [file, setFile] = useState<File | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [filesToProcess, setFilesToProcess] = useState<File[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [analysisData, setAnalysisData] = useState<string>('');
+  const [customTask, setCustomTask] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerHeight, setContainerHeight] = useState('100vh');
   const [isTutorialActive, setIsTutorialActive] = useState(false);
@@ -103,9 +107,24 @@ export default function PdfUploadAndRenderPage() {
     }
   };
 
-  const uploadToSupabase = async (file: File) => {
+  const updateFreeSearches = async () => {
+    try {
+      const response = await fetch('/api/free-searches', { method: 'POST' });
+      if (!response.ok) {
+        throw new Error('Failed to update free searches');
+      }
+      const data = await response.json();
+      setFreeSearches(data.freeSearches);
+    } catch (error) {
+      console.error('Error updating free searches:', error);
+    }
+  };
+
+  const uploadToSupabase = async (files: File[]) => {
     const formData = new FormData();
-    formData.append('file', file);
+    files.forEach((file, index) => {
+      formData.append('files', file);
+    });
 
     const response = await fetch('/api/upload-pdf', {
       method: 'POST',
@@ -120,32 +139,44 @@ export default function PdfUploadAndRenderPage() {
     return await response.json();
   };
 
-  const updateFreeSearches = async () => {
-    try {
-      const response = await fetch('/api/free-searches', { method: 'POST' });
-      if (!response.ok) {
-        throw new Error('Failed to update free searches');
-      }
-      const data = await response.json();
-      setFreeSearches(data.freeSearches);
-    } catch (error) {
-      console.error('Error updating free searches:', error);
+  const handleFileChange = useCallback((uploadedFiles: File[]) => {
+    const pdfFiles = uploadedFiles.filter(file => file.type === 'application/pdf');
+    if (pdfFiles.length === 0) {
+      toast.error('Please upload valid PDF files.');
+      return;
     }
-  };
+    if (pdfFiles.length < uploadedFiles.length) {
+      toast.warning('Only PDF files are allowed. Non-PDF files were removed.');
+    }
+    setSelectedFiles(prevFiles => [...prevFiles, ...pdfFiles]);
+  }, []);
 
-  const processFile = async (file: File) => {
+  const handleUploadAndProcess = useCallback(() => {
+    if (selectedFiles.length === 0) {
+      toast.error('Please select PDF files before uploading.');
+      return;
+    }
     if (!isPro && freeSearches === 0) {
       setShowUpgradeAlert(true);
       return;
     }
+    setFilesToProcess(selectedFiles);
+    processFiles(selectedFiles);
+  }, [selectedFiles, isPro, freeSearches, customTask]);
 
+  const processFiles = async (files: File[]) => {
     setIsProcessing(true);
     try {
-      await uploadToSupabase(file);
+      await uploadToSupabase(files);
 
       const formData = new FormData();
-      formData.append('file', file);
-  
+      files.forEach((file, index) => {
+        formData.append('files', file);
+      });
+
+      const taskToUse = customTask.trim() || DEFAULT_TASK;
+      formData.append('task', `${taskToUse} Bluebook citations are key.`);
+
       const response = await fetch('/api/analyze-document', {
         method: 'POST',
         body: formData,
@@ -153,7 +184,7 @@ export default function PdfUploadAndRenderPage() {
   
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`Failed to process PDF: ${errorText}`);
+        throw new Error(`Failed to process PDFs: ${errorText}`);
       }
   
       const reader = response.body!.getReader();
@@ -182,29 +213,24 @@ export default function PdfUploadAndRenderPage() {
 
       toast.success('File processing completed');
     } catch (error) {
-      console.error('Error processing file:', error);
-      toast.error('Failed to process file');
+      console.error('Error processing files:', error);
+      toast.error('Failed to process files');
     } finally {
       setIsProcessing(false);
     }
   };
 
-  const handleFileUpload = useCallback((uploadedFiles: File[]) => {
-    const pdfFiles = uploadedFiles.filter(file => file.type === 'application/pdf');
-    if (pdfFiles.length === 0) {
-      toast.error('Please upload a valid PDF file.');
-      return;
-    }
-    if (pdfFiles.length < uploadedFiles.length) {
-      toast.warning('Only PDF files are allowed. Non-PDF files were removed.');
-    }
-    setFile(pdfFiles[0]);
-    processFile(pdfFiles[0]);
-  }, [isPro, freeSearches]);
-
   const memoizedPDFViewer = useMemo(() => {
-    return file ? <PDFViewer fileUrl={URL.createObjectURL(file)} /> : null;
-  }, [file]);
+    return filesToProcess.length > 0 ? (
+      <div className="h-full w-full">
+        {selectedFiles.length > 0 && (
+        <div className="h-full w-full">
+          <PDFViewer files={selectedFiles} />
+        </div>
+      )}
+      </div>
+    ) : null;
+  }, [filesToProcess]);
 
   return (
     <>
@@ -243,31 +269,64 @@ export default function PdfUploadAndRenderPage() {
       </AnimatePresence>
       <div className="flex w-full relative" style={{ height: containerHeight }} ref={containerRef}>
         <div className="w-1/2 overflow-hidden border-r relative flex flex-col">
-          {!file ? (
+          {filesToProcess.length === 0 ? (
             <Card className="border-none shadow-none dark:bg-transparent h-full">
-              <CardContent className="flex items-center justify-center h-full">
-                <div className="w-full max-w-md">
+              <CardContent className="flex flex-col items-center justify-center h-full">
+                <div className="w-full max-w-md mb-4">
                   <FileUpload
-                    onChange={handleFileUpload}
+                    onChange={handleFileChange}
                   />
+                </div>
+                <div className="w-full max-w-md mb-4 flex items-end">
+                  <Textarea
+                    placeholder="Enter custom task (optional)"
+                    value={customTask}
+                    onChange={(e) => setCustomTask(e.target.value)}
+                    className="flex-grow mr-2"
+                  />
+                  <Button
+                    onClick={handleUploadAndProcess}
+                    disabled={selectedFiles.length === 0 || isProcessing}
+                    className="whitespace-nowrap h-full"
+                  >
+                    Analyze
+                  </Button>
                 </div>
               </CardContent>
             </Card>
           ) : (
-            memoizedPDFViewer
+            <>
+              {memoizedPDFViewer}
+              {!isProcessing && (
+                <div className="mt-4 flex justify-center">
+                  <Button
+                    onClick={() => {
+                      setFilesToProcess([]);
+                      setSelectedFiles([]);
+                      setAnalysisData('');
+                      setCustomTask('');
+                    }}
+                  >
+                    Clear and Upload New Files
+                  </Button>
+                </div>
+              )}
+            </>
           )}
         </div>
         <div className="w-1/2 p-4 overflow-y-auto">
           {isProcessing ? (
             <div className="flex flex-col items-center justify-center h-full">
               <LoaderIcon className="animate-spin h-10 w-10 text-gray-500 mb-4" />
-              <span className="text-gray-700 dark:text-gray-300">Analyzing Document...</span>
+              <span className="text-gray-700 dark:text-gray-300">Analyzing Documents...</span>
             </div>
           ) : analysisData ? (
             <AnalysisDisplay analysis={analysisData} />
           ) : (
             <div className="flex items-center justify-center h-full text-gray-500">
-              Upload a PDF to get started.
+              {selectedFiles.length > 0 
+                ? "Click 'Analyze' to get started."
+                : "Upload PDF's and click 'Analyze' to get started."}
             </div>
           )}
         </div>

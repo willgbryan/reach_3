@@ -18,5 +18,5 @@ export default async function Page() {
     }
   }
 
-  return <PricingPage session={session} userSubscription={userSubscription} />;
+  return <PricingPage session={session}/>;
 }

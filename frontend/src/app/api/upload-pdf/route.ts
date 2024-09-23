@@ -13,31 +13,37 @@ export async function POST(req: NextRequest) {
 
   try {
     const formData = await req.formData();
-    const file = formData.get('file') as File;
+    const files = formData.getAll('files') as File[];
 
-    if (!file) {
-      return new NextResponse('Missing file', { status: 400 });
+    if (files.length === 0) {
+      return new NextResponse('No files uploaded', { status: 400 });
     }
 
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${userId}/${file.name}`;
+    const uploadResults = await Promise.all(
+      files.map(async (file) => {
+        const fileName = `${userId}/${file.name}`;
+        const { data, error } = await db.storage
+          .from('user_uploads')
+          .upload(fileName, file, {
+            contentType: file.type,
+            upsert: true
+          });
 
-    const { data, error } = await db.storage
-      .from('user_uploads')
-      .upload(fileName, file, {
-        contentType: file.type,
-        upsert: true
-      });
+        if (error) throw error;
+        return { fileName, data };
+      })
+    );
 
-    if (error) throw error;
-
-    return new NextResponse(JSON.stringify({ message: 'File uploaded successfully', data }), {
+    return new NextResponse(JSON.stringify({ 
+      message: 'Files uploaded successfully', 
+      data: uploadResults 
+    }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     });
   } catch (error) {
-    console.error('Error uploading file:', error);
-    return new NextResponse(JSON.stringify({ message: 'Error uploading file' }), {
+    console.error('Error uploading files:', error);
+    return new NextResponse(JSON.stringify({ message: 'Error uploading files' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
     });

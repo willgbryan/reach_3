@@ -49,7 +49,7 @@ class WebSocketManager:
             del self.sender_tasks[websocket]
             del self.message_queues[websocket]
 
-    async def start_streaming(self, task, report_type, sources, websocket, cadence, edits=None, file_url=""):
+    async def start_streaming(self, task, report_type, sources, websocket, cadence, edits=None, file_urls=[]):
         """Start streaming the output."""
         retained_text = ""
         deleted_text = ""
@@ -63,15 +63,15 @@ class WebSocketManager:
                 deleted_text = parts[1].strip()
 
         print(f"Full edits string: {edits}")
-        print(f"File url: {file_url}")
+        print(f"File url: {file_urls}")
         print(f"Retained text: {retained_text}")
         print(f"Deleted text: {deleted_text}")
         
-        await run_agent(task, report_type, sources, websocket, cadence, retained_text, deleted_text, file_url)
+        await run_agent(task, report_type, sources, websocket, cadence, retained_text, deleted_text, file_urls)
         # return report
 
 
-async def run_agent( task, report_type, sources, websocket, cadence, retained_text, deleted_text, file_url):
+async def run_agent( task, report_type, sources, websocket, cadence, retained_text, deleted_text, file_urls):
         """Run the agent."""
         start_time = datetime.datetime.now()
         config_path = None
@@ -84,7 +84,7 @@ async def run_agent( task, report_type, sources, websocket, cadence, retained_te
             else:
                 researcher = BasicReport(query=task, report_type=report_type,
                                          source_urls=None, sources=sources, config_path=config_path, websocket=websocket, 
-                                         cadence=cadence, retained_text=retained_text, deleted_text=deleted_text, file_url=file_url)
+                                         cadence=cadence, retained_text=retained_text, deleted_text=deleted_text, file_urls=file_urls)
                 
 
             await researcher.run()

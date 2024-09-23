@@ -5,6 +5,31 @@ import { createClient } from '@/db/server'
 
 export const dynamic = 'force-dynamic';
 
+interface FileData {
+  name: string;
+  type: string;
+  size: number;
+}
+
+interface SignedUrlData {
+  signedUrl: string;
+}
+
+function isFileData(value: unknown): value is FileData {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'name' in value &&
+    'type' in value &&
+    'size' in value &&
+    typeof (value as any).name === 'string' &&
+    typeof (value as any).type === 'string' &&
+    typeof (value as any).size === 'number'
+  );
+}
+
+const DEFAULT_TASK = "The following are legal documents that I would like analyzed. I need to understand the key important pieces with the relevant cited language as well as any language that can be loosely interpreted. Bluebook citations are key.";
+
 export async function POST(req: NextRequest) {
   const db = createClient(cookies())
   const {
@@ -17,30 +42,55 @@ export async function POST(req: NextRequest) {
   }
 
   const formData = await req.formData();
-  const file = formData.get('file') as File;
+  const files: FileData[] = [];
+  let task = '';
 
-  if (!file) {
-    return NextResponse.json({ error: 'File is required' }, { status: 400 });
+  for (const [key, value] of formData.entries()) {
+    if (key === 'task' && typeof value === 'string') {
+      task = value;
+    } else if (isFileData(value)) {
+      files.push({
+        name: value.name,
+        type: value.type,
+        size: value.size
+      });
+    }
   }
 
-  const fileExt = file.name.split('.').pop();
-  const filePath = `${userId}/${file.name}`;
-
-  const { data, error } = await db.storage
-    .from('user_uploads')
-    .createSignedUrl(filePath, 300); // valid for 5 minutes
-
-  if (error || !data) {
-    console.error('Error generating signed URL:', error);
-    return NextResponse.json({ error: 'Error generating signed URL' }, { status: 500 });
+  if (files.length === 0) {
+    return NextResponse.json({ error: 'Files are required' }, { status: 400 });
   }
 
-  const signedUrl = data.signedUrl;
+  if (!task) {
+    task = DEFAULT_TASK;
+  }
+
+  const signedUrls: string[] = [];
+  const filePaths: string[] = [];
+
+  for (const { name } of files) {
+    const filePath = `${userId}/${name}`;
+    filePaths.push(filePath);
+
+    const { data, error } = await db.storage
+      .from('user_uploads')
+      .createSignedUrl(filePath, 300); // valid for 5 minutes
+
+    if (error || !data) {
+      console.error('Error generating signed URL:', error);
+      return NextResponse.json({ error: 'Error generating signed URL' }, { status: 500 });
+    }
+
+    signedUrls.push((data as SignedUrlData).signedUrl);
+  }
 
   const chatId = nanoid()
 
-  // const ws_uri = 'ws://backend:8000/ws'
-  const ws_uri = 'wss://heighliner.tech/ws'
+  // PROD
+  // const ws_uri = `wss://heighliner.tech/ws`;
+
+  // //DEV
+  const ws_uri = `ws://backend:8000/ws`
 
   let accumulatedOutput = ''
 
@@ -51,11 +101,11 @@ export async function POST(req: NextRequest) {
       socket.onopen = () => {
         console.log('WebSocket connection opened');
         const requestData = {
-          task: "The following is a legal document that I would like analyzed. I need to understand the key important pieces with the relevant cited language as well as any language that can be loosely interpreted. Correct legal Bluebook citations are key.",
+          task: task,
           report_type: "document_analysis",
           sources: ["FILES"],
-          file_url: signedUrl,
-          file_path: filePath,
+          file_urls: signedUrls,
+          file_paths: filePaths,
         }
         console.log('Sending data to WebSocket:', requestData);
         socket.send(JSON.stringify(requestData))
@@ -91,7 +141,7 @@ export async function POST(req: NextRequest) {
           await saveChatHistory({
             chatId,
             completion: accumulatedOutput,
-            messages: [{ content: "The following is a legal document that I would like analyzed. I need to understand the key important pieces with the relevant cited language as well as any language that can be loosely interpreted. Correct legal Bluebook citations are key.", role: "user" }],
+            messages: [{ content: task, role: "user" }],
             userId,
             db,
           })
