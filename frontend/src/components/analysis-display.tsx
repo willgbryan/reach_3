@@ -275,7 +275,7 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis }) => {
               <h4 className="font-medium leading-none">Query</h4>
               <Input
                 id="prompt"
-                placeholder="Enter your prompt"
+                placeholder="Enter your query"
                 value={prompt}
                 onChange={handlePromptChange}
               />
