@@ -97,7 +97,6 @@ async def get_sub_queries(query: str, agent_role_prompt: str, cfg, parent_query:
         llm_provider=cfg.llm_provider
     )
 
-    print(f'response: {response}')
     sub_queries = json.loads(response)
     await stream_output("queries", f"{sub_queries}", websocket)
     return sub_queries

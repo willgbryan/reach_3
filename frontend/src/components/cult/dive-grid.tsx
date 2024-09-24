@@ -144,7 +144,6 @@ export const Card: React.FC<CardProps> = ({
 
   const handleCreatePDF = (e: React.MouseEvent) => {
     e.stopPropagation();
-    console.log('Creating PDF for card', index);
     onCreateDoc(card.rawContent);
   };
 

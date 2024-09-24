@@ -954,7 +954,6 @@ const ChatSection = ({
           onCreatePowerPoint={handleCreateStructuredPowerPoint}
           onCreateChart={(tableId: string) => {
             console.log(`Create chart for table ${tableId}`);
-            // Implement chart creation logic here
           }}
         />
       );
