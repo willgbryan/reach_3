@@ -32,7 +32,6 @@ interface AnalysisSection {
 const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis }) => {
   const [selectedText, setSelectedText] = useState('');
   const [prompt, setPrompt] = useState('');
-  const [jurisdiction, setJurisdiction] = useState('');
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [popoverPosition, setPopoverPosition] = useState({ top: 0, left: 0 });
   const contentRef = useRef<HTMLDivElement>(null);
@@ -289,7 +288,10 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis }) => {
             </div>
             <div className="space-y-2">
               <h4 className="font-medium leading-none">Jurisdictions</h4>
-              <MultiJurisdictionSelector onSelect={handleJurisdictionSelect} />
+              <MultiJurisdictionSelector 
+                onSelect={handleJurisdictionSelect} 
+                initialSelections={jurisdictions}
+              />
             </div>
             <Button onClick={handleSubmit}>
               Submit

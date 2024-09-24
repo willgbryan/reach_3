@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { useEffect, useState } from "react"
 import { Check, ChevronsUpDown, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -89,11 +89,16 @@ const jurisdictions = [
 
 interface MultiJurisdictionSelectorProps {
     onSelect: (values: string[]) => void
+    initialSelections?: string[]
   }
   
-  export function MultiJurisdictionSelector({ onSelect }: MultiJurisdictionSelectorProps) {
+  export function MultiJurisdictionSelector({ onSelect, initialSelections = [] }: MultiJurisdictionSelectorProps) {
     const [open, setOpen] = useState(false)
-    const [selectedValues, setSelectedValues] = useState<string[]>([])
+    const [selectedValues, setSelectedValues] = useState<string[]>(initialSelections)
+  
+    useEffect(() => {
+      setSelectedValues(initialSelections)
+    }, [initialSelections])
   
     const handleSelect = (currentValue: string) => {
       const newSelectedValues = selectedValues.includes(currentValue)
