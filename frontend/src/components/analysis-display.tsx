@@ -17,7 +17,7 @@ import {
 import { LoaderIcon } from 'lucide-react';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
-import { JurisdictionSelector } from './jurisdictions-combobox';
+import { MultiJurisdictionSelector } from './jurisdictions-combobox';
 
 interface AnalysisDisplayProps {
   analysis: string;
@@ -42,6 +42,11 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis }) => {
   ]);
   const socketRef = useRef<WebSocket | null>(null);
   const [openAccordion, setOpenAccordion] = useState<string | undefined>('initial-analysis');
+  const [jurisdictions, setJurisdictions] = useState<string[]>([]);
+
+  const handleJurisdictionSelect = (selectedJurisdictions: string[]) => {
+    setJurisdictions(selectedJurisdictions);
+  };
 
   const handleSelection = useCallback(() => {
     const selection = window.getSelection();
@@ -189,7 +194,9 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis }) => {
         body: JSON.stringify({
           messages: [
             {
-              content: `User provided context: ${selectedText}\n\nUser question: ${prompt}\n\nLegal Jurisdiction: ${jurisdiction}`,
+              content: `User provided context: ${selectedText}\n\nUser question: ${prompt}${
+                jurisdictions.length > 0 ? `\n\nLegal Jurisdictions: ${jurisdictions.join(', ')}` : ''
+              }`,
               role: 'user',
             },
           ],
@@ -281,10 +288,10 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis }) => {
               />
             </div>
             <div className="space-y-2">
-              <h4 className="font-medium leading-none">Jurisdiction</h4>
-              <JurisdictionSelector onSelect={setJurisdiction} />
+              <h4 className="font-medium leading-none">Jurisdictions</h4>
+              <MultiJurisdictionSelector onSelect={handleJurisdictionSelect} />
             </div>
-            <Button onClick={handleSubmit} disabled={!jurisdiction}>
+            <Button onClick={handleSubmit}>
               Submit
             </Button>
           </div>
