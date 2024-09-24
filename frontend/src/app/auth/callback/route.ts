@@ -20,7 +20,7 @@ function getBaseUrl(): string {
   if (deployment === "PROD") {
     return 'https://heighliner.tech'
   } else if (deployment === "DEV") {
-    return ''
+    return 'https://heighliner.tech'
   } else {
     return process.env.NEXT_PUBLIC_SITE_URL || 
            process.env.NEXT_PUBLIC_VERCEL_URL || 
@@ -34,7 +34,7 @@ export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
 
   const code = searchParams.get('code')
-  const next = searchParams.get('next') ?? ''
+  const next = searchParams.get('next') ?? '/chat'
   const redirectPath = searchParams.get('redirect')
   const redirect = getUrl() + redirectPath
 
@@ -44,7 +44,7 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
       const baseUrl = getBaseUrl()
-      return NextResponse.redirect(new URL(`${baseUrl}/chat`, request.url))
+      return NextResponse.redirect(new URL(`${baseUrl}/${next}`, request.url))
 
       // return NextResponse.redirect(
       //   redirect ? origin : new URL(`/${next.slice(1)}`, request.url)
