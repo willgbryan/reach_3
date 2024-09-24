@@ -66,7 +66,6 @@ export const LayoutGrid = ({ cards }: { cards: Card[] }) => {
 const GridCard = ({ card }: { card: Card }) => {
   return (
     <>
-      {/* Background layers */}
       <div className="absolute inset-0 bg-gray-100 dark:bg-zinc-800 group-hover/feature:opacity-0 transition-opacity duration-300" />
 
       <div className="absolute inset-0 opacity-0 group-hover/feature:opacity-100 transition-opacity duration-300">
@@ -74,7 +73,6 @@ const GridCard = ({ card }: { card: Card }) => {
         <div className="absolute inset-0 bg-gray-900 dark:bg-zinc-800" />
       </div>
 
-      {/* Card content */}
       <div className="relative z-40 p-8 h-full w-full flex flex-col justify-center items-center">
 
         <p className="text-neutral-600 dark:text-neutral-400 group-hover/feature:text-neutral-300 text-sm md:text-base font-medium font-sans text-center mb-2 transition-colors duration-300">
@@ -86,7 +84,6 @@ const GridCard = ({ card }: { card: Card }) => {
         </p>
       </div>
 
-      {/* Meteors effect */}
       <div className="absolute inset-0 opacity-0 group-hover/feature:opacity-100 transition-opacity duration-300 pointer-events-none overflow-hidden">
         <Meteors number={20} />
       </div>
