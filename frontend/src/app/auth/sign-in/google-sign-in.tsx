@@ -7,7 +7,7 @@ function getBaseUrl(): string {
   if (deployment === "PROD") {
     return 'https://heighliner.tech'
   } else if (deployment === "DEV") {
-    return ''
+    return 'https://heighliner.tech'
   } else {
     return process.env.NEXT_PUBLIC_BASE_URL || 'https://heighliner.tech'
   }

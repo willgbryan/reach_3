@@ -9,7 +9,7 @@ function getBaseUrl(): string {
   if (deployment === "PROD") {
     return 'https://heighliner.tech'
   } else if (deployment === "DEV") {
-    return ''
+    return 'https://heighliner.tech'
   } else {
     return process.env.NEXT_PUBLIC_BASE_URL || 'https://heighliner.tech'
   }
@@ -25,13 +25,12 @@ export async function GET(req: NextRequest) {
 
   // PROD
   const next = searchParams.get('next') ?? `${baseUrl}/chat`
-
   if (token_hash && type) {
     const cookieStore = cookies()
     const supabase = createClient(cookieStore)
     const { error } = await supabase.auth.verifyOtp({ type, token_hash })
     if (!error) {
-      return NextResponse.redirect(new URL(`/${next.slice(1)}`, req.url))
+      return NextResponse.redirect(new URL(`${baseUrl}${next.startsWith('/') ? next.slice(1) : next}`, req.url))
     }
   }
 
