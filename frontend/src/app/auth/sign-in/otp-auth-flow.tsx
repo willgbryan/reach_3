@@ -133,7 +133,7 @@ export function OTPAuthFlow() {
             </Button>
           </form>
           <div className="mt-4 flex flex-col space-y-2">
-            <GoogleSignIn />
+            {/* <GoogleSignIn /> */}
             <LinkedInSignIn />
           </div>
         </>

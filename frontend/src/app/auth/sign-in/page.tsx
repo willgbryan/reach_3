@@ -53,12 +53,6 @@ export default async function SignIn() {
       </div>
       <div className="flex-grow w-full md:w-1/2 flex flex-col items-center justify-center bg-[#e4e4e4] p-8">
         <Heading variant="secondary" weight="thin" size="xl" className="mb-8">Heighliner</Heading>
-        <Alert variant="destructive" className="mb-4 max-w-md">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            We're aware of an issue with Google OAuth. Please sign up or sign in using your email at this time.
-          </AlertDescription>
-        </Alert>
         <Card className="w-full max-w-md bg-[#e4e4e4] border-none relative corner-borders">
           <CardContent className="items-center justify-center space-y-4 p-6">
             <OTPAuthFlow />
