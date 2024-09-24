@@ -1,19 +1,6 @@
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
-
 import { createClient } from '@/db/server'
-
-const getUrl = () => {
-  let url =
-    process?.env?.NEXT_PUBLIC_SITE_URL ?? // Set this to your site URL in production env.
-    process?.env?.NEXT_PUBLIC_VERCEL_URL ?? // Automatically set by Vercel.
-    'https://heighliner.tech'
-  // Make sure to include `https://` when not localhost.
-  url = url.includes('http') ? url : `https://${url}`
-  // Make sure to include a trailing `/`.
-  url = url.charAt(url.length - 1) === '/' ? url : `${url}/`
-  return url
-}
 
 function getBaseUrl(): string {
   const deployment = process.env.DEPLOYMENT
@@ -22,35 +9,29 @@ function getBaseUrl(): string {
   } else if (deployment === "DEV") {
     return 'https://heighliner.tech'
   } else {
-    return process.env.NEXT_PUBLIC_SITE_URL || 
-           process.env.NEXT_PUBLIC_VERCEL_URL || 
-           'https://heighliner.tech'
+    return process.env.NEXT_PUBLIC_BASE_URL || 'https://heighliner.tech'
   }
 }
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url)
-
-  const { searchParams, origin } = new URL(request.url)
-
-  const code = searchParams.get('code')
-  const next = searchParams.get('next') ?? '/chat'
-  const redirectPath = searchParams.get('redirect')
-  const redirect = getUrl() + redirectPath
-
+  const code = requestUrl.searchParams.get('code')
+  const next = requestUrl.searchParams.get('next') ?? '/chat'
+  
   if (code) {
     const cookieStore = cookies()
     const supabase = createClient(cookieStore)
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
-    if (!error) {
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+    
+    if (!error && data.session) {
       const baseUrl = getBaseUrl()
-      return NextResponse.redirect(new URL(`${baseUrl}${next.startsWith('/') ? next : `/${next}`}`, request.url))
-      // return NextResponse.redirect(
-      //   redirect ? origin : new URL(`/${next.slice(1)}`, request.url)
-      // );
+      console.log(`Redirecting to: ${baseUrl}${next}`)
+      return NextResponse.redirect(new URL(`${baseUrl}${next}`, request.url))
+    } else {
+      console.error('Error exchanging code for session:', error)
     }
   }
-
-  // return the user to an error page with instructions
-  return NextResponse.redirect(new URL('/auth/auth-code-error', request.url))
+  
+  console.log('Redirecting to sign-in page due to error or missing code')
+  return NextResponse.redirect(new URL('/auth/sign-in', request.url))
 }
