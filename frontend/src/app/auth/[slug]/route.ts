@@ -9,7 +9,7 @@ function getBaseUrl(): string {
   if (deployment === "PROD") {
     return 'https://heighliner.tech'
   } else if (deployment === "DEV") {
-    return 'https://heighliner.tech'
+    return ''
   } else {
     return process.env.NEXT_PUBLIC_BASE_URL || 'https://heighliner.tech'
   }
@@ -29,7 +29,8 @@ export async function GET(
   const slug = params.slug
   const { searchParams } = new URL(req.url)
   const next = searchParams.get('next')
-  const redirectPath = next ? `/auth/callback?next=${next}` : `/chat`  
+  const redirectPath = next ? `$/auth/callback?next=${next}` : `/auth/callback`
+  
   const cookieStore = cookies()
   const supabase = createClient(cookieStore)
 
