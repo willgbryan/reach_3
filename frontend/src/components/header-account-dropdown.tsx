@@ -18,7 +18,6 @@ type UserProps = {
 }
 
 export function HeaderAccountDropdown({ user }: { user: UserProps }) {
-
   return (
     <DropdownMenu>
       <DropdownMenuTrigger className="outline-none">
@@ -52,7 +51,6 @@ export function HeaderAccountDropdown({ user }: { user: UserProps }) {
               <span>Pricing</span>
             </Link>
           </DropdownMenuItem>
-      
           <DropdownMenuItem>
             <Link href="/billing" className="flex w-full items-center justify-between gap-2">
               <span>Billing</span>
@@ -66,6 +64,21 @@ export function HeaderAccountDropdown({ user }: { user: UserProps }) {
               <button type="submit">Sign out</button>
             </form>
           </DropdownMenuItem>
+        </div>
+        <Separator />
+        <div className="py-2 flex justify-center space-x-4">
+          <Link 
+            href="/terms-and-privacy" 
+            className="text-xs dark:text-zinc-600 text-gray-600 hover:underline"
+          >
+            Terms
+          </Link>
+          <Link 
+            href="/terms-and-privacy" 
+            className="text-xs dark:text-zinc-600 text-gray-600 hover:underline"
+          >
+            Privacy
+          </Link>
         </div>
       </DropdownMenuContent>
     </DropdownMenu>
