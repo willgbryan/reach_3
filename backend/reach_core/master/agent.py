@@ -242,16 +242,12 @@ class Reach:
             context: List of context
         """
 
-        print(f"get_context_by_search - full retained_text: {self.retained_text}")
-
         content = []
-        print(f"context {self.cadence}")
         sub_queries = await get_sub_queries(query, self.role, self.cfg, self.parent_query, self.report_type, 
                                             self.websocket, self.cadence, self.retained_text, self.deleted_text) + [query]
         # await stream_output("logs",
         #                     f"I will conduct my research based on the following queries: {sub_queries}...",
         #                     self.websocket)
-        print(f'sub queries {sub_queries}')
         content = []
         all_docs_dicts = []
 
@@ -266,8 +262,6 @@ class Reach:
             else:
                 pass
 
-        print(f"Collected content: {content}")
-        print(f"dict content: {all_docs_dicts}")
         await stream_output("sources", all_docs_dicts, self.websocket)
 
         return content
@@ -292,21 +286,24 @@ class Reach:
         """
         Runs a sub-query
         Args:
-            sub_query:
-
+        sub_query:
         Returns:
-            Summary
+        Summary
         """
         # Get Urls
         retriever = self.retriever(sub_query)
-        search_results = retriever.search(max_results=self.cfg.max_search_results_per_query)
-        new_search_urls = await self.get_new_urls([url.get("href") for url in search_results])
-
-        # Scrape Urls
-        # await stream_output("logs", f"📝Scraping urls {new_search_urls}...\n", self.websocket)
-        # await stream_output("logs", f"Researching for relevant information...\n", self.websocket)
-        scraped_content_results = scrape_urls(new_search_urls, self.cfg)
-        return scraped_content_results
+        try:
+            search_results = retriever.search(max_results=self.cfg.max_search_results_per_query)
+            new_search_urls = await self.get_new_urls([url.get("href") for url in search_results if url.get("href")])
+            
+            # Scrape Urls
+            # await stream_output("logs", f"📝Scraping urls {new_search_urls}...\n", self.websocket)
+            # await stream_output("logs", f"Researching for relevant information...\n", self.websocket)
+            scraped_content_results = scrape_urls(new_search_urls, self.cfg)
+            return scraped_content_results
+        except Exception as e:
+            print(f"Error in scrape_sites_by_query for sub_query '{sub_query}': {str(e)}")
+            return []
 
     async def get_similar_content_by_query(self, query, pages):
         # await stream_output("logs", f"Getting relevant content based on query: {query}...", self.websocket)

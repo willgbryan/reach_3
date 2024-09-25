@@ -106,19 +106,21 @@ def scrape_urls(urls, cfg=None):
     """
     Scrapes the urls
     Args:
-        urls: List of urls
-        cfg: Config (optional)
-
+    urls: List of urls
+    cfg: Config (optional)
     Returns:
-        text: str
-
+    text: str
     """
     content = []
     user_agent = cfg.user_agent if cfg else "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36 Edg/119.0.0.0"
     try:
-        content = Scraper(urls, user_agent, cfg.scraper).run()
+        scraper = Scraper(urls, user_agent, cfg.scraper)
+        content = scraper.run()
+        # print(f"Scraped content: {content}")
     except Exception as e:
-        print(f"{Fore.RED}Error in scrape_urls: {e}{Style.RESET_ALL}")
+        # print(f"Error in scrape_urls: {e}")
+        # print(f"Error type: {type(e).__name__}")
+        # print(f"Error details: {e.args}")
     return content
 
 

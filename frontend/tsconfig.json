@@ -39,6 +39,6 @@
     ".next/types/**/*.ts",
     ".prettierrc.js",
     "src/types/**/*.d.ts"
-  ],
+],
   "exclude": ["node_modules"]
 }

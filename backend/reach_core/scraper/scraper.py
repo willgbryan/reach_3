@@ -6,6 +6,8 @@ from functools import partial
 import requests
 from bs4 import BeautifulSoup
 from newspaper import Article
+import re
+from urllib.parse import urlparse
 
 class Scraper:
     """
@@ -34,127 +36,120 @@ class Scraper:
         res = [content for content in contents if content['raw_content'] is not None]
         return res
 
+    def is_valid_url(self, url):
+        """
+        Check if the URL is valid.
+        """
+        try:
+            result = urlparse(url)
+            return all([result.scheme, result.netloc])
+        except ValueError:
+            return False
+
     def extract_data_from_link(self, link, session):
         """
         Extracts the data from the link
         """
         content = ""
         try:
+            if not self.is_valid_url(link):
+                print(f"Invalid URL: {link}")
+                return {'url': link, 'raw_content': None}
+
             if link.endswith(".pdf"):
                 content = self.scrape_pdf_with_pymupdf(link)
             elif "arxiv.org" in link:
                 doc_num = link.split("/")[-1]
                 content = self.scrape_pdf_with_arxiv(doc_num)
-            elif "youtube" in link:
+            elif "youtube.com" in link or "youtu.be" in link:
                 content = self.scrape_youtube_transcripts(link)
             elif link and self.scraper=="bs":
                 content = self.scrape_text_with_bs(link, session)
             else:
                 content = self.scrape_url_with_newspaper(link)
 
+            print(f"Scraped content length for {link}: {len(content)}")
+            
             if len(content) < 100:
+                print(f"Content too short for {link}")
                 return {'url': link, 'raw_content': None}
             return {'url': link, 'raw_content': content}
+        except requests.exceptions.RequestException as e:
+            print(f"Network error while scraping {link}: {str(e)}")
         except Exception as e:
-            return {'url': link, 'raw_content': None}
+            print(f"Error scraping {link}: {str(e)}")
+        return {'url': link, 'raw_content': None}
 
     def scrape_youtube_transcripts(self, url: str) -> str:
-        """Scrape transcript from a Youtube video url
-        
-        Args:
-            url (str): The video url to scrape
-            
-        Returns:
-            str: The transcript from the video
-        """
-
-        video_id = url.replace('https://www.youtube.com/watch?v=', '')
-        transcript = YouTubeTranscriptApi.get_transcript(video_id)
-        output=''
-
-        for x in transcript:
-            #TODO look into preserving timestamps: x format: {'text': 'in the TRX and raptor r that may change', 'start': 158.68, 'duration': 5.479}
-            sentence = x['text']
-            output += f' {sentence}'
-
-        return output
+        """Scrape transcript from a Youtube video url"""
+        video_id = re.search(r'(?:v=|\/)([0-9A-Za-z_-]{11}).*', url)
+        if not video_id:
+            print(f"Invalid YouTube URL: {url}")
+            return ""
+        video_id = video_id.group(1)
+        try:
+            transcript = YouTubeTranscriptApi.get_transcript(video_id)
+            return ' '.join(x['text'] for x in transcript)
+        except Exception as e:
+            print(f"Error scraping YouTube transcript for {url}: {str(e)}")
+            return ""
 
     def scrape_text_with_bs(self, link, session):
-        response = session.get(link, timeout=4)
-        soup = BeautifulSoup(response.content, 'lxml', from_encoding=response.encoding)
+        try:
+            response = session.get(link, timeout=10)
+            response.raise_for_status()
+            soup = BeautifulSoup(response.content, 'lxml', from_encoding=response.encoding)
 
-        for script_or_style in soup(["script", "style"]):
-            script_or_style.extract()
+            for script_or_style in soup(["script", "style"]):
+                script_or_style.extract()
 
-        raw_content = self.get_content_from_url(soup)
-        lines = (line.strip() for line in raw_content.splitlines())
-        chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
-        content = "\n".join(chunk for chunk in chunks if chunk)
-        return content
+            raw_content = self.get_content_from_url(soup)
+            lines = (line.strip() for line in raw_content.splitlines())
+            chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
+            return "\n".join(chunk for chunk in chunks if chunk)
+        except requests.exceptions.RequestException as e:
+            print(f"Error fetching {link}: {str(e)}")
+            return ""
 
     def scrape_url_with_newspaper(self, url) -> str:
         try:
-            # Uses newspaper3k to extract webpage content 
-            article = Article(
-                url,
-                language="en",
-                memoize_articles=False,
-                fetch_images=False
-            )
+            article = Article(url, language="en", memoize_articles=False, fetch_images=False)
             article.download()
             article.parse()
 
-            # Extracting the title and text if present from the parsed article
             title = article.title
             text = article.text
 
-            # If title, summary are not present then return blank string
             if not (title and text):
+                print(f"No content found for {url}")
                 return ""
 
             return f"{title} : {text}"
-        
         except Exception as e:
+            print(f"Error scraping {url} with newspaper: {str(e)}")
             return ""
 
     def scrape_pdf_with_pymupdf(self, url) -> str:
-        """Scrape a pdf with pymupdf
-
-        Args:
-            url (str): The url of the pdf to scrape
-
-        Returns:
-            str: The text scraped from the pdf
-        """
-        loader = PyMuPDFLoader(url)
-        doc = loader.load()
-        return str(doc)
+        try:
+            loader = PyMuPDFLoader(url)
+            doc = loader.load()
+            return str(doc)
+        except Exception as e:
+            print(f"Error scraping PDF {url}: {str(e)}")
+            return ""
 
     def scrape_pdf_with_arxiv(self, query) -> str:
-        """Scrape a pdf with arxiv
-        default document length of 70000 about ~15 pages or None for no limit
-
-        Args:
-            query (str): The query to search for
-
-        Returns:
-            str: The text scraped from the pdf
-        """
-        retriever = ArxivRetriever(load_max_docs=2, doc_content_chars_max=None)
-        docs = retriever.get_relevant_documents(query=query)
-        return docs[0].page_content
+        try:
+            retriever = ArxivRetriever(load_max_docs=2, doc_content_chars_max=None)
+            docs = retriever.get_relevant_documents(query=query)
+            return docs[0].page_content
+        except Exception as e:
+            print(f"Error scraping arXiv PDF for query {query}: {str(e)}")
+            return ""
 
     def get_content_from_url(self, soup):
-        """Get the text from the soup
-
-        Args:
-            soup (BeautifulSoup): The soup to get the text from
-
-        Returns:
-            str: The text from the soup
-        """
         text = ""
         tags = ['p', 'h1', 'h2', 'h3', 'h4', 'h5']
-        for element in soup.find_all(tags):  # Find all the <p> elements
+        for element in soup.find_all(tags):
             text += element.text + "\n"
         return text
