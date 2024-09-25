@@ -118,9 +118,9 @@ def scrape_urls(urls, cfg=None):
         content = scraper.run()
         # print(f"Scraped content: {content}")
     except Exception as e:
-        # print(f"Error in scrape_urls: {e}")
-        # print(f"Error type: {type(e).__name__}")
-        # print(f"Error details: {e.args}")
+        print(f"Error in scrape_urls: {e}")
+        print(f"Error type: {type(e).__name__}")
+        print(f"Error details: {e.args}")
     return content
 
 
