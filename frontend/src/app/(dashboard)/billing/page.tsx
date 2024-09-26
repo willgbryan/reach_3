@@ -82,14 +82,12 @@ export default async function Page() {
   }
 
   const stripeCustomerId = await getStripeCustomerId(userId)
-  
   let subscription: Subscription | null = null;
   let paymentHistory: PaymentHistoryItem[] = [];
 
   if (stripeCustomerId) {
     const stripeSubscription = await getSubscriptionStatus(stripeCustomerId)
     const stripePaymentHistory = await getPaymentHistory(stripeCustomerId)
-    
     subscription = mapStripeSubscriptionToSubscription(stripeSubscription)
     paymentHistory = stripePaymentHistory.map(mapStripeChargeToPaymentHistoryItem)
   }
@@ -100,6 +98,7 @@ export default async function Page() {
       subscription={subscription}
       paymentHistory={paymentHistory}
       isFreeTier={!stripeCustomerId}
+      stripeCustomerId={stripeCustomerId}
     />
   )
 }

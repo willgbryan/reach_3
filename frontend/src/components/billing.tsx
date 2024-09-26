@@ -45,15 +45,22 @@ type BillingPageClientProps = {
     subscription: Subscription | null;
     paymentHistory: PaymentHistoryItem[];
     isFreeTier: boolean;
+    stripeCustomerId: string | undefined;
   }
   
-  export const BillingPageClient: React.FC<BillingPageClientProps> = ({ user, subscription, paymentHistory, isFreeTier }) => {
+  export const BillingPageClient: React.FC<BillingPageClientProps> = ({ 
+    user, 
+    subscription, 
+    paymentHistory, 
+    isFreeTier,
+    stripeCustomerId
+  }) => {
     const router = useRouter();
   
     const handleManageSubscription = async () => {
-      if (subscription) {
+      if (stripeCustomerId) {
         try {
-          const { url } = await createStripePortalSession(user.id);
+          const { url } = await createStripePortalSession(stripeCustomerId);
           window.location.href = url;
         } catch (error) {
           alert('Failed to open Stripe portal: ' + (error as Error).message);
