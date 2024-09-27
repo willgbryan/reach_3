@@ -15,42 +15,48 @@ export interface DocumentAnalysis {
     filePaths: string[];
   }
   
-  function isDocumentAnalysis(value: any): value is DocumentAnalysis {
-    return (
-      typeof value === 'object' &&
-      value !== null &&
-      typeof value.id === 'string' &&
-      typeof value.path === 'string' &&
-      typeof value.title === 'string' &&
-      Array.isArray(value.messages) &&
-      typeof value.createdAt === 'string' &&
-      Array.isArray(value.filePaths) &&
-      value.filePaths.every((path: any) => typeof path === 'string')
-    );
-  }
-  
   export async function getDocumentAnalyses(userId?: string | null): Promise<DocumentAnalysis[]> {
     if (!userId) {
       return [];
     }
+  
     try {
       const db = createClient(cookies());
-      const { data, error } = await db
+      const { data } = await db
         .from('chats')
         .select('payload')
         .order('payload->createdAt', { ascending: false })
         .eq('user_id', userId)
-        .eq('payload->title', 'Document Analysis');
-  
-      if (error) throw error;
+        .eq('is_newsletter', false)
+        .throwOnError();
   
       return (data ?? [])
-        .map(entry => entry.payload as unknown as DocumentAnalysis)
-        .filter((item): item is DocumentAnalysis => isDocumentAnalysis(item));
+        .map((entry) => entry.payload as unknown)
+        .filter((payload): payload is DocumentAnalysis => isDocumentAnalysis(payload));
     } catch (error) {
       console.error('Error fetching document analyses:', error);
       return [];
     }
+  }
+  
+  function isDocumentAnalysis(value: unknown): value is DocumentAnalysis {
+    return (
+      typeof value === 'object' &&
+      value !== null &&
+      'id' in value &&
+      'path' in value &&
+      'title' in value &&
+      'messages' in value &&
+      'createdAt' in value &&
+      'filePaths' in value &&
+      typeof (value as DocumentAnalysis).id === 'string' &&
+      typeof (value as DocumentAnalysis).path === 'string' &&
+      typeof (value as DocumentAnalysis).title === 'string' &&
+      Array.isArray((value as DocumentAnalysis).messages) &&
+      typeof (value as DocumentAnalysis).createdAt === 'string' &&
+      Array.isArray((value as DocumentAnalysis).filePaths) &&
+      (value as DocumentAnalysis).filePaths.every((path) => typeof path === 'string')
+    );
   }
 
   export async function removeAnalysis({ id, path }: { id: string; path: string }): ServerActionResult<void> {
@@ -60,7 +66,7 @@ export interface DocumentAnalysis {
         .from('chats')
         .delete()
         .eq('id', id)
-        .eq('payload->title', 'Document Analysis');
+        .filter('payload->title', 'eq', 'Document Analysis');
       if (error) throw error;
       revalidatePath('/')
       revalidatePath(path)
@@ -82,7 +88,7 @@ export interface DocumentAnalysis {
         .from('chats')
         .update({ payload })
         .eq('id', analysis.id)
-        .eq('payload->title', 'Document Analysis');
+        .filter('payload->title', 'eq', 'Document Analysis');
       if (error) throw error;
       return payload;
     } catch (error) {
@@ -102,7 +108,7 @@ export interface DocumentAnalysis {
         .from('chats')
         .delete()
         .eq('user_id', userId)
-        .eq('payload->title', 'Document Analysis');
+        .filter('payload->title', 'eq', 'Document Analysis');
       if (error) throw error;
       revalidatePath('/')
       return;

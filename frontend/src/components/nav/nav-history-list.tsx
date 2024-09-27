@@ -24,6 +24,7 @@ const loadAnalyses = cache(async (userId?: string | null) => {
 export async function NavHistoryList({ mobile, user }: SidebarListProps) {
   const chats = await loadChats(user?.id)
   const analyses = await loadAnalyses(user?.id)
+  console.log(`analyses: ${analyses}`)
   const hasHistory = (chats?.length ?? 0) > 0 || analyses.length > 0
   return (
     <div className={'flex flex-col h-full'}>

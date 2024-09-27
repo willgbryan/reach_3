@@ -1,3 +1,5 @@
+'use client'
+
 import { AnimatePresence, motion } from 'framer-motion'
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
 import { useCollapsedState } from '@/hooks/use-vector-blob'
