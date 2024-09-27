@@ -15,24 +15,19 @@ export async function POST(req: NextRequest) {
   }
 
   const json = await req.json()
-  const { messages, id: chatId, edits } = json
+  const { messages, analysisId, edits } = json
   const lastMessage = messages[messages.length - 1]
   const task = lastMessage?.content || ''
 
-  // Generate a new chatId if one wasn't provided
-  const actualChatId = chatId || nanoid()
+  // Generate a new chatId for this interaction
+  const chatId = nanoid()
 
-  const isProduction = process.env.NODE_ENV === 'production';
-  
   // PROD
-  const ws_uri = `wss://heighliner.tech/ws`;
+  // const ws_uri = `wss://heighliner.tech/ws`;
 
   // //DEV
-  // const ws_uri = `ws://${process.env.NEXT_PUBLIC_BACKEND_URL}/ws`
-
-
+  const ws_uri = `ws://backend:8000/ws`
   const socket = new WebSocket(ws_uri)
-
   let accumulatedOutput = ''
 
   return new Response(
@@ -42,20 +37,20 @@ export async function POST(req: NextRequest) {
           console.log('WebSocket connection opened');
           const requestData = {
             task: task,
-            report_type: "research_report",
+            report_type: analysisId ? "follow_up_question" : "document_analysis",
             sources: ["WEB"],
             ...(edits && { edits }),
+            ...(analysisId && { analysisId }),
           }
           console.log('Sending data to WebSocket:', requestData);
-          socket.send(`${JSON.stringify(requestData)}`)
+          socket.send(JSON.stringify(requestData))
         }
-        
+
         socket.onmessage = async (event) => {
           const data = JSON.parse(event.data)
           console.log(`Received WebSocket data: ${JSON.stringify(data)}`);
           if (data.type === 'report' || data.type === 'logs') {
             controller.enqueue(new TextEncoder().encode(JSON.stringify(data)))
-
             if (data.type === 'report') {
               accumulatedOutput += data.output
             }
@@ -71,11 +66,12 @@ export async function POST(req: NextRequest) {
           console.log("WebSocket connection closed")
           if (accumulatedOutput) {
             await saveChatHistory({
-              chatId: actualChatId,
+              chatId,
               completion: accumulatedOutput,
               messages,
               userId,
               db,
+              analysisId,
             })
           }
           controller.close()
@@ -101,6 +97,7 @@ interface ChatHistoryParams {
   messages: any[]
   userId: string
   db: ReturnType<typeof createClient>
+  analysisId?: string
 }
 
 async function saveChatHistory({
@@ -109,6 +106,7 @@ async function saveChatHistory({
   messages,
   userId,
   db,
+  analysisId,
 }: ChatHistoryParams): Promise<void> {
   const newMessage = {
     content: completion,
@@ -123,6 +121,7 @@ async function saveChatHistory({
     createdAt: new Date().toISOString(),
     path: `/chat/${chatId}`,
     messages: [...messages, newMessage],
+    analysisId,
   }
 
   const { error } = await db
@@ -131,6 +130,7 @@ async function saveChatHistory({
       id: chatId,
       user_id: userId,
       payload: chatPayload,
+      is_newsletter: false,
     })
 
   if (error) {

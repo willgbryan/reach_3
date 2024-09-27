@@ -21,6 +21,8 @@ import { MultiJurisdictionSelector } from './jurisdictions-combobox';
 
 interface AnalysisDisplayProps {
   analysis: string;
+  analysisId: string | null;
+  isStreaming?: boolean;
 }
 
 interface AnalysisSection {
@@ -29,7 +31,7 @@ interface AnalysisSection {
   content: string;
 }
 
-const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis }) => {
+const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis, analysisId, isStreaming = false }) => {
   const [selectedText, setSelectedText] = useState('');
   const [prompt, setPrompt] = useState('');
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
@@ -46,6 +48,12 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis }) => {
   const handleJurisdictionSelect = (selectedJurisdictions: string[]) => {
     setJurisdictions(selectedJurisdictions);
   };
+
+  useEffect(() => {
+    if (analysis) {
+      setSections([{ id: 'initial-analysis', title: 'Initial Analysis', content: analysis }]);
+    }
+  }, [analysis]);
 
   const handleSelection = useCallback(() => {
     const selection = window.getSelection();
@@ -199,6 +207,7 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis }) => {
               role: 'user',
             },
           ],
+          analysisId,
         }),
       });
 

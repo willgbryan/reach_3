@@ -16,6 +16,19 @@ import { ModeToggle } from '@/components/theme-toggle';
 import UserProvider from '@/components/user-provider';
 import { UpgradeAlert } from '@/components/upgrade-alert';
 import { Textarea } from '@/components/ui/textarea';
+import { getDocumentAnalyses } from '@/app/_data/document-analysis';
+import { getCurrentUserId } from '@/app/_data/user';
+import { AnalysisItems } from '@/components/nav/history/analysis-items';
+
+interface DocumentAnalysis {
+  id: string;
+  path: string;
+  title: string;
+  messages: any[];
+  createdAt: string;
+  filePaths: string[];
+  analysisId: string;
+}
 
 const PDFViewer = dynamic(() => import('@/components/pdf-handler'), {
   ssr: false,
@@ -42,6 +55,11 @@ export default function PdfUploadAndRenderPage() {
   const [freeSearches, setFreeSearches] = useState<number | null>(null);
   const [isPro, setIsPro] = useState<boolean>(false);
   const [showUpgradeAlert, setShowUpgradeAlert] = useState(false);
+  const [analysisId, setAnalysisId] = useState<string | null>(null);
+  const [streamingAnalysis, setStreamingAnalysis] = useState<string>('');
+  const [isAnalysisComplete, setIsAnalysisComplete] = useState(false);
+  const [previousAnalyses, setPreviousAnalyses] = useState<DocumentAnalysis[]>([]);
+
 
   const tutorialSteps = [
     {
@@ -89,6 +107,16 @@ export default function PdfUploadAndRenderPage() {
 
     fetchUserStatus();
 
+    const fetchPreviousAnalyses = async () => {
+      const userId = await getCurrentUserId();
+      if (userId) {
+        const analyses = await getDocumentAnalyses(userId);
+        setPreviousAnalyses(analyses);
+      }
+    };
+
+    fetchPreviousAnalyses();
+
     return () => window.removeEventListener('resize', updateHeight);
   }, []);
 
@@ -98,6 +126,13 @@ export default function PdfUploadAndRenderPage() {
 
   const handlePreviousTutorialStep = () => {
     setCurrentTutorialStep((prev) => Math.max(prev - 1, 0));
+  };
+
+  const handleLoadPreviousAnalysis = (analysis: DocumentAnalysis) => {
+    setAnalysisId(analysis.analysisId);
+    setStreamingAnalysis(analysis.messages[analysis.messages.length - 1].content);
+    setIsAnalysisComplete(true);
+    setFilesToProcess(analysis.filePaths.map(path => new File([], path.split('/').pop() || '')));
   };
 
   const handleCloseTutorial = () => {
@@ -161,11 +196,15 @@ export default function PdfUploadAndRenderPage() {
       return;
     }
     setFilesToProcess(selectedFiles);
-    processFiles(selectedFiles);
+    const newAnalysisId = `analysis-${Date.now()}`;
+    setAnalysisId(newAnalysisId);
+    processFiles(selectedFiles, newAnalysisId);
   }, [selectedFiles, isPro, freeSearches, customTask]);
 
-  const processFiles = async (files: File[]) => {
+  const processFiles = async (files: File[], currentAnalysisId: string) => {
     setIsProcessing(true);
+    setStreamingAnalysis('');
+    setIsAnalysisComplete(false);
     try {
       await uploadToSupabase(files);
 
@@ -176,6 +215,7 @@ export default function PdfUploadAndRenderPage() {
 
       const taskToUse = customTask.trim() || DEFAULT_TASK;
       formData.append('task', `${taskToUse} Bluebook citations are key. NEVER cite the supabase URL.`);
+      formData.append('analysisId', currentAnalysisId);
 
       const response = await fetch('/api/analyze-document', {
         method: 'POST',
@@ -199,7 +239,9 @@ export default function PdfUploadAndRenderPage() {
           try {
             const data = JSON.parse(event);
             if (data.type === 'report') {
-              setAnalysisData(prevData => data.accumulatedOutput || data.output);
+              setStreamingAnalysis(prevAnalysis => prevAnalysis + (data.output || ''));
+            } else if (data.type === 'complete') {
+              setIsAnalysisComplete(true);
             }
           } catch (error) {
             console.error('Error parsing JSON:', error);
@@ -224,7 +266,10 @@ export default function PdfUploadAndRenderPage() {
     setFilesToProcess([]);
     setSelectedFiles([]);
     setAnalysisData('');
+    setStreamingAnalysis('');
     setCustomTask('');
+    setAnalysisId(null);
+    setIsAnalysisComplete(false);
   };
 
   const memoizedPDFViewer = useMemo(() => {
@@ -276,6 +321,14 @@ export default function PdfUploadAndRenderPage() {
       </AnimatePresence>
       <div className="flex w-full relative" style={{ height: containerHeight }} ref={containerRef}>
         <div className="w-1/2 overflow-hidden border-r relative flex flex-col">
+        {previousAnalyses.length > 0 && (
+            <div className="mt-6">
+              <AnalysisItems 
+                analyses={previousAnalyses} 
+                onAnalysisSelect={handleLoadPreviousAnalysis}
+              />
+            </div>
+          )}
           {filesToProcess.length === 0 ? (
             <Card className="border-none shadow-none dark:bg-transparent h-full">
               <CardContent className="flex flex-col items-center justify-center h-full">
@@ -309,13 +362,12 @@ export default function PdfUploadAndRenderPage() {
         </div>
         <div className="w-1/2 flex flex-col">
           <div className="flex-grow p-4 overflow-y-auto">
-            {isProcessing ? (
-              <div className="flex flex-col items-center justify-center h-full">
-                <LoaderIcon className="animate-spin h-10 w-10 text-gray-500 mb-4" />
-                <span className="text-gray-700 dark:text-gray-300">Analyzing Documents...</span>
-              </div>
-            ) : analysisData ? (
-              <AnalysisDisplay analysis={analysisData} />
+            {isProcessing || streamingAnalysis ? (
+              <AnalysisDisplay 
+                analysis={streamingAnalysis} 
+                analysisId={analysisId}
+                isStreaming={isProcessing && !isAnalysisComplete}
+              />
             ) : (
               <div className="flex items-center justify-center h-full text-gray-500">
                 {selectedFiles.length > 0 

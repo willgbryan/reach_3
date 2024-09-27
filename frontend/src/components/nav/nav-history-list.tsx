@@ -33,19 +33,7 @@ export async function NavHistoryList({ mobile, user }: SidebarListProps) {
           <div className="space-y-2">
             {(chats?.length ?? 0) > 0 && (
               <>
-                <h3 className="px-2 text-lg font-semibold">Chat History</h3>
                 {mobile ? <MobileHistoryItems chats={chats ?? []} /> : <HistoryItems chats={chats ?? []} />}
-              </>
-            )}
-            
-            {(chats?.length ?? 0) > 0 && analyses.length > 0 && (
-              <Separator className="my-4" />
-            )}
-            
-            {analyses.length > 0 && (
-              <>
-                <h3 className="px-2 text-lg font-semibold mt-4">Document Analyses</h3>
-                <AnalysisItems analyses={analyses} />
               </>
             )}
           </div>
