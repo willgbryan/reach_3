@@ -42,53 +42,6 @@ export async function getChats(userId?: string | null) {
   }
 }
 
-interface DocumentAnalysis {
-  id: string;
-  path: string;
-  title: string;
-  messages: any[];
-  createdAt: string;
-  filePaths: string[];
-}
-
-function isDocumentAnalysis(value: any): value is DocumentAnalysis {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    typeof value.id === 'string' &&
-    typeof value.path === 'string' &&
-    typeof value.title === 'string' &&
-    Array.isArray(value.messages) &&
-    typeof value.createdAt === 'string' &&
-    Array.isArray(value.filePaths) &&
-    value.filePaths.every((path: any) => typeof path === 'string')
-  );
-}
-
-export async function getDocumentAnalyses(userId?: string | null) {
-  if (!userId) {
-    return [];
-  }
-
-  try {
-    const db = createClient(cookies());
-    const { data } = await db
-      .from('chats')
-      .select('payload')
-      .order('payload->createdAt', { ascending: false })
-      .eq('user_id', userId)
-      .eq('payload->title', 'Document Analysis')
-      .throwOnError();
-
-    return (data ?? [])
-      .map(entry => entry.payload)
-      .filter(isDocumentAnalysis);
-  } catch (error) {
-    console.error('Error fetching document analyses:', error);
-    return [];
-  }
-}
-
 export interface NewsletterChat {
   id: string;
   path: string;

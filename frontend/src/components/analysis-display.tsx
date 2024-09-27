@@ -49,12 +49,6 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis, analysisId,
     setJurisdictions(selectedJurisdictions);
   };
 
-  useEffect(() => {
-    if (analysis) {
-      setSections([{ id: 'initial-analysis', title: 'Initial Analysis', content: analysis }]);
-    }
-  }, [analysis]);
-
   const handleSelection = useCallback(() => {
     const selection = window.getSelection();
     if (selection && !selection.isCollapsed) {
