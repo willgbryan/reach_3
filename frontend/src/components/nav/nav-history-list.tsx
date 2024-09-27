@@ -1,9 +1,10 @@
 import { cache } from 'react'
-
 import { clearChats, getChats } from '@/app/_data/chat'
-
+import { clearAnalyses, getDocumentAnalyses, DocumentAnalysis } from '@/app/_data/document-analysis'
 import { ClearHistory } from '../chat/chat-clear-history'
 import { HistoryItems, MobileHistoryItems } from './history/history-items'
+import { AnalysisItems } from './history/analysis-items'
+import { Separator } from '@/components/ui/separator'
 
 interface SidebarListProps {
   user?: any
@@ -12,29 +13,55 @@ interface SidebarListProps {
   mobile?: boolean
 }
 
-// TODO: revalidate tags?
 const loadChats = cache(async (userId?: string | null) => {
   return await getChats(userId)
 })
 
+const loadAnalyses = cache(async (userId?: string | null) => {
+  return await getDocumentAnalyses(userId)
+})
+
 export async function NavHistoryList({ mobile, user }: SidebarListProps) {
   const chats = await loadChats(user?.id)
+  const analyses = await loadAnalyses(user?.id)
+
+  const hasHistory = (chats?.length ?? 0) > 0 || analyses.length > 0
 
   return (
-    <div className={'flex  flex-col  h-full'}>
-      <div className="flex-1  pb-4">
-        {chats?.length ? (
-          <div className="space-y-2 ">
-            {mobile ? <MobileHistoryItems chats={chats} /> : <HistoryItems chats={chats} />}
+    <div className={'flex flex-col h-full'}>
+      <div className="flex-1 pb-4">
+        {hasHistory ? (
+          <div className="space-y-2">
+            {(chats?.length ?? 0) > 0 && (
+              <>
+                <h3 className="px-2 text-lg font-semibold">Chat History</h3>
+                {mobile ? <MobileHistoryItems chats={chats ?? []} /> : <HistoryItems chats={chats ?? []} />}
+              </>
+            )}
+            
+            {(chats?.length ?? 0) > 0 && analyses.length > 0 && (
+              <Separator className="my-4" />
+            )}
+            
+            {analyses.length > 0 && (
+              <>
+                <h3 className="px-2 text-lg font-semibold mt-4">Document Analyses</h3>
+                <AnalysisItems analyses={analyses} />
+              </>
+            )}
           </div>
         ) : (
           <div className="p-4 text-center">
-            <p className="text-sm text-muted-foreground"></p>
+            <p className="text-sm text-muted-foreground">No history yet</p>
           </div>
         )}
       </div>
       <div className="flex items-center justify-center p-4 pl-2">
-        <ClearHistory clearChats={clearChats} isEnabled={chats?.length > 10} />
+        <ClearHistory 
+          clearChats={clearChats} 
+          clearAnalyses={clearAnalyses}
+          isEnabled={hasHistory && ((chats?.length ?? 0) + analyses.length > 10)}
+        />
       </div>
     </div>
   )

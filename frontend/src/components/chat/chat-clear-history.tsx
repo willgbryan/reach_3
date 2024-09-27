@@ -1,10 +1,8 @@
 'use client'
-
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { LoaderIcon, Trash } from 'lucide-react'
 import { toast } from 'sonner'
-
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,13 +21,26 @@ import { ServerActionResult } from '@/types'
 interface ClearHistoryProps {
   isEnabled: boolean
   clearChats: () => ServerActionResult<void>
+  clearAnalyses: () => ServerActionResult<void>
 }
 
-export function ClearHistory({ isEnabled = false, clearChats }: ClearHistoryProps) {
+export function ClearHistory({ isEnabled = false, clearChats, clearAnalyses }: ClearHistoryProps) {
   const [open, setOpen] = React.useState(false)
   const [isPending, startTransition] = React.useTransition()
   const router = useRouter()
   const { isGlobalCollapsed } = useCollapsedState()
+
+  const handleClear = async () => {
+    try {
+      await clearChats()
+      await clearAnalyses()
+      setOpen(false)
+      router.push('/')
+      toast.success('History cleared successfully')
+    } catch (error) {
+      toast.error('Failed to clear history')
+    }
+  }
 
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
@@ -44,7 +55,7 @@ export function ClearHistory({ isEnabled = false, clearChats }: ClearHistoryProp
             {isGlobalCollapsed ? (
               <Trash className="h-5 w-5 text-neutral-500 group-hover:text-red-50" />
             ) : (
-              'Clear'
+              'Clear All History'
             )}
           </Button>
         </AlertDialogTrigger>
@@ -53,7 +64,7 @@ export function ClearHistory({ isEnabled = false, clearChats }: ClearHistoryProp
         <AlertDialogHeader>
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
           <AlertDialogDescription>
-            This will permanently delete your chat history and remove your data from our servers.
+            This will permanently delete your chat history and document analyses, removing all data from our servers.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -63,20 +74,12 @@ export function ClearHistory({ isEnabled = false, clearChats }: ClearHistoryProp
             onClick={(event) => {
               event.preventDefault()
               startTransition(() => {
-                clearChats().then((result) => {
-                  if (result && 'error' in result) {
-                    toast.error(result.error)
-                    return
-                  }
-
-                  setOpen(false)
-                  router.push('/')
-                })
+                handleClear()
               })
             }}
           >
             {isPending && <LoaderIcon className="mr-2 animate-spin" />}
-            Delete
+            Delete All
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
