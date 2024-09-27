@@ -53,73 +53,61 @@ export interface DocumentAnalysis {
     }
   }
 
-export async function removeAnalysis({ id, path }: { id: string; path: string }): Promise<ServerActionResult<void>> {
-  try {
-    const db = createClient(cookies())
-    const { error } = await db
-      .from('chats')
-      .delete()
-      .eq('id', id)
-      .eq('payload->title', 'Document Analysis');
-
-    if (error) throw error;
-
-    revalidatePath('/')
-    revalidatePath(path)
-  } catch (error) {
-    console.error('Error removing analysis:', error)
-    return {
-      error: 'Failed to remove analysis'
+  export async function removeAnalysis({ id, path }: { id: string; path: string }): ServerActionResult<void> {
+    try {
+      const db = createClient(cookies())
+      const { error } = await db
+        .from('chats')
+        .delete()
+        .eq('id', id)
+        .eq('payload->title', 'Document Analysis');
+      if (error) throw error;
+      revalidatePath('/')
+      revalidatePath(path)
+      return;
+    } catch (error) {
+      console.error('Error removing analysis:', error)
+      return { error: 'Failed to remove analysis' }
     }
   }
-}
-
-export async function shareAnalysis(analysis: DocumentAnalysis): Promise<ServerActionResult<DocumentAnalysis>> {
-  try {
-    const payload = {
-      ...analysis,
-      sharePath: `/share-analysis/${analysis.id}`,
-    }
-    const db = createClient(cookies())
-    const { error } = await db
-      .from('chats')
-      .update({ payload })
-      .eq('id', analysis.id)
-      .eq('payload->title', 'Document Analysis');
-
-    if (error) throw error;
-
-    return { data: payload }
-  } catch (error) {
-    console.error('Error sharing analysis:', error)
-    return {
-      error: 'Failed to share analysis'
+  
+  export async function shareAnalysis(analysis: DocumentAnalysis): ServerActionResult<DocumentAnalysis> {
+    try {
+      const payload = {
+        ...analysis,
+        sharePath: `/share-analysis/${analysis.id}`,
+      }
+      const db = createClient(cookies())
+      const { error } = await db
+        .from('chats')
+        .update({ payload })
+        .eq('id', analysis.id)
+        .eq('payload->title', 'Document Analysis');
+      if (error) throw error;
+      return payload;
+    } catch (error) {
+      console.error('Error sharing analysis:', error)
+      return { error: 'Failed to share analysis' }
     }
   }
-}
-
-export async function clearAnalyses(): Promise<ServerActionResult<void>> {
-  const userId = await getCurrentUserId()
-  if (!userId) {
-    return {
-      error: 'Unauthorized'
+  
+  export async function clearAnalyses(): ServerActionResult<void> {
+    const userId = await getCurrentUserId()
+    if (!userId) {
+      return { error: 'Unauthorized' }
+    }
+    try {
+      const db = createClient(cookies())
+      const { error } = await db
+        .from('chats')
+        .delete()
+        .eq('user_id', userId)
+        .eq('payload->title', 'Document Analysis');
+      if (error) throw error;
+      revalidatePath('/')
+      return;
+    } catch (error) {
+      console.error('Error clearing analyses:', error)
+      return { error: 'Failed to clear analyses' }
     }
   }
-  try {
-    const db = createClient(cookies())
-    const { error } = await db
-      .from('chats')
-      .delete()
-      .eq('user_id', userId)
-      .eq('payload->title', 'Document Analysis');
-
-    if (error) throw error;
-
-    revalidatePath('/')
-  } catch (error) {
-    console.error('Error clearing analyses:', error)
-    return {
-      error: 'Failed to clear analyses'
-    }
-  }
-}
