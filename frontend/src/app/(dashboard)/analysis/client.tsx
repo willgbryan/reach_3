@@ -59,6 +59,7 @@ export default function PdfUploadAndRenderPage() {
   const [streamingAnalysis, setStreamingAnalysis] = useState<string>('');
   const [isAnalysisComplete, setIsAnalysisComplete] = useState(false);
   const [previousAnalyses, setPreviousAnalyses] = useState<DocumentAnalysis[]>([]);
+  const [isNewUpload, setIsNewUpload] = useState(false);
 
 
   const tutorialSteps = [
@@ -128,13 +129,6 @@ export default function PdfUploadAndRenderPage() {
     setCurrentTutorialStep((prev) => Math.max(prev - 1, 0));
   };
 
-  const handleLoadPreviousAnalysis = (analysis: DocumentAnalysis) => {
-    setAnalysisId(analysis.analysisId);
-    setStreamingAnalysis(analysis.messages[analysis.messages.length - 1].content);
-    setIsAnalysisComplete(true);
-    setFilesToProcess(analysis.filePaths.map(path => new File([], path.split('/').pop() || '')));
-  };
-
   const handleCloseTutorial = () => {
     setIsTutorialActive(false);
     if (dontShowTutorial) {
@@ -184,6 +178,7 @@ export default function PdfUploadAndRenderPage() {
       toast.warning('Only PDF files are allowed. Non-PDF files were removed.');
     }
     setSelectedFiles(prevFiles => [...prevFiles, ...pdfFiles]);
+    setIsNewUpload(true);
   }, []);
 
   const handleUploadAndProcess = useCallback(() => {
@@ -262,6 +257,14 @@ export default function PdfUploadAndRenderPage() {
     }
   };
 
+  const handleLoadPreviousAnalysis = (analysis: DocumentAnalysis) => {
+    setAnalysisId(analysis.analysisId);
+    setStreamingAnalysis(analysis.messages[analysis.messages.length - 1].content);
+    setIsAnalysisComplete(true);
+    setFilesToProcess(analysis.filePaths.map(path => new File([], path.split('/').pop() || '')));
+    setIsNewUpload(false);
+  };
+
   const handleClearAndUpload = () => {
     setFilesToProcess([]);
     setSelectedFiles([]);
@@ -270,6 +273,7 @@ export default function PdfUploadAndRenderPage() {
     setCustomTask('');
     setAnalysisId(null);
     setIsAnalysisComplete(false);
+    setIsNewUpload(false);
   };
 
   const memoizedPDFViewer = useMemo(() => {
@@ -321,7 +325,7 @@ export default function PdfUploadAndRenderPage() {
       </AnimatePresence>
       <div className="flex w-full relative" style={{ height: containerHeight }} ref={containerRef}>
         <div className="w-1/2 overflow-hidden border-r relative flex flex-col">
-        {previousAnalyses.length > 0 && (
+          {!isNewUpload && previousAnalyses.length > 0 && (
             <div className="mt-6">
               <AnalysisItems 
                 analyses={previousAnalyses} 
