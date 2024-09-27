@@ -144,6 +144,7 @@ export async function POST(req: NextRequest) {
             messages: [{ content: task, role: "user" }],
             userId,
             db,
+            filePaths,
           })
         }
         controller.close()
@@ -175,6 +176,7 @@ interface ChatHistoryParams {
   messages: any[]
   userId: string
   db: ReturnType<typeof createClient>
+  filePaths: string[]
 }
 
 async function saveChatHistory({
@@ -183,6 +185,7 @@ async function saveChatHistory({
   messages,
   userId,
   db,
+  filePaths,
 }: ChatHistoryParams): Promise<void> {
   const newMessage = {
     content: completion,
@@ -197,6 +200,7 @@ async function saveChatHistory({
     createdAt: new Date().toISOString(),
     path: `/chat/${chatId}`,
     messages: [...messages, newMessage],
+    filePaths: filePaths,
   }
 
   const { error } = await db
