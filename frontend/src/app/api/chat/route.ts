@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
   }
 
   const json = await req.json()
-  const { messages, id: chatId, edits } = json
+  const { messages, id: chatId, edits, analysisId } = json
   const lastMessage = messages[messages.length - 1]
   const task = lastMessage?.content || ''
 
@@ -25,10 +25,10 @@ export async function POST(req: NextRequest) {
   const isProduction = process.env.NODE_ENV === 'production';
   
   // PROD
-  const ws_uri = `wss://heighliner.tech/ws`;
+  // const ws_uri = `wss://heighliner.tech/ws`;
 
   // //DEV
-  // const ws_uri = `ws://backend:8000/ws`
+  const ws_uri = `ws://backend:8000/ws`
 
 
   const socket = new WebSocket(ws_uri)
@@ -76,8 +76,10 @@ export async function POST(req: NextRequest) {
               messages,
               userId,
               db,
+              analysisId,
             })
           }
+          console.log(`chat history saved`)
           controller.close()
         }
       },
@@ -101,6 +103,7 @@ interface ChatHistoryParams {
   messages: any[]
   userId: string
   db: ReturnType<typeof createClient>
+  analysisId?: string
 }
 
 async function saveChatHistory({
@@ -109,6 +112,7 @@ async function saveChatHistory({
   messages,
   userId,
   db,
+  analysisId,
 }: ChatHistoryParams): Promise<void> {
   const newMessage = {
     content: completion,
@@ -123,6 +127,7 @@ async function saveChatHistory({
     createdAt: new Date().toISOString(),
     path: `/chat/${chatId}`,
     messages: [...messages, newMessage],
+    analysisId,
   }
 
   const { error } = await db

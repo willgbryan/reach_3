@@ -17,37 +17,38 @@ export interface DocumentAnalysis {
 }
 
 export async function getDocumentAnalyses(userId?: string | null): Promise<DocumentAnalysis[]> {
-  if (!userId) {
-    return [];
+    if (!userId) {
+      return [];
+    }
+    try {
+      const db = createClient(cookies());
+      const { data } = await db
+        .from('chats')
+        .select('payload')
+        .order('payload->createdAt', { ascending: false })
+        .eq('user_id', userId)
+        .eq('is_newsletter', false)
+        .not('payload->analysisId', 'is', null)
+        .throwOnError();
+  
+      const analyses = (data ?? [])
+        .map((entry) => entry.payload as unknown)
+        .filter((payload): payload is DocumentAnalysis => isDocumentAnalysis(payload));
+  
+      const groupedAnalyses = analyses.reduce((acc, analysis) => {
+        if (!acc[analysis.analysisId]) {
+          acc[analysis.analysisId] = [];
+        }
+        acc[analysis.analysisId].push(analysis);
+        return acc;
+      }, {} as Record<string, DocumentAnalysis[]>);
+  
+      return Object.values(groupedAnalyses).map(group => group[0]);
+    } catch (error) {
+      console.error('Error fetching document analyses:', error);
+      return [];
+    }
   }
-  try {
-    const db = createClient(cookies());
-    const { data } = await db
-      .from('chats')
-      .select('payload')
-      .order('payload->createdAt', { ascending: false })
-      .eq('user_id', userId)
-      .eq('is_newsletter', false)
-      .throwOnError();
-
-    const analyses = (data ?? [])
-      .map((entry) => entry.payload as unknown)
-      .filter((payload): payload is DocumentAnalysis => isDocumentAnalysis(payload));
-
-    const groupedAnalyses = analyses.reduce((acc, analysis) => {
-      if (!acc[analysis.analysisId]) {
-        acc[analysis.analysisId] = [];
-      }
-      acc[analysis.analysisId].push(analysis);
-      return acc;
-    }, {} as Record<string, DocumentAnalysis[]>);
-
-    return Object.values(groupedAnalyses).map(group => group[0]);
-  } catch (error) {
-    console.error('Error fetching document analyses:', error);
-    return [];
-  }
-}
 
 function isDocumentAnalysis(value: unknown): value is DocumentAnalysis {
   return (

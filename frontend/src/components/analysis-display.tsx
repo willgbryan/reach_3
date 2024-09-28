@@ -41,7 +41,6 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis, analysisId,
   const [sections, setSections] = useState<AnalysisSection[]>([
     { id: 'initial-analysis', title: 'Initial Analysis', content: analysis }
   ]);
-  const socketRef = useRef<WebSocket | null>(null);
   const [openAccordion, setOpenAccordion] = useState<string | undefined>('initial-analysis');
   const [jurisdictions, setJurisdictions] = useState<string[]>([]);
 
@@ -236,10 +235,6 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis, analysisId,
                 )
               );
             } else if (data.type === 'complete') {
-              if (socketRef.current) {
-                socketRef.current.close();
-                socketRef.current = null;
-              }
               return;
             }
           } catch (error) {
