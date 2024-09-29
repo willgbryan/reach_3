@@ -31,6 +31,7 @@ interface AnalysisDisplayProps {
   isStreaming?: boolean;
   sections: AnalysisSection[];
   onUpdateSections: React.Dispatch<React.SetStateAction<AnalysisSection[]>>;
+  isInitialAnalysis: boolean;
 }
 
 const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ 
@@ -38,7 +39,8 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
   analysisId, 
   isStreaming = false, 
   sections, 
-  onUpdateSections 
+  onUpdateSections,
+  isInitialAnalysis
 }) => {
   const [selectedText, setSelectedText] = useState('');
   const [prompt, setPrompt] = useState('');
@@ -54,10 +56,10 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
   };
 
   useEffect(() => {
-    if (analysis && sections.length === 0) {
-      onUpdateSections([{ id: 'initial-analysis', title: 'Initial Analysis', content: analysis }]);
+    if (isInitialAnalysis && sections.length === 0) {
+      onUpdateSections([{ id: 'initial-analysis', title: 'Initial Analysis', content: '' }]);
     }
-  }, [analysis, sections, onUpdateSections]);
+  }, [isInitialAnalysis, sections, onUpdateSections]);
 
 
   const handleSelection = useCallback(() => {
@@ -308,35 +310,35 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
         </PopoverContent>
       </Popover>
       <Accordion 
-      type="single" 
-      collapsible 
-      className="w-full"
-      value={openAccordion}
-      onValueChange={setOpenAccordion}
-    >
-      {sections.map((section) => (
-        <AccordionItem key={section.id} value={section.id}>
-          <AccordionTrigger>{section.title}</AccordionTrigger>
-          <AccordionContent>
-            <Card className="pt-6 bg-transparent">
-              <CardContent className="">
-                {section.content ? (
-                  <div 
-                    dangerouslySetInnerHTML={{ __html: formatContentToHTML(section.content) }}
-                    className="prose dark:prose-invert max-w-none"
-                  />
-                ) : (
-                  <div className="flex items-center space-x-2">
-                    <LoaderIcon className="animate-spin h-5 w-5" />
-                    <span>Analyzing...</span>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </AccordionContent>
-        </AccordionItem>
-      ))}
-    </Accordion>
+        type="single" 
+        collapsible 
+        className="w-full"
+        value={openAccordion}
+        onValueChange={setOpenAccordion}
+      >
+        {sections.map((section) => (
+          <AccordionItem key={section.id} value={section.id}>
+            <AccordionTrigger>{section.title}</AccordionTrigger>
+            <AccordionContent>
+              <Card className="pt-6 bg-transparent">
+                <CardContent className="">
+                  {section.content ? (
+                    <div 
+                      dangerouslySetInnerHTML={{ __html: formatContentToHTML(section.content) }}
+                      className="prose dark:prose-invert max-w-none"
+                    />
+                  ) : (
+                    <div className="flex items-center space-x-2">
+                      <LoaderIcon className="animate-spin h-5 w-5" />
+                      <span>Analyzing...</span>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </AccordionContent>
+          </AccordionItem>
+        ))}
+      </Accordion>
     </div>
   );
 };

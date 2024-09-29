@@ -68,6 +68,7 @@ export default function PdfUploadAndRenderPage() {
   const [previousAnalyses, setPreviousAnalyses] = useState<DocumentAnalysis[]>([]);
   const [isNewUpload, setIsNewUpload] = useState(false);
   const [sections, setSections] = useState<AnalysisSection[]>([]);
+  const [isInitialAnalysis, setIsInitialAnalysis] = useState(false);
 
   const tutorialSteps = [
     {
@@ -208,6 +209,8 @@ export default function PdfUploadAndRenderPage() {
     setIsProcessing(true);
     setStreamingAnalysis('');
     setIsAnalysisComplete(false);
+    setIsInitialAnalysis(true);
+    setSections([{ id: 'initial-analysis', title: 'Initial Analysis', content: '' }]);
     try {
       await uploadToSupabase(files);
 
@@ -431,6 +434,7 @@ export default function PdfUploadAndRenderPage() {
                 isStreaming={isProcessing && !isAnalysisComplete}
                 sections={sections}
                 onUpdateSections={setSections}
+                isInitialAnalysis={isInitialAnalysis}
               />
             ) : (
               <div className="flex items-center justify-center h-full text-gray-500">
@@ -440,7 +444,7 @@ export default function PdfUploadAndRenderPage() {
               </div>
             )}
           </div>
-          {filesToProcess.length > 0 && !isProcessing && (
+          {/* {filesToProcess.length > 0 && !isProcessing && (
             <div className="p-4 border-t">
               <Button
                 onClick={handleClearAndUpload}
@@ -449,7 +453,7 @@ export default function PdfUploadAndRenderPage() {
                 Clear and Upload New Files
               </Button>
             </div>
-          )}
+          )} */}
         </div>
       </div>
     </>
