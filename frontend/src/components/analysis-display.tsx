@@ -19,28 +19,33 @@ import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { MultiJurisdictionSelector } from './jurisdictions-combobox';
 
-interface AnalysisDisplayProps {
-  analysis: string;
-  analysisId: string | null;
-  isStreaming?: boolean;
-}
-
 interface AnalysisSection {
   id: string;
   title: string;
   content: string;
 }
 
-const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis, analysisId, isStreaming = false }) => {
+interface AnalysisDisplayProps {
+  analysis: string;
+  analysisId: string | null;
+  isStreaming?: boolean;
+  sections: AnalysisSection[];
+  onUpdateSections: React.Dispatch<React.SetStateAction<AnalysisSection[]>>;
+}
+
+const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ 
+  analysis, 
+  analysisId, 
+  isStreaming = false, 
+  sections, 
+  onUpdateSections 
+}) => {
   const [selectedText, setSelectedText] = useState('');
   const [prompt, setPrompt] = useState('');
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [popoverPosition, setPopoverPosition] = useState({ top: 0, left: 0 });
   const contentRef = useRef<HTMLDivElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
-  const [sections, setSections] = useState<AnalysisSection[]>([
-    { id: 'initial-analysis', title: 'Initial Analysis', content: analysis }
-  ]);
   const [openAccordion, setOpenAccordion] = useState<string | undefined>('initial-analysis');
   const [jurisdictions, setJurisdictions] = useState<string[]>([]);
 
@@ -49,10 +54,11 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis, analysisId,
   };
 
   useEffect(() => {
-    if (analysis) {
-      setSections([{ id: 'initial-analysis', title: 'Initial Analysis', content: analysis }]);
+    if (analysis && sections.length === 0) {
+      onUpdateSections([{ id: 'initial-analysis', title: 'Initial Analysis', content: analysis }]);
     }
-  }, [analysis]);
+  }, [analysis, sections, onUpdateSections]);
+
 
   const handleSelection = useCallback(() => {
     const selection = window.getSelection();
@@ -185,14 +191,11 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis, analysisId,
   const handleSubmit = async () => {
     setIsPopoverOpen(false);
     const newSectionId = `section-${Date.now()}`;
-    setSections(prevSections => [
-      ...prevSections,
-      { id: newSectionId, title: prompt, content: '' }
-    ]);
+    onUpdateSections([...sections, { id: newSectionId, title: prompt, content: '' }]);
     setOpenAccordion(newSectionId);
 
     try {
-      const response = await fetch('/api/chat', {
+      const response = await fetch('/api/analyze-document', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -207,6 +210,7 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis, analysisId,
             },
           ],
           analysisId,
+          edits: [],
         }),
       });
 
@@ -227,7 +231,7 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis, analysisId,
             const data = JSON.parse(event);
 
             if (data.type === 'report') {
-              setSections(prevSections => 
+              onUpdateSections((prevSections: AnalysisSection[]) => 
                 prevSections.map(section => 
                   section.id === newSectionId
                     ? { ...section, content: section.content + data.output }
@@ -244,7 +248,7 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis, analysisId,
       }
     } catch (error) {
       console.error('Error submitting prompt:', error);
-      setSections(prevSections => 
+      onUpdateSections((prevSections: AnalysisSection[]) => 
         prevSections.map(section => 
           section.id === newSectionId
             ? { ...section, content: 'An error occurred while processing your request.' }
@@ -304,35 +308,35 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis, analysisId,
         </PopoverContent>
       </Popover>
       <Accordion 
-        type="single" 
-        collapsible 
-        className="w-full"
-        value={openAccordion}
-        onValueChange={setOpenAccordion}
-      >
-        {sections.map((section) => (
-          <AccordionItem key={section.id} value={section.id}>
-            <AccordionTrigger>{section.title}</AccordionTrigger>
-            <AccordionContent>
-              <Card className="pt-6 bg-transparent">
-                <CardContent className="">
-                  {section.content ? (
-                    <div 
-                      dangerouslySetInnerHTML={{ __html: formatContentToHTML(section.content) }}
-                      className="prose dark:prose-invert max-w-none"
-                    />
-                  ) : (
-                    <div className="flex items-center space-x-2">
-                      <LoaderIcon className="animate-spin h-5 w-5" />
-                      <span>Analyzing...</span>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </AccordionContent>
-          </AccordionItem>
-        ))}
-      </Accordion>
+      type="single" 
+      collapsible 
+      className="w-full"
+      value={openAccordion}
+      onValueChange={setOpenAccordion}
+    >
+      {sections.map((section) => (
+        <AccordionItem key={section.id} value={section.id}>
+          <AccordionTrigger>{section.title}</AccordionTrigger>
+          <AccordionContent>
+            <Card className="pt-6 bg-transparent">
+              <CardContent className="">
+                {section.content ? (
+                  <div 
+                    dangerouslySetInnerHTML={{ __html: formatContentToHTML(section.content) }}
+                    className="prose dark:prose-invert max-w-none"
+                  />
+                ) : (
+                  <div className="flex items-center space-x-2">
+                    <LoaderIcon className="animate-spin h-5 w-5" />
+                    <span>Analyzing...</span>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </AccordionContent>
+        </AccordionItem>
+      ))}
+    </Accordion>
     </div>
   );
 };

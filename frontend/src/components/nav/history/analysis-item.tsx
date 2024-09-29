@@ -26,20 +26,20 @@ interface AnalysisItemProps {
   }
   
   export function AnalysisItem({ index, analysis, children, onSelect }: AnalysisItemProps) {
-    const [newAnalysisId, setNewAnalysisId] = useLocalStorage('newAnalysisId', null)
-    const shouldAnimate = index === 0 && newAnalysisId === analysis.id
-  
-    if (!analysis?.id) return null
-  
-    const previewContent = analysis.messages[analysis.messages.length - 1].content
-    const truncatedContent = previewContent.slice(0, 150) + (previewContent.length > 150 ? '...' : '')
-  
+    const [newAnalysisId, setNewAnalysisId] = useLocalStorage('newAnalysisId', null);
+    const shouldAnimate = index === 0 && newAnalysisId === analysis.id;
+    
+    if (!analysis?.id) return null;
+    
+    const initialAnalysis = analysis.messages[0].content;
+    const truncatedContent = initialAnalysis.slice(0, 150) + (initialAnalysis.length > 150 ? '...' : '');
+    
     return (
       <Card className="w-full h-full">
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <FileTextIcon className="h-5 w-5" />
-            <span className="truncate">{analysis.title}</span>
+            <span className="truncate">{analysis.title || "Untitled Analysis"}</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -54,7 +54,7 @@ interface AnalysisItemProps {
           </div>
         </CardContent>
       </Card>
-    )
+    );
   }
   
   function AnalysisTypeIcon({ isActive, isGlobalCollapsed = false }) {

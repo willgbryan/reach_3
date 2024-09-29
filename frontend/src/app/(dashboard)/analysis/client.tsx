@@ -19,15 +19,22 @@ import { Textarea } from '@/components/ui/textarea';
 import { getDocumentAnalyses } from '@/app/_data/document-analysis';
 import { getCurrentUserId } from '@/app/_data/user';
 import { AnalysisItems } from '@/components/nav/history/analysis-items';
+import { Message } from 'ai';
 
 interface DocumentAnalysis {
   id: string;
   path: string;
   title: string;
-  messages: any[];
+  messages: Message[];
   createdAt: string;
   filePaths: string[];
   analysisId: string;
+}
+
+interface AnalysisSection {
+  id: string;
+  title: string;
+  content: string;
 }
 
 const PDFViewer = dynamic(() => import('@/components/pdf-handler'), {
@@ -60,7 +67,7 @@ export default function PdfUploadAndRenderPage() {
   const [isAnalysisComplete, setIsAnalysisComplete] = useState(false);
   const [previousAnalyses, setPreviousAnalyses] = useState<DocumentAnalysis[]>([]);
   const [isNewUpload, setIsNewUpload] = useState(false);
-
+  const [sections, setSections] = useState<AnalysisSection[]>([]);
 
   const tutorialSteps = [
     {
@@ -193,6 +200,7 @@ export default function PdfUploadAndRenderPage() {
     setFilesToProcess(selectedFiles);
     const newAnalysisId = `analysis-${Date.now()}`;
     setAnalysisId(newAnalysisId);
+    setSections([]);
     processFiles(selectedFiles, newAnalysisId);
   }, [selectedFiles, isPro, freeSearches, customTask]);
 
@@ -231,15 +239,28 @@ export default function PdfUploadAndRenderPage() {
         const chunk = decoder.decode(value);
         const events = chunk.split('\n\n').filter(Boolean);
         for (const event of events) {
-          try {
-            const data = JSON.parse(event);
-            if (data.type === 'report') {
-              setStreamingAnalysis(prevAnalysis => prevAnalysis + (data.output || ''));
-            } else if (data.type === 'complete') {
-              setIsAnalysisComplete(true);
+          for (const event of events) {
+            try {
+              const data = JSON.parse(event);
+              if (data.type === 'report') {
+                setStreamingAnalysis(prevAnalysis => prevAnalysis + (data.output || ''));
+                setSections((prevSections: AnalysisSection[]) => {
+                  if (prevSections.length === 0) {
+                    return [{ id: 'initial-analysis', title: 'Initial Analysis', content: data.output }];
+                  } else {
+                    const lastSection = prevSections[prevSections.length - 1];
+                    return [
+                      ...prevSections.slice(0, -1),
+                      { ...lastSection, content: lastSection.content + data.output }
+                    ];
+                  }
+                });
+              } else if (data.type === 'complete') {
+                setIsAnalysisComplete(true);
+              }
+            } catch (error) {
+              console.error('Error parsing JSON:', error);
             }
-          } catch (error) {
-            console.error('Error parsing JSON:', error);
           }
         }
       }
@@ -259,11 +280,48 @@ export default function PdfUploadAndRenderPage() {
 
   const handleLoadPreviousAnalysis = (analysis: DocumentAnalysis) => {
     setAnalysisId(analysis.analysisId);
-    setStreamingAnalysis(analysis.messages[analysis.messages.length - 1].content);
+    setStreamingAnalysis('');
     setIsAnalysisComplete(true);
     setFilesToProcess(analysis.filePaths.map(path => new File([], path.split('/').pop() || '')));
     setIsNewUpload(false);
+  
+    const sections: AnalysisSection[] = [];
+    let sectionIndex = 0;
+    let i = 0;
+  
+    while (i < analysis.messages.length) {
+      const userMessage = analysis.messages[i];
+      let assistantMessageContent = '';
+  
+      if (userMessage.role === 'user') {
+        i++;
+        if (i < analysis.messages.length && analysis.messages[i].role === 'assistant') {
+          const assistantMessage = analysis.messages[i];
+          assistantMessageContent = assistantMessage.content;
+          i++;
+        }
+        const extractUserQuestion = (content: string): string => {
+          const userQuestionMatch = content.match(/User question: (.+)/);
+          return userQuestionMatch ? userQuestionMatch[1] : content;
+        };
+        
+        const sectionTitle = userMessage.content === "The following are legal documents that I would like analyzed. I need to understand the key important pieces with the relevant cited language as well as any language that can be loosely interpreted. Bluebook citations are key. NEVER cite the supabase URL." 
+          ? 'Initial Analysis' 
+          : extractUserQuestion(userMessage.content);
+        
+        sections.push({
+          id: `section-${sectionIndex}`,
+          title: sectionTitle,
+          content: assistantMessageContent
+        });
+        sectionIndex++;
+      } else {
+        i++;
+      }
+    }
+    setSections(sections);
   };
+  
 
   const handleClearAndUpload = () => {
     setFilesToProcess([]);
@@ -366,11 +424,13 @@ export default function PdfUploadAndRenderPage() {
         </div>
         <div className="w-1/2 flex flex-col">
           <div className="flex-grow p-4 overflow-y-auto">
-            {isProcessing || streamingAnalysis ? (
+            {isProcessing || streamingAnalysis || sections.length > 0 ? (
               <AnalysisDisplay 
                 analysis={streamingAnalysis} 
                 analysisId={analysisId}
                 isStreaming={isProcessing && !isAnalysisComplete}
+                sections={sections}
+                onUpdateSections={setSections}
               />
             ) : (
               <div className="flex items-center justify-center h-full text-gray-500">

@@ -25,7 +25,7 @@ export async function getDocumentAnalyses(userId?: string | null): Promise<Docum
       const { data } = await db
         .from('chats')
         .select('payload')
-        .order('payload->createdAt', { ascending: false })
+        .order('payload->createdAt', { ascending: true })
         .eq('user_id', userId)
         .eq('is_newsletter', false)
         .not('payload->analysisId', 'is', null)
@@ -37,13 +37,19 @@ export async function getDocumentAnalyses(userId?: string | null): Promise<Docum
   
       const groupedAnalyses = analyses.reduce((acc, analysis) => {
         if (!acc[analysis.analysisId]) {
-          acc[analysis.analysisId] = [];
+          acc[analysis.analysisId] = {
+            ...analysis,
+            allMessages: [],
+          };
         }
-        acc[analysis.analysisId].push(analysis);
+        acc[analysis.analysisId].allMessages.push(...analysis.messages);
         return acc;
-      }, {} as Record<string, DocumentAnalysis[]>);
+      }, {} as Record<string, DocumentAnalysis & { allMessages: any[] }>);
   
-      return Object.values(groupedAnalyses).map(group => group[0]);
+      return Object.values(groupedAnalyses).map(group => ({
+        ...group,
+        messages: group.allMessages,
+      }));
     } catch (error) {
       console.error('Error fetching document analyses:', error);
       return [];
