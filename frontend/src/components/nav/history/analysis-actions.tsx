@@ -49,7 +49,7 @@ export function AnalysisActions({ analysis, removeAnalysis, shareAnalysis }: Ana
               disabled
               // onClick={() => handleShare()}
             >
-              <ShareIcon className="h-4 w-4" />
+              <ShareIcon className="h-4 w-4 text-white" />
               <span className="sr-only">Share</span>
             </Button>
           </TooltipTrigger>
@@ -63,7 +63,7 @@ export function AnalysisActions({ analysis, removeAnalysis, shareAnalysis }: Ana
               disabled={isRemovePending}
               onClick={() => setDeleteDialogOpen(true)}
             >
-              <TrashIcon className="h-4 w-4" />
+              <TrashIcon className="h-4 w-4 text-white" />
               <span className="sr-only">Delete</span>
             </Button>
           </TooltipTrigger>
