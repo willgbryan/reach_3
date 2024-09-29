@@ -73,7 +73,7 @@ export default function PdfUploadAndRenderPage() {
   const tutorialSteps = [
     {
       title: "Document Analysis",
-      description: "Upload a legal document to analyze. Following the initial analysis, you can highlight text anywhere on the page to ask follow-up questions. Results are not saved quite yet, we're working to ship that functionality soon. This is still experimental but analysis shouldn't take more than 5 minutes. If it lasts longer than that, feel free to refresh the page.",
+      description: "Upload a legal document to analyze. Following the initial analysis, you can highlight text anywhere on the page to ask follow-up questions. This is still experimental but analysis shouldn't take more than 5 minutes. If it lasts longer than that, feel free to refresh the page.",
       highlightId: ""
     },
     {
