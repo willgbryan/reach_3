@@ -41,47 +41,70 @@ export async function POST(req: NextRequest) {
     return new NextResponse('Unauthorized', { status: 401 })
   }
 
-  const formData = await req.formData();
-  const files: FileData[] = [];
+  const contentType = req.headers.get('content-type') || '';
+
   let task = '';
+  let analysisId = '';
+  let sources: string[] = [];
+  let filePaths: string[] = [];
+  let signedUrls: string[] = [];
+  let messages: any[] = [];
 
-  for (const [key, value] of formData.entries()) {
-    if (key === 'task' && typeof value === 'string') {
-      task = value;
-    } else if (isFileData(value)) {
-      files.push({
-        name: value.name,
-        type: value.type,
-        size: value.size
-      });
+  if (contentType.includes('multipart/form-data')) {
+    const formData = await req.formData();
+    const files: FileData[] = [];
+
+    for (const [key, value] of formData.entries()) {
+      if (key === 'task' && typeof value === 'string') {
+        task = value;
+      } else if (key === 'analysisId' && typeof value === 'string') {
+        analysisId = value;
+      } else if (isFileData(value)) {
+        files.push({
+          name: value.name,
+          type: value.type,
+          size: value.size
+        });
+      }
     }
-  }
 
-  if (files.length === 0) {
-    return NextResponse.json({ error: 'Files are required' }, { status: 400 });
+    if (files.length === 0) {
+      return NextResponse.json({ error: 'Files are required' }, { status: 400 });
+    }
+
+    sources = ["FILES"];
+
+    for (const { name } of files) {
+      const filePath = `${userId}/${name}`;
+      filePaths.push(filePath);
+
+      const { data, error } = await db.storage
+        .from('user_uploads')
+        .createSignedUrl(filePath, 300); // valid for 5 minutes
+
+      if (error || !data) {
+        console.error('Error generating signed URL:', error);
+        return NextResponse.json({ error: 'Error generating signed URL' }, { status: 500 });
+      }
+
+      signedUrls.push((data as SignedUrlData).signedUrl);
+    }
+  } else if (contentType.includes('application/json')) {
+    const jsonData = await req.json();
+    task = jsonData.messages[0].content;
+    analysisId = jsonData.analysisId;
+    sources = ["WEB"];
+    messages = jsonData.messages;
+  } else {
+    return NextResponse.json({ error: 'Unsupported content type' }, { status: 400 });
   }
 
   if (!task) {
     task = DEFAULT_TASK;
   }
 
-  const signedUrls: string[] = [];
-  const filePaths: string[] = [];
-
-  for (const { name } of files) {
-    const filePath = `${userId}/${name}`;
-    filePaths.push(filePath);
-
-    const { data, error } = await db.storage
-      .from('user_uploads')
-      .createSignedUrl(filePath, 300); // valid for 5 minutes
-
-    if (error || !data) {
-      console.error('Error generating signed URL:', error);
-      return NextResponse.json({ error: 'Error generating signed URL' }, { status: 500 });
-    }
-
-    signedUrls.push((data as SignedUrlData).signedUrl);
+  if (!analysisId) {
+    analysisId = `analysis-${nanoid()}`;
   }
 
   const chatId = nanoid()
@@ -102,8 +125,8 @@ export async function POST(req: NextRequest) {
         console.log('WebSocket connection opened');
         const requestData = {
           task: task,
-          report_type: "document_analysis",
-          sources: ["FILES"],
+          report_type: "research_report",
+          sources: sources,
           file_urls: signedUrls,
           file_paths: filePaths,
         }
@@ -141,9 +164,11 @@ export async function POST(req: NextRequest) {
           await saveChatHistory({
             chatId,
             completion: accumulatedOutput,
-            messages: [{ content: task, role: "user" }],
+            messages: messages.length > 0 ? messages : [{ content: task, role: "user" }],
             userId,
             db,
+            filePaths,
+            analysisId,
           })
         }
         controller.close()
@@ -175,6 +200,8 @@ interface ChatHistoryParams {
   messages: any[]
   userId: string
   db: ReturnType<typeof createClient>
+  filePaths: string[]
+  analysisId: string
 }
 
 async function saveChatHistory({
@@ -183,6 +210,8 @@ async function saveChatHistory({
   messages,
   userId,
   db,
+  filePaths,
+  analysisId,
 }: ChatHistoryParams): Promise<void> {
   const newMessage = {
     content: completion,
@@ -191,12 +220,14 @@ async function saveChatHistory({
   }
 
   const chatPayload = {
-    title: "Document Analysis",
-    userId,
     id: chatId,
-    createdAt: new Date().toISOString(),
-    path: `/chat/${chatId}`,
+    title: "DocumentAnalysis",
+    userId,
+    path: `/analysis/${chatId}`,
     messages: [...messages, newMessage],
+    filePaths: filePaths,
+    createdAt: new Date().toISOString(),
+    analysisId,
   }
 
   const { error } = await db
@@ -205,6 +236,7 @@ async function saveChatHistory({
       id: chatId,
       user_id: userId,
       payload: chatPayload,
+      is_newsletter: false
     })
 
   if (error) {

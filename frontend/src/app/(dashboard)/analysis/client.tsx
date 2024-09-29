@@ -16,6 +16,26 @@ import { ModeToggle } from '@/components/theme-toggle';
 import UserProvider from '@/components/user-provider';
 import { UpgradeAlert } from '@/components/upgrade-alert';
 import { Textarea } from '@/components/ui/textarea';
+import { getDocumentAnalyses } from '@/app/_data/document-analysis';
+import { getCurrentUserId } from '@/app/_data/user';
+import { AnalysisItems } from '@/components/nav/history/analysis-items';
+import { Message } from 'ai';
+
+interface DocumentAnalysis {
+  id: string;
+  path: string;
+  title: string;
+  messages: Message[];
+  createdAt: string;
+  filePaths: string[];
+  analysisId: string;
+}
+
+interface AnalysisSection {
+  id: string;
+  title: string;
+  content: string;
+}
 
 const PDFViewer = dynamic(() => import('@/components/pdf-handler'), {
   ssr: false,
@@ -42,6 +62,13 @@ export default function PdfUploadAndRenderPage() {
   const [freeSearches, setFreeSearches] = useState<number | null>(null);
   const [isPro, setIsPro] = useState<boolean>(false);
   const [showUpgradeAlert, setShowUpgradeAlert] = useState(false);
+  const [analysisId, setAnalysisId] = useState<string | null>(null);
+  const [streamingAnalysis, setStreamingAnalysis] = useState<string>('');
+  const [isAnalysisComplete, setIsAnalysisComplete] = useState(false);
+  const [previousAnalyses, setPreviousAnalyses] = useState<DocumentAnalysis[]>([]);
+  const [isNewUpload, setIsNewUpload] = useState(false);
+  const [sections, setSections] = useState<AnalysisSection[]>([]);
+  const [isInitialAnalysis, setIsInitialAnalysis] = useState(false);
 
   const tutorialSteps = [
     {
@@ -88,6 +115,16 @@ export default function PdfUploadAndRenderPage() {
     };
 
     fetchUserStatus();
+
+    const fetchPreviousAnalyses = async () => {
+      const userId = await getCurrentUserId();
+      if (userId) {
+        const analyses = await getDocumentAnalyses(userId);
+        setPreviousAnalyses(analyses);
+      }
+    };
+
+    fetchPreviousAnalyses();
 
     return () => window.removeEventListener('resize', updateHeight);
   }, []);
@@ -149,6 +186,7 @@ export default function PdfUploadAndRenderPage() {
       toast.warning('Only PDF files are allowed. Non-PDF files were removed.');
     }
     setSelectedFiles(prevFiles => [...prevFiles, ...pdfFiles]);
+    setIsNewUpload(true);
   }, []);
 
   const handleUploadAndProcess = useCallback(() => {
@@ -161,11 +199,18 @@ export default function PdfUploadAndRenderPage() {
       return;
     }
     setFilesToProcess(selectedFiles);
-    processFiles(selectedFiles);
+    const newAnalysisId = `analysis-${Date.now()}`;
+    setAnalysisId(newAnalysisId);
+    setSections([]);
+    processFiles(selectedFiles, newAnalysisId);
   }, [selectedFiles, isPro, freeSearches, customTask]);
 
-  const processFiles = async (files: File[]) => {
+  const processFiles = async (files: File[], currentAnalysisId: string) => {
     setIsProcessing(true);
+    setStreamingAnalysis('');
+    setIsAnalysisComplete(false);
+    setIsInitialAnalysis(true);
+    setSections([{ id: 'initial-analysis', title: 'Initial Analysis', content: '' }]);
     try {
       await uploadToSupabase(files);
 
@@ -176,6 +221,7 @@ export default function PdfUploadAndRenderPage() {
 
       const taskToUse = customTask.trim() || DEFAULT_TASK;
       formData.append('task', `${taskToUse} Bluebook citations are key. NEVER cite the supabase URL.`);
+      formData.append('analysisId', currentAnalysisId);
 
       const response = await fetch('/api/analyze-document', {
         method: 'POST',
@@ -196,13 +242,28 @@ export default function PdfUploadAndRenderPage() {
         const chunk = decoder.decode(value);
         const events = chunk.split('\n\n').filter(Boolean);
         for (const event of events) {
-          try {
-            const data = JSON.parse(event);
-            if (data.type === 'report') {
-              setAnalysisData(prevData => data.accumulatedOutput || data.output);
+          for (const event of events) {
+            try {
+              const data = JSON.parse(event);
+              if (data.type === 'report') {
+                setStreamingAnalysis(prevAnalysis => prevAnalysis + (data.output || ''));
+                setSections((prevSections: AnalysisSection[]) => {
+                  if (prevSections.length === 0) {
+                    return [{ id: 'initial-analysis', title: 'Initial Analysis', content: data.output }];
+                  } else {
+                    const lastSection = prevSections[prevSections.length - 1];
+                    return [
+                      ...prevSections.slice(0, -1),
+                      { ...lastSection, content: lastSection.content + data.output }
+                    ];
+                  }
+                });
+              } else if (data.type === 'complete') {
+                setIsAnalysisComplete(true);
+              }
+            } catch (error) {
+              console.error('Error parsing JSON:', error);
             }
-          } catch (error) {
-            console.error('Error parsing JSON:', error);
           }
         }
       }
@@ -220,11 +281,60 @@ export default function PdfUploadAndRenderPage() {
     }
   };
 
+  const handleLoadPreviousAnalysis = (analysis: DocumentAnalysis) => {
+    setAnalysisId(analysis.analysisId);
+    setStreamingAnalysis('');
+    setIsAnalysisComplete(true);
+    setFilesToProcess(analysis.filePaths.map(path => new File([], path.split('/').pop() || '')));
+    setIsNewUpload(false);
+  
+    const sections: AnalysisSection[] = [];
+    let sectionIndex = 0;
+    let i = 0;
+  
+    while (i < analysis.messages.length) {
+      const userMessage = analysis.messages[i];
+      let assistantMessageContent = '';
+  
+      if (userMessage.role === 'user') {
+        i++;
+        if (i < analysis.messages.length && analysis.messages[i].role === 'assistant') {
+          const assistantMessage = analysis.messages[i];
+          assistantMessageContent = assistantMessage.content;
+          i++;
+        }
+        const extractUserQuestion = (content: string): string => {
+          const userQuestionMatch = content.match(/User question: (.+)/);
+          return userQuestionMatch ? userQuestionMatch[1] : content;
+        };
+        
+        const sectionTitle = userMessage.content === "The following are legal documents that I would like analyzed. I need to understand the key important pieces with the relevant cited language as well as any language that can be loosely interpreted. Bluebook citations are key. NEVER cite the supabase URL." 
+          ? 'Initial Analysis' 
+          : extractUserQuestion(userMessage.content);
+        
+        sections.push({
+          id: `section-${sectionIndex}`,
+          title: sectionTitle,
+          content: assistantMessageContent
+        });
+        sectionIndex++;
+      } else {
+        i++;
+      }
+    }
+    setSections(sections);
+  };
+  
+
   const handleClearAndUpload = () => {
     setFilesToProcess([]);
     setSelectedFiles([]);
     setAnalysisData('');
+    setStreamingAnalysis('');
     setCustomTask('');
+    setAnalysisId(null);
+    setIsAnalysisComplete(false);
+    setIsNewUpload(false);
   };
 
   const memoizedPDFViewer = useMemo(() => {
@@ -276,6 +386,14 @@ export default function PdfUploadAndRenderPage() {
       </AnimatePresence>
       <div className="flex w-full relative" style={{ height: containerHeight }} ref={containerRef}>
         <div className="w-1/2 overflow-hidden border-r relative flex flex-col">
+          {!isNewUpload && previousAnalyses.length > 0 && (
+            <div className="mt-6">
+              <AnalysisItems 
+                analyses={previousAnalyses} 
+                onAnalysisSelect={handleLoadPreviousAnalysis}
+              />
+            </div>
+          )}
           {filesToProcess.length === 0 ? (
             <Card className="border-none shadow-none dark:bg-transparent h-full">
               <CardContent className="flex flex-col items-center justify-center h-full">
@@ -309,13 +427,15 @@ export default function PdfUploadAndRenderPage() {
         </div>
         <div className="w-1/2 flex flex-col">
           <div className="flex-grow p-4 overflow-y-auto">
-            {isProcessing ? (
-              <div className="flex flex-col items-center justify-center h-full">
-                <LoaderIcon className="animate-spin h-10 w-10 text-gray-500 mb-4" />
-                <span className="text-gray-700 dark:text-gray-300">Analyzing Documents...</span>
-              </div>
-            ) : analysisData ? (
-              <AnalysisDisplay analysis={analysisData} />
+            {isProcessing || streamingAnalysis || sections.length > 0 ? (
+              <AnalysisDisplay 
+                analysis={streamingAnalysis} 
+                analysisId={analysisId}
+                isStreaming={isProcessing && !isAnalysisComplete}
+                sections={sections}
+                onUpdateSections={setSections}
+                isInitialAnalysis={isInitialAnalysis}
+              />
             ) : (
               <div className="flex items-center justify-center h-full text-gray-500">
                 {selectedFiles.length > 0 
@@ -324,7 +444,7 @@ export default function PdfUploadAndRenderPage() {
               </div>
             )}
           </div>
-          {filesToProcess.length > 0 && !isProcessing && (
+          {/* {filesToProcess.length > 0 && !isProcessing && (
             <div className="p-4 border-t">
               <Button
                 onClick={handleClearAndUpload}
@@ -333,7 +453,7 @@ export default function PdfUploadAndRenderPage() {
                 Clear and Upload New Files
               </Button>
             </div>
-          )}
+          )} */}
         </div>
       </div>
     </>

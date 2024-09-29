@@ -19,33 +19,48 @@ import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { MultiJurisdictionSelector } from './jurisdictions-combobox';
 
-interface AnalysisDisplayProps {
-  analysis: string;
-}
-
 interface AnalysisSection {
   id: string;
   title: string;
   content: string;
 }
 
-const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis }) => {
+interface AnalysisDisplayProps {
+  analysis: string;
+  analysisId: string | null;
+  isStreaming?: boolean;
+  sections: AnalysisSection[];
+  onUpdateSections: React.Dispatch<React.SetStateAction<AnalysisSection[]>>;
+  isInitialAnalysis: boolean;
+}
+
+const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ 
+  analysis, 
+  analysisId, 
+  isStreaming = false, 
+  sections, 
+  onUpdateSections,
+  isInitialAnalysis
+}) => {
   const [selectedText, setSelectedText] = useState('');
   const [prompt, setPrompt] = useState('');
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [popoverPosition, setPopoverPosition] = useState({ top: 0, left: 0 });
   const contentRef = useRef<HTMLDivElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
-  const [sections, setSections] = useState<AnalysisSection[]>([
-    { id: 'initial-analysis', title: 'Initial Analysis', content: analysis }
-  ]);
-  const socketRef = useRef<WebSocket | null>(null);
   const [openAccordion, setOpenAccordion] = useState<string | undefined>('initial-analysis');
   const [jurisdictions, setJurisdictions] = useState<string[]>([]);
 
   const handleJurisdictionSelect = (selectedJurisdictions: string[]) => {
     setJurisdictions(selectedJurisdictions);
   };
+
+  useEffect(() => {
+    if (isInitialAnalysis && sections.length === 0) {
+      onUpdateSections([{ id: 'initial-analysis', title: 'Initial Analysis', content: '' }]);
+    }
+  }, [isInitialAnalysis, sections, onUpdateSections]);
+
 
   const handleSelection = useCallback(() => {
     const selection = window.getSelection();
@@ -178,14 +193,11 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis }) => {
   const handleSubmit = async () => {
     setIsPopoverOpen(false);
     const newSectionId = `section-${Date.now()}`;
-    setSections(prevSections => [
-      ...prevSections,
-      { id: newSectionId, title: prompt, content: '' }
-    ]);
+    onUpdateSections([...sections, { id: newSectionId, title: prompt, content: '' }]);
     setOpenAccordion(newSectionId);
 
     try {
-      const response = await fetch('/api/chat', {
+      const response = await fetch('/api/analyze-document', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -199,6 +211,8 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis }) => {
               role: 'user',
             },
           ],
+          analysisId,
+          edits: [],
         }),
       });
 
@@ -219,7 +233,7 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis }) => {
             const data = JSON.parse(event);
 
             if (data.type === 'report') {
-              setSections(prevSections => 
+              onUpdateSections((prevSections: AnalysisSection[]) => 
                 prevSections.map(section => 
                   section.id === newSectionId
                     ? { ...section, content: section.content + data.output }
@@ -227,10 +241,6 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis }) => {
                 )
               );
             } else if (data.type === 'complete') {
-              if (socketRef.current) {
-                socketRef.current.close();
-                socketRef.current = null;
-              }
               return;
             }
           } catch (error) {
@@ -240,7 +250,7 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis }) => {
       }
     } catch (error) {
       console.error('Error submitting prompt:', error);
-      setSections(prevSections => 
+      onUpdateSections((prevSections: AnalysisSection[]) => 
         prevSections.map(section => 
           section.id === newSectionId
             ? { ...section, content: 'An error occurred while processing your request.' }
