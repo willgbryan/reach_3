@@ -43,7 +43,7 @@ export function AnalysisActions({ analysis, removeAnalysis, shareAnalysis }: Ana
       <div className="space-x-1 mt-1">
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button
+            {/* <Button
               variant="ghost"
               className="w-6 h-6 p-0 hover: hover:text-brand-500 hover:bg-black"
               disabled
@@ -51,13 +51,13 @@ export function AnalysisActions({ analysis, removeAnalysis, shareAnalysis }: Ana
             >
               <ShareIcon className="h-4 w-4 text-white" />
               <span className="sr-only">Share</span>
-            </Button>
+            </Button> */}
           </TooltipTrigger>
           <TooltipContent>Share analysis</TooltipContent>
         </Tooltip>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button
+            {/* <Button
               variant="ghost"
               className="w-6 h-6 p-0 hover:text-red-300 hover:bg-black"
               disabled={isRemovePending}
@@ -65,7 +65,7 @@ export function AnalysisActions({ analysis, removeAnalysis, shareAnalysis }: Ana
             >
               <TrashIcon className="h-4 w-4 text-white" />
               <span className="sr-only">Delete</span>
-            </Button>
+            </Button> */}
           </TooltipTrigger>
           <TooltipContent>Delete analysis</TooltipContent>
         </Tooltip>
