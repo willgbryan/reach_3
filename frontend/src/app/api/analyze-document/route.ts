@@ -142,8 +142,7 @@ export async function POST(req: NextRequest) {
             accumulatedOutput += data.output
             controller.enqueue(new TextEncoder().encode(JSON.stringify({
               type: data.type,
-              output: data.output,
-              accumulatedOutput: accumulatedOutput
+              output: data.output
             }) + '\n\n'))
           } else {
             controller.enqueue(new TextEncoder().encode(JSON.stringify(data) + '\n\n'))

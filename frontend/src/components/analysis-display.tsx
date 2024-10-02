@@ -195,7 +195,7 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
     const newSectionId = `section-${Date.now()}`;
     onUpdateSections([...sections, { id: newSectionId, title: prompt, content: '' }]);
     setOpenAccordion(newSectionId);
-
+  
     try {
       const response = await fetch('/api/analyze-document', {
         method: 'POST',
@@ -215,14 +215,14 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
           edits: [],
         }),
       });
-
+  
       if (!response.ok) {
         throw new Error('Failed to fetch');
       }
-
+  
       const reader = response.body!.getReader();
       const decoder = new TextDecoder();
-
+  
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -231,7 +231,7 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
         for (const event of events) {
           try {
             const data = JSON.parse(event);
-
+  
             if (data.type === 'report') {
               onUpdateSections((prevSections: AnalysisSection[]) => 
                 prevSections.map(section => 
