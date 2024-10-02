@@ -213,16 +213,16 @@ export default function PdfUploadAndRenderPage() {
     setSections([{ id: 'initial-analysis', title: 'Initial Analysis', content: '' }]);
     try {
       await uploadToSupabase(files);
-
+  
       const formData = new FormData();
       files.forEach((file, index) => {
         formData.append('files', file);
       });
-
+  
       const taskToUse = customTask.trim() || DEFAULT_TASK;
       formData.append('task', `${taskToUse} Bluebook citations are key. NEVER cite the supabase URL.`);
       formData.append('analysisId', currentAnalysisId);
-
+  
       const response = await fetch('/api/analyze-document', {
         method: 'POST',
         body: formData,
@@ -235,43 +235,37 @@ export default function PdfUploadAndRenderPage() {
   
       const reader = response.body!.getReader();
       const decoder = new TextDecoder();
-
+  
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
         const chunk = decoder.decode(value);
         const events = chunk.split('\n\n').filter(Boolean);
         for (const event of events) {
-          for (const event of events) {
-            try {
-              const data = JSON.parse(event);
-              if (data.type === 'report') {
-                setStreamingAnalysis(prevAnalysis => prevAnalysis + (data.output || ''));
-                setSections((prevSections: AnalysisSection[]) => {
-                  if (prevSections.length === 0) {
-                    return [{ id: 'initial-analysis', title: 'Initial Analysis', content: data.output }];
-                  } else {
-                    const lastSection = prevSections[prevSections.length - 1];
-                    return [
-                      ...prevSections.slice(0, -1),
-                      { ...lastSection, content: lastSection.content + data.output }
-                    ];
-                  }
-                });
-              } else if (data.type === 'complete') {
-                setIsAnalysisComplete(true);
-              }
-            } catch (error) {
-              console.error('Error parsing JSON:', error);
+          try {
+            const data = JSON.parse(event);
+            if (data.type === 'report') {
+              setStreamingAnalysis(prevAnalysis => prevAnalysis + (data.output || ''));
+              setSections((prevSections: AnalysisSection[]) => {
+                const lastSection = prevSections[prevSections.length - 1];
+                return [
+                  ...prevSections.slice(0, -1),
+                  { ...lastSection, content: lastSection.content + data.output }
+                ];
+              });
+            } else if (data.type === 'complete') {
+              setIsAnalysisComplete(true);
             }
+          } catch (error) {
+            console.error('Error parsing JSON:', error);
           }
         }
       }
-
+  
       if (!isPro) {
         await updateFreeSearches();
       }
-
+  
       toast.success('File processing completed');
     } catch (error) {
       console.error('Error processing files:', error);
