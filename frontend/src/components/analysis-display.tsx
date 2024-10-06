@@ -14,7 +14,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
-import { LoaderIcon } from 'lucide-react';
+import { LoaderIcon, FileText, Presentation } from 'lucide-react';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { MultiJurisdictionSelector } from './jurisdictions-combobox';
@@ -32,6 +32,8 @@ interface AnalysisDisplayProps {
   sections: AnalysisSection[];
   onUpdateSections: React.Dispatch<React.SetStateAction<AnalysisSection[]>>;
   isInitialAnalysis: boolean;
+  onCreateDoc: (content: string) => void;
+  onCreatePowerPoint?: (content: string) => void;
 }
 
 const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ 
@@ -40,7 +42,9 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
   isStreaming = false, 
   sections, 
   onUpdateSections,
-  isInitialAnalysis
+  isInitialAnalysis,
+  onCreateDoc,
+  onCreatePowerPoint
 }) => {
   const [selectedText, setSelectedText] = useState('');
   const [prompt, setPrompt] = useState('');
@@ -268,6 +272,16 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
     }
   };
 
+  const handleCreateDoc = (sectionContent: string) => {
+    onCreateDoc(sectionContent);
+  };
+
+  const handleCreatePowerPoint = (sectionContent: string) => {
+    if (onCreatePowerPoint) {
+      onCreatePowerPoint(sectionContent);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Popover open={isPopoverOpen} onOpenChange={handlePopoverOpenChange}>
@@ -312,7 +326,7 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
       <Accordion 
         type="single" 
         collapsible 
-        className="w-full"
+        className="w-full mt-8"
         value={openAccordion}
         onValueChange={setOpenAccordion}
       >
@@ -320,10 +334,32 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
           <AccordionItem key={section.id} value={section.id}>
             <AccordionTrigger>{section.title}</AccordionTrigger>
             <AccordionContent>
-              <Card className="pt-6 bg-transparent">
-                <CardContent className="">
+              <Card className="pt-10 bg-transparent relative">
+                {section.content && (
+                  <div className="absolute top-2 right-2 flex space-x-2 ">
+                    <Button
+                      onClick={() => onCreateDoc(section.content)}
+                      className="rounded-full flex items-center px-3 py-1 text-xs"
+                      variant="outline"
+                    >
+                      <FileText className="h-3 w-3 mr-1" />
+                      Create Word Document
+                    </Button>
+                    {onCreatePowerPoint && (
+                      <Button
+                        onClick={() => onCreatePowerPoint(section.content)}
+                        className="rounded-full flex items-center px-3 py-1 text-xs"
+                        variant="outline"
+                      >
+                        <Presentation className="h-3 w-3 mr-1" />
+                        Create PowerPoint
+                      </Button>
+                    )}
+                  </div>
+                )}
+                <CardContent>
                   {section.content ? (
-                    <div 
+                    <div
                       dangerouslySetInnerHTML={{ __html: formatContentToHTML(section.content) }}
                       className="prose dark:prose-invert max-w-none"
                     />

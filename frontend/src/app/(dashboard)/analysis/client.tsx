@@ -20,6 +20,9 @@ import { getDocumentAnalyses } from '@/app/_data/document-analysis';
 import { getCurrentUserId } from '@/app/_data/user';
 import { AnalysisItems } from '@/components/nav/history/analysis-items';
 import { Message } from 'ai';
+import createEditableDocument from '@/components/word-doc-functions';
+import { generatePowerPoint } from '@/components/structured-ppt-gen';
+import { IconPresentation } from '@tabler/icons-react';
 
 interface DocumentAnalysis {
   id: string;
@@ -29,6 +32,18 @@ interface DocumentAnalysis {
   createdAt: string;
   filePaths: string[];
   analysisId: string;
+}
+
+interface ReportConfig {
+  font: string;
+  pageOrientation: "portrait" | "landscape";
+  marginSize: number;
+  documentTitle: string;
+  subject: string;
+  tableOfContents: boolean;
+  pageNumbering: boolean;
+  headerText: string;
+  footerText: string;
 }
 
 interface AnalysisSection {
@@ -83,22 +98,34 @@ export default function PdfUploadAndRenderPage() {
     }
   ];
 
+  const [reportConfig, setReportConfig] = useState<ReportConfig>({
+    font: "",
+    pageOrientation: "portrait",
+    marginSize: 15,
+    documentTitle: "",
+    subject: "",
+    tableOfContents: false,
+    pageNumbering: false,
+    headerText: "",
+    footerText: "",
+  });
+
   useEffect(() => {
     const hasSeenTutorial = Cookies.get('hasSeenDocumentAnalysisTutorial');
     if (hasSeenTutorial !== 'true') {
       setIsTutorialActive(true);
     }
-
+  
     const updateHeight = () => {
       if (containerRef.current) {
         const viewportHeight = window.innerHeight;
         setContainerHeight(`${viewportHeight}px`);
       }
     };
-
+  
     window.addEventListener('resize', updateHeight);
     updateHeight();
-
+  
     const fetchUserStatus = async () => {
       try {
         const response = await fetch('/api/user-status');
@@ -113,9 +140,7 @@ export default function PdfUploadAndRenderPage() {
         console.error('Error fetching user status:', error);
       }
     };
-
-    fetchUserStatus();
-
+  
     const fetchPreviousAnalyses = async () => {
       const userId = await getCurrentUserId();
       if (userId) {
@@ -123,10 +148,30 @@ export default function PdfUploadAndRenderPage() {
         setPreviousAnalyses(analyses);
       }
     };
-
+  
+    const fetchReportConfig = async () => {
+      try {
+        const response = await fetch('/api/fetch-report-config');
+        if (response.ok) {
+          const data = await response.json();
+          const pageOrientation = data.report_config.pageOrientation === "landscape" ? "landscape" : "portrait";
+          setReportConfig({
+            ...data.report_config,
+            pageOrientation,
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching report configuration:', error);
+      }
+    };
+  
+    fetchUserStatus();
     fetchPreviousAnalyses();
-
-    return () => window.removeEventListener('resize', updateHeight);
+    fetchReportConfig();
+  
+    return () => {
+      window.removeEventListener('resize', updateHeight);
+    };
   }, []);
 
   const handleNextTutorialStep = () => {
@@ -345,6 +390,72 @@ export default function PdfUploadAndRenderPage() {
     ) : null;
   }, [filesToProcess]);
 
+  const handleCreateDoc = (content: string) => {
+    createEditableDocument(content, reportConfig);
+  };
+
+  const handleCreatePowerPoint = async (content: string) => {
+    const toastId = toast.custom((t) => (
+      <div className="flex items-center justify-center w-full">
+        <div className="flex items-center space-x-2">
+          <LoaderIcon className="animate-spin h-5 w-5" />
+          <div className="text-center">
+            <div className="font-semibold">Creating PowerPoint</div>
+            <div className="text-sm text-gray-500">One moment please...</div>
+          </div>
+        </div>
+      </div>
+    ), {
+      duration: Infinity,
+      className: 'w-full max-w-md',
+    });
+  
+    try {
+      console.log('Generating PowerPoint with content:', content);
+      
+      const response = await fetch('/api/fetch-powerpoint');
+      if (!response.ok) {
+        throw new Error('Failed to fetch PowerPoint template');
+      }
+      
+      const { filePath, signedUrl } = await response.json();
+      if (!signedUrl) {
+        throw new Error('No signed URL provided for the PowerPoint template');
+      }
+      
+      console.log('Signed URL before calling generatePowerPoint:', signedUrl);
+      const favoriteTheme = response.headers.get('X-Favorite-Theme') || 'default_template.pptx';
+      
+      await generatePowerPoint(content, filePath, favoriteTheme, signedUrl);
+  
+      toast.dismiss(toastId);
+  
+      toast.custom((t) => (
+        <div className="flex items-center justify-center w-full">
+          <div className="flex items-center space-x-2">
+            <IconPresentation className="h-5 w-5 text-green-500" />
+            <div className="text-center">
+              <div className="font-semibold">PowerPoint Created Successfully</div>
+              <div className="text-sm text-gray-500">Your presentation is available in your downloads.</div>
+            </div>
+          </div>
+        </div>
+      ), {
+        duration: 3000,
+        className: 'w-full max-w-md',
+      });
+  
+    } catch (error) {
+      console.error("Error creating PowerPoint:", error);
+      
+      toast.dismiss(toastId);
+  
+      toast.error("Failed to create PowerPoint", {
+        description: "We encountered an error while generating your presentation. Please try again.",
+      });
+    }
+  };
+
   return (
     <>
       <div className="absolute top-4 left-4 z-50">
@@ -431,7 +542,9 @@ export default function PdfUploadAndRenderPage() {
                 sections={sections}
                 onUpdateSections={setSections}
                 isInitialAnalysis={isInitialAnalysis}
-              />
+                onCreateDoc={handleCreateDoc}
+                onCreatePowerPoint={handleCreatePowerPoint}
+            />
             ) : (
               <div className="flex items-center justify-center h-full text-gray-500">
                 {selectedFiles.length > 0 
