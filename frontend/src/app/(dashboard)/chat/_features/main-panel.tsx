@@ -106,12 +106,7 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
   },
   {
     title: "Legal Document Analysis",
-    description: "The 'Document Analysis' tab allows you to easily analyze legal documents of any size. Following the initial analysis, highlight text anywhere on the page to ask follow up questions.",
-    highlightId: ""
-  },
-  {
-    title: "Heighliner constantly improves",
-    description: "Heighliner learns what information is most valuable to you and your role over time. Start by updating your profile in the top right and Heighliner will instantly begin optimizing its research.",
+    description: "The 'Document Analysis' tab allows you to easily analyze legal documents or images of any size. Following the initial analysis, highlight text anywhere on the page to ask follow up questions.",
     highlightId: ""
   },
 ];
