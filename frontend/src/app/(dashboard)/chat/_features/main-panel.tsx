@@ -854,7 +854,12 @@ const ChatSection = ({
     `;
     doc.head.appendChild(style);
   
-    return doc.body.innerHTML;
+    const purifyConfig = {
+      ADD_ATTR: ['target', 'rel']
+    };
+  
+    const finalHtml = DOMPurify.sanitize(doc.body.innerHTML, purifyConfig);
+    return finalHtml;
   };
 
   type TableInfo = {

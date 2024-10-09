@@ -119,6 +119,9 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
       const tableId = `table-${index}`;
       table.id = tableId;
       table.classList.add('border-collapse', 'my-4', 'w-full', 'rounded-lg', 'overflow-hidden');
+      
+      const iconContainer = doc.createElement('div');
+      iconContainer.className = 'absolute -top-10 right-0 flex space-x-2 mb-2';
     });
     doc.querySelectorAll('th, td').forEach(el => {
       el.classList.add('px-4', 'py-2', 'border', 'border-gray-300', 'dark:border-stone-100');
@@ -155,39 +158,72 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
         background-color: #f8fafc;
       }
       a {
-        color: #2563eb;
+        color: #2563eb; /* blue-600 */
         text-decoration: underline;
       }
       a:hover {
-        color: #1d4ed8;
+        color: #1d4ed8; /* blue-800 */
       }
+      .table-wrapper {
+        position: relative;
+        margin-top: 2.5rem; /* Increased margin-top to accommodate buttons and spacing */
+      }
+
+      .table-icon-container {
+        position: absolute;
+        top: -2.5rem; /* Adjusted top position */
+        right: 0;
+        display: flex;
+        gap: 0.5rem;
+        z-index: 10;
+        margin-bottom: 0.5rem; /* Added margin-bottom for spacing */
+      }
+
+      .table-icon {
+        padding: 0.25rem;
+        border-radius: 0.25rem;
+        transition: background-color 0.2s;
+      }
+
+      .table-icon:hover {
+        background-color: #e2e8f0;
+      }
+
       @media (prefers-color-scheme: dark) {
-        table {
-          border-color: #3f3f46;
-        }
-        th, td {
-          border-color: #3f3f46;
-        }
-        th {
-          background-color: #27272a;
-        }
-        tr:nth-child(even) {
+        .table-icon:hover {
           background-color: #18181b;
         }
+        table {
+          border-color: #3f3f46; /* zinc-700 */
+        }
+        th, td {
+          border-color: #3f3f46; /* zinc-700 */
+        }
+        th {
+          background-color: #27272a; /* zinc-800 for header */
+        }
+        tr:nth-child(even) {
+          background-color: #18181b; /* zinc-900 for even rows */
+        }
         tr:nth-child(odd) {
-          background-color: #27272a;
+          background-color: #27272a; /* zinc-800 for odd rows */
         }
         a {
-          color: #60a5fa;
+          color: #60a5fa; /* blue-400 */
         }
         a:hover {
-          color: #93c5fd;
+          color: #93c5fd; /* blue-300 */
         }
       }
     `;
     doc.head.appendChild(style);
   
-    return doc.body.innerHTML;
+    const purifyConfig = {
+      ADD_ATTR: ['target', 'rel']
+    };
+  
+    const finalHtml = DOMPurify.sanitize(doc.body.innerHTML, purifyConfig);
+    return finalHtml;
   };
 
   const handlePromptChange = (e: React.ChangeEvent<HTMLInputElement>) => {

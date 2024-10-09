@@ -438,10 +438,21 @@ export const Card: React.FC<CardProps> = ({
 
       const sanitizedHtml = DOMPurify.sanitize(doc.body.innerHTML, {
         ADD_TAGS: ['button'],
-        ADD_ATTR: ['data-table-id'],
+        ADD_ATTR: ['data-table-id', 'target'],
+        FORBID_TAGS: ['script'],
+        FORBID_ATTR: ['onerror', 'onload', 'onclick'],
       });
+      
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = sanitizedHtml;
+      
+      tempDiv.querySelectorAll('a').forEach((anchor) => {
+        anchor.setAttribute('target', '_blank');
+      });
+      
+      const finalHtml = tempDiv.innerHTML;
 
-      return <div ref={contentRef} dangerouslySetInnerHTML={{ __html: sanitizedHtml }} />;
+      return <div ref={contentRef} dangerouslySetInnerHTML={{ __html: finalHtml }} />;
     }
 
     return null;
