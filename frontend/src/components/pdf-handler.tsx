@@ -10,27 +10,28 @@ import { ChevronLeft, ChevronRight, LoaderIcon } from 'lucide-react';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `/pdf.worker.min.mjs`;
 
-interface PDFViewerProps {
+interface FileViewerProps {
   files: File[];
 }
 
-interface PDFDocumentState {
-  numPages: number;
+interface FileState {
+  numPages?: number;
   currentPage: number;
   scale: number;
+  content?: string;
 }
 
-const PDFViewer: React.FC<PDFViewerProps> = ({ files }) => {
+const FileViewer: React.FC<FileViewerProps> = ({ files }) => {
   const [activeTab, setActiveTab] = useState<string>(files[0]?.name || '');
-  const [documents, setDocuments] = useState<Record<string, PDFDocumentState>>({});
+  const [documents, setDocuments] = useState<Record<string, FileState>>({});
   const [loading, setLoading] = useState<boolean>(true);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const initialDocuments: Record<string, PDFDocumentState> = {};
+    const initialDocuments: Record<string, FileState> = {};
     files.forEach(file => {
       initialDocuments[file.name] = {
-        numPages: 0,
+        numPages: file.type === 'application/pdf' ? 0 : 1,
         currentPage: 1,
         scale: 1,
       };
@@ -75,7 +76,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ files }) => {
       ...prev,
       [activeTab]: {
         ...prev[activeTab],
-        currentPage: Math.max(1, Math.min(prev[activeTab].currentPage + offset, prev[activeTab].numPages)),
+        currentPage: Math.max(1, Math.min(prev[activeTab].currentPage + offset, prev[activeTab].numPages || 1)),
       },
     }));
   }
@@ -90,14 +91,64 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ files }) => {
         ...prev,
         [activeTab]: {
           ...prev[activeTab],
-          currentPage: Math.max(1, Math.min(newPage, prev[activeTab].numPages)),
+          currentPage: Math.max(1, Math.min(newPage, prev[activeTab].numPages || 1)),
         },
       }));
     }
   };
 
+  const renderFileContent = (file: File) => {
+    if (file.type === 'application/pdf') {
+      return (
+        <Document
+          file={file}
+          onLoadSuccess={onDocumentLoadSuccess}
+          onLoadError={(error) => {
+            console.error('Error while loading document:', error);
+            toast.error(`Failed to load PDF document: ${file.name}`);
+          }}
+        >
+          <Page
+            pageNumber={documents[file.name]?.currentPage || 1}
+            renderTextLayer={true}
+            renderAnnotationLayer={true}
+            scale={documents[file.name]?.scale || 1}
+          />
+        </Document>
+      );
+    } else if (file.type.startsWith('image/')) {
+      return (
+        <img
+          src={URL.createObjectURL(file)}
+          alt={file.name}
+          style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+        />
+      );
+    } else {
+      // For text files or other types
+      if (!documents[file.name]?.content) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setDocuments(prev => ({
+            ...prev,
+            [file.name]: {
+              ...prev[file.name],
+              content: e.target?.result as string,
+            },
+          }));
+        };
+        reader.readAsText(file);
+      }
+      return (
+        <pre className="whitespace-pre-wrap">
+          {documents[file.name]?.content || 'Loading content...'}
+        </pre>
+      );
+    }
+  };
+
   return (
-    <div className="pdf-viewer relative w-full h-full flex flex-col" ref={containerRef}>
+    <div className="file-viewer relative w-full h-full flex flex-col" ref={containerRef}>
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full h-full flex flex-col mt-4">
         <TabsList className="w-full overflow-x-auto bg-transparent">
           {files.map(file => (
@@ -114,57 +165,45 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ files }) => {
           )}
           {files.map(file => (
             <TabsContent key={file.name} value={file.name} className="absolute inset-0 overflow-auto">
-              <Document
-                file={file}
-                onLoadSuccess={onDocumentLoadSuccess}
-                onLoadError={(error) => {
-                  console.error('Error while loading document:', error);
-                  toast.error(`Failed to load PDF document: ${file.name}`);
-                }}
-              >
-                <Page
-                  pageNumber={documents[file.name]?.currentPage || 1}
-                  renderTextLayer={true}
-                  renderAnnotationLayer={true}
-                  scale={documents[file.name]?.scale || 1}
-                />
-              </Document>
+              {renderFileContent(file)}
             </TabsContent>
           ))}
         </div>
-        <div className="flex justify-between items-center p-4 bg-white dark:bg-transparent border-t">
-          <Button
-            onClick={previousPage}
-            disabled={documents[activeTab]?.currentPage <= 1}
-            variant="outline"
-            size="sm"
-            className="rounded-full"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <div className="flex items-center">
-            <span className="text-sm mr-2">Page</span>
-            <Input
-              value={documents[activeTab]?.currentPage || 1}
-              onChange={handleInputChange}
-              className="w-16 text-center"
-              size={4}
-            />
-            <span className="text-sm ml-2">of {documents[activeTab]?.numPages || '--'}</span>
+        {files.find(file => file.name === activeTab)?.type === 'application/pdf' && (
+          <div className="flex justify-between items-center p-4 bg-white dark:bg-transparent border-t">
+            <Button
+              onClick={previousPage}
+              disabled={documents[activeTab]?.currentPage <= 1}
+              variant="outline"
+              size="sm"
+              className="rounded-full"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <div className="flex items-center">
+              <span className="text-sm mr-2">Page</span>
+              <Input
+                value={documents[activeTab]?.currentPage || 1}
+                onChange={handleInputChange}
+                className="w-16 text-center"
+                size={4}
+              />
+              <span className="text-sm ml-2">of {documents[activeTab]?.numPages || '--'}</span>
+            </div>
+            <Button
+              onClick={nextPage}
+              disabled={documents[activeTab]?.currentPage >= (documents[activeTab]?.numPages || 0)}
+              variant="outline"
+              size="sm"
+              className="rounded-full"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
           </div>
-          <Button
-            onClick={nextPage}
-            disabled={documents[activeTab]?.currentPage >= (documents[activeTab]?.numPages || 0)}
-            variant="outline"
-            size="sm"
-            className="rounded-full"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
+        )}
       </Tabs>
     </div>
   );
 };
 
-export default PDFViewer;
+export default FileViewer;

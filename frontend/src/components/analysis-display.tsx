@@ -326,7 +326,7 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
       <Accordion 
         type="single" 
         collapsible 
-        className="w-full mt-8"
+        className="w-full"
         value={openAccordion}
         onValueChange={setOpenAccordion}
       >

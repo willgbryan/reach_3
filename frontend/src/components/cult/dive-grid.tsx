@@ -14,6 +14,7 @@ import { TutorialStep } from '@/components/tutorial/tutorial-step';
 import Cookies from 'js-cookie';
 import { PopoverBody, PopoverButton, PopoverContent, PopoverHeader, PopoverRoot, PopoverTrigger } from './popover-button';
 import { LoaderIcon } from 'lucide-react';
+import { useExternalLinks } from '@/hooks/use-external-link';
 
 type Card = {
   title: string;
@@ -375,10 +376,12 @@ export const Card: React.FC<CardProps> = ({
     );
   };
 
+  const contentRef = useRef<HTMLDivElement>(null);
+  useExternalLinks(contentRef);
 
   const renderContent = () => {
     if (React.isValidElement(card.content) || Array.isArray(card.content)) {
-      return card.content;
+      return <div ref={contentRef}>{card.content}</div>;
     }
 
     if (typeof card.content === 'string') {
@@ -438,7 +441,7 @@ export const Card: React.FC<CardProps> = ({
         ADD_ATTR: ['data-table-id'],
       });
 
-      return <div dangerouslySetInnerHTML={{ __html: sanitizedHtml }} />;
+      return <div ref={contentRef} dangerouslySetInnerHTML={{ __html: sanitizedHtml }} />;
     }
 
     return null;
