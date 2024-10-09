@@ -3,6 +3,10 @@ import requests
 import time
 import aiofiles
 from PyPDF2 import PdfReader
+import pytesseract
+from PIL import Image
+import docx2txt
+from urllib.parse import urlparse, unquote
 from typing import List, Dict
 from reach_core.config import Config
 from reach_core.master.functions import *
@@ -162,27 +166,45 @@ class Reach:
         try:
             parsed_content: List[Dict[str, str]] = []
             first_1000_chars_list = []
-            
             for file_url in self.file_urls:
                 await stream_output("logs", f'Processing file: {file_url}', self.websocket)
+                
+                # Extract file name from the URL
+                parsed_url = urlparse(file_url)
+                file_path = unquote(parsed_url.path)
+                file_name = os.path.basename(file_path)
+                
+                # Determine file type based on extension
+                _, file_extension = os.path.splitext(file_name)
+                file_extension = file_extension.lower()
+
                 response = requests.get(file_url)
                 response.raise_for_status()
                 file_content = response.content
-                pdf_reader = PdfReader(io.BytesIO(file_content))
                 
                 file_text = ""
-                for page in pdf_reader.pages:
-                    file_text += page.extract_text()
+                if file_extension == '.pdf':
+                    pdf_reader = PdfReader(io.BytesIO(file_content))
+                    for page in pdf_reader.pages:
+                        file_text += page.extract_text()
+                elif file_extension in ['.png', '.jpg', '.jpeg', '.gif', '.bmp']:
+                    image = Image.open(io.BytesIO(file_content))
+                    file_text = pytesseract.image_to_string(image)
+                elif file_extension in ['.doc', '.docx']:
+                    file_text = docx2txt.process(io.BytesIO(file_content))
+                elif file_extension == '.txt':
+                    file_text = file_content.decode('utf-8')
+                else:
+                    await stream_output("logs", f"Unsupported file type: {file_extension}", self.websocket)
+                    continue
                 
                 parsed_content.append({
                     "url": file_url,
                     "raw_content": file_text
                 })
-                
                 first_1000_chars_list.append(file_text[:1000])
-            
+                
             all_first_1000_chars = "\n\n".join(first_1000_chars_list)
-            
             enhanced_query = f"{query}\n\nFirst 1000 characters of each document:\n{all_first_1000_chars}"
             sub_queries = await get_sub_queries(enhanced_query, self.role, self.cfg, self.parent_query, self.report_type,
                                                 self.websocket, self.cadence, self.retained_text, self.deleted_text)
@@ -194,11 +216,9 @@ class Reach:
                     content.append(document_content)
                 else:
                     await stream_output("logs", f"No content found for '{sub_query}'...", self.websocket)
-        
         except Exception as e:
             await stream_output("logs", f"Error processing files: {str(e)}", self.websocket)
             raise
-        
         return content
     
     async def get_context_by_systems(self, query):

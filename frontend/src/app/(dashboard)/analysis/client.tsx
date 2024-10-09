@@ -52,6 +52,10 @@ interface AnalysisSection {
   content: string;
 }
 
+function sanitizeFileName(fileName: string): string {
+  return fileName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_.-]/g, '');
+}
+
 const PDFViewer = dynamic(() => import('@/components/pdf-handler'), {
   ssr: false,
   loading: () => (
@@ -222,33 +226,41 @@ export default function PdfUploadAndRenderPage() {
   };
 
   const handleFileChange = useCallback((uploadedFiles: File[]) => {
-    const pdfFiles = uploadedFiles.filter(file => file.type === 'application/pdf');
-    if (pdfFiles.length === 0) {
-      toast.error('Please upload valid PDF files.');
+    const allowedTypes = [
+      'application/pdf',
+      'image/png',
+      'image/jpeg',
+      'image/gif',
+      'image/bmp',
+      'text/plain',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ];
+  
+    const validFiles = uploadedFiles.filter(file => allowedTypes.includes(file.type));
+    const invalidFiles = uploadedFiles.filter(file => !allowedTypes.includes(file.type));
+  
+    if (validFiles.length === 0) {
+      toast.error('Please upload valid files (PDF, images, or text documents).');
       return;
     }
-    if (pdfFiles.length < uploadedFiles.length) {
-      toast.warning('Only PDF files are allowed. Non-PDF files were removed.');
+  
+    if (invalidFiles.length > 0) {
+      const invalidFileTypes = [...new Set(invalidFiles.map(file => file.type))].join(', ');
+      toast.warning(`The following file types are not allowed and were removed: ${invalidFileTypes}`);
     }
-    setSelectedFiles(prevFiles => [...prevFiles, ...pdfFiles]);
+  
+    const sanitizedFiles = validFiles.map(file => {
+      const sanitizedName = sanitizeFileName(file.name);
+      return new File([file], sanitizedName, { type: file.type });
+    });
+  
+    setSelectedFiles(prevFiles => [...prevFiles, ...sanitizedFiles]);
     setIsNewUpload(true);
+  
+    const acceptedFileTypes = [...new Set(validFiles.map(file => file.type))];
+    toast.success(`Successfully added ${validFiles.length} file(s) of type(s): ${acceptedFileTypes.join(', ')}`);
   }, []);
-
-  const handleUploadAndProcess = useCallback(() => {
-    if (selectedFiles.length === 0) {
-      toast.error('Please select PDF files before uploading.');
-      return;
-    }
-    if (!isPro && freeSearches === 0) {
-      setShowUpgradeAlert(true);
-      return;
-    }
-    setFilesToProcess(selectedFiles);
-    const newAnalysisId = `analysis-${Date.now()}`;
-    setAnalysisId(newAnalysisId);
-    setSections([]);
-    processFiles(selectedFiles, newAnalysisId);
-  }, [selectedFiles, isPro, freeSearches, customTask]);
 
   const processFiles = async (files: File[], currentAnalysisId: string) => {
     setIsProcessing(true);
@@ -261,7 +273,7 @@ export default function PdfUploadAndRenderPage() {
   
       const formData = new FormData();
       files.forEach((file, index) => {
-        formData.append('files', file);
+        formData.append('files', file, sanitizeFileName(file.name));
       });
   
       const taskToUse = customTask.trim() || DEFAULT_TASK;
@@ -319,6 +331,22 @@ export default function PdfUploadAndRenderPage() {
       setIsProcessing(false);
     }
   };
+
+  const handleUploadAndProcess = useCallback(() => {
+    if (selectedFiles.length === 0) {
+      toast.error('Please select PDF files before uploading.');
+      return;
+    }
+    if (!isPro && freeSearches === 0) {
+      setShowUpgradeAlert(true);
+      return;
+    }
+    setFilesToProcess(selectedFiles);
+    const newAnalysisId = `analysis-${Date.now()}`;
+    setAnalysisId(newAnalysisId);
+    setSections([]);
+    processFiles(selectedFiles, newAnalysisId);
+  }, [selectedFiles, isPro, freeSearches, customTask]);
 
   const handleLoadPreviousAnalysis = (analysis: DocumentAnalysis) => {
     setAnalysisId(analysis.analysisId);

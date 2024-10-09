@@ -35,6 +35,9 @@ fastapi==0.103.2
 uvicorn==0.23.2
 openai
 pypdf2
+Pillow
+pytesseract
+docx2txt
 python-pptx==0.6.21
 pydantic==2.4.2
 supabase
