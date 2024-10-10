@@ -2,8 +2,8 @@
 import { cn } from "@/lib/utils";
 import Link, { LinkProps } from "next/link";
 import React, { useState, createContext, useContext } from "react";
-import { AnimatePresence, motion } from "framer-motion";
-import { IconMenu, IconMenu2, IconX } from "@tabler/icons-react";
+import { AnimatePresence, motion, HTMLMotionProps, MotionValue } from "framer-motion";
+import { IconMenu2, IconX } from "@tabler/icons-react";
 
 interface Links {
   label: string;
@@ -46,7 +46,7 @@ export const SidebarProvider = ({
   const setOpen = setOpenProp !== undefined ? setOpenProp : setOpenState;
 
   return (
-    <SidebarContext.Provider value={{ open, setOpen, animate: animate }}>
+    <SidebarContext.Provider value={{ open, setOpen, animate }}>
       {children}
     </SidebarContext.Provider>
   );
@@ -70,11 +70,11 @@ export const Sidebar = ({
   );
 };
 
-export const SidebarBody = (props: React.ComponentProps<typeof motion.div>) => {
+export const SidebarBody = (props: HTMLMotionProps<"div">) => {
   return (
     <>
       <DesktopSidebar {...props} />
-      <MobileSidebar {...(props as React.ComponentProps<"div">)} />
+      <MobileSidebar {...props} />
     </>
   );
 };
@@ -83,7 +83,7 @@ export const DesktopSidebar = ({
   className,
   children,
   ...props
-}: React.ComponentProps<typeof motion.div>) => {
+}: HTMLMotionProps<"div">) => {
   const { open, setOpen, animate } = useSidebar();
   return (
     <motion.div
@@ -98,7 +98,7 @@ export const DesktopSidebar = ({
       onMouseLeave={() => setOpen(false)}
       {...props}
     >
-      {children}
+      {children as React.ReactNode} {/* Explicit type casting */}
     </motion.div>
   );
 };
@@ -107,7 +107,7 @@ export const MobileSidebar = ({
   className,
   children,
   ...props
-}: React.ComponentProps<"div">) => {
+}: HTMLMotionProps<"div">) => {
   const { open, setOpen } = useSidebar();
 
   const toggleSidebar = () => {
@@ -148,7 +148,7 @@ export const MobileSidebar = ({
             >
               <IconX />
             </div>
-            {children}
+            {children as React.ReactNode} {/* Explicit type casting */}
           </motion.div>
         )}
       </AnimatePresence>

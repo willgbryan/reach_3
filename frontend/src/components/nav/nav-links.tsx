@@ -4,12 +4,11 @@ import { Nav } from './nav'
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://heighliner.tech';
 
-export function NavLinks({ isCollapsed, closeSidebar }) {
+export function NavLinks({ isCollapsed }) {
   return (
     <div className="">
       <Nav
         isCollapsed={isCollapsed}
-        closeSidebar={closeSidebar}
         links={[
           // { title: 'Home', icon: Home, variant: 'ghost', href: `/chat` },
           { 
