@@ -486,7 +486,7 @@ export default function PdfUploadAndRenderPage() {
 
   return (
     <>
-      <div className="absolute top-4 left-4 z-50">
+      <div className="absolute top-4 left-4 z-50 hidden md:block">
         <FreeSearchCounter isPro={isPro} freeSearches={freeSearches} />
       </div>
       <div className="absolute top-4 right-4 z-50 flex items-center space-x-2">

@@ -590,7 +590,9 @@ const TopSection = ({ docSetName, documentSets, onTriggerTutorial }) => {
   return (
     <div className="flex justify-between items-center px-4">
       <div className="flex items-center space-x-4">
-        <FreeSearchCounter />
+        <div className="hidden md:block">
+          <FreeSearchCounter />
+        </div>
         {/* <SelectScrollable prevDocSets={documentSets} /> */}
       </div>
       <div id="profile" className="flex items-center space-x-2 pt-4">
@@ -601,6 +603,7 @@ const TopSection = ({ docSetName, documentSets, onTriggerTutorial }) => {
     </div>
   );
 };
+
 
 const ChatSection = ({ 
   messages, 
