@@ -361,11 +361,12 @@ export const Card: React.FC<CardProps> = ({
   
     return (
       <PopoverRoot>
-        <PopoverTrigger ref={triggerRef}>
-          <IconChartDots3 className="h-5 w-5 mr-2" />
-          Create Diagram
+        <PopoverTrigger className="flex items-center space-x-2 py-2 bg-stone-900 dark:bg-stone-100 rounded-full text-sm font-medium text-stone-100 dark:text-stone-900 hover:bg-stone-300 dark:hover:bg-stone-600 transition-colors">
+          <IconChartDots3 className="h-5 w-5" />
+          <span className="md:inline hidden md:block">Create Diagram</span>
+          <span className="md:hidden">Diagram</span>
         </PopoverTrigger>
-        <PopoverContent ref={contentRef}>
+        <PopoverContent>
           {diagramTypes.map((type) => (
             <PopoverButton key={type.value} onClick={() => handleCreateDiagram(type.value, type.label)}>
               {type.label}
@@ -570,30 +571,36 @@ export const Card: React.FC<CardProps> = ({
                   </TutorialOverlay>
                 )}
               </AnimatePresence>
-              <div className="sticky top-0 right-0 left-0 z-20 bg-transparent py-4 px-4 md:px-0 flex flex-col md:flex-row justify-end space-y-2 md:space-y-0 md:space-x-2">
+              <div className="sticky top-0 right-0 left-0 z-20 bg-transparent py-4 md:px-0 flex flex-row items-center justify-end space-x-2">
+
                 <button
-                  className="flex items-center justify-center px-3 py-2 hover:text-stone-900 bg-stone-900 dark:bg-stone-100 rounded-full text-sm font-medium text-stone-100 dark:hover:text-stone-100 dark:text-stone-900 hover:bg-stone-300 dark:hover:bg-stone-600 transition-colors"
+                  className="max-w-full flex items-center justify-center px-3 py-2 hover:text-stone-900 bg-stone-900 dark:bg-stone-100 rounded-full text-sm font-medium text-stone-100 dark:hover:text-stone-100 dark:text-stone-900 hover:bg-stone-300 dark:hover:bg-stone-600 transition-colors"
                   onClick={handleCreatePDF}
                   title="Download as Word Document"
                 >
                   <IconFileText className="h-5 w-5 mr-2" />
-                  Download as Word Document
+                  <span className="md:inline hidden md:block">Download as Word Document</span>
+                  <span className="md:hidden">Word Document</span>
                 </button>
+
                 {card.type !== 'sources' && onCreatePowerPoint && (
                   <button
-                    className="flex items-center justify-center px-3 py-2 hover:text-stone-900 bg-stone-900 dark:bg-stone-100 rounded-full text-sm font-medium text-stone-100 dark:hover:text-stone-100 dark:text-stone-900 hover:bg-stone-300 dark:hover:bg-stone-600 transition-colors"
+                    className="max-w-full flex items-center justify-center px-3 py-2 hover:text-stone-900 bg-stone-900 dark:bg-stone-100 rounded-full text-sm font-medium text-stone-100 dark:hover:text-stone-100 dark:text-stone-900 hover:bg-stone-300 dark:hover:bg-stone-600 transition-colors"
                     onClick={handleCreatePowerPoint}
                     title="Download as PowerPoint"
                   >
                     <IconPresentation className="h-5 w-5 mr-2" />
-                    Download as PowerPoint
+                    <span className="md:inline hidden md:block">Download as PowerPoint</span>
+                    <span className="md:hidden">PowerPoint</span>
                   </button>
                 )}
+
                 {card.type !== 'sources' && onCreatePowerPoint && (
                   <DiagramTypePopover />
                 )}
+
                 <button
-                  className="flex items-center justify-center w-10 h-10 bg-black rounded-full hover:text-stone-900 text-stone-100 dark:bg-white dark:text-stone-900 hover:bg-stone-300 dark:hover:bg-stone-600 dark:text-neutral-900 dark:hover:text-stone-100 relative z-[120]"
+                  className="flex items-center justify-center w-10 h-10 bg-black rounded-full hover:text-stone-900 text-stone-100 dark:bg-white dark:text-stone-900 hover:bg-stone-300 dark:hover:bg-stone-600 dark:text-neutral-900 dark:hover:text-stone-100 relative z-[120] ml-auto md:ml-0"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleClose();
