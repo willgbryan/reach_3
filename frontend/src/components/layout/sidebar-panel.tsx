@@ -21,7 +21,9 @@ export function SidebarPanel({ children, user }) {
           </div>
           {/* <NavHeading isCollapsed={!open} /> */}
           {/* <NavSearchActions isCollapsed={!open} /> */}
-          <NavLinks isCollapsed={!open} />
+          
+          <NavLinks isCollapsed={!open} closeSidebar={() => setOpen(false)} />
+
           <div className={cn(!open ? 'pl-4' : 'pl-3')}>{children}</div>
           {/* <NavFooter isCollapsed={!open} user={user} /> */}
         </div>

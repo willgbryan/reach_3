@@ -20,8 +20,9 @@ export function MobileLayout({ historyChildren, children, user }) {
             <div className="px-3 py-2">
               <FreeSearchCounter />
             </div>
-            
-            <NavLinks isCollapsed={false} />
+
+            <NavLinks isCollapsed={false} closeSidebar={() => setIsMobileNavOpen(false)} />
+
             <div className="pr-4">
               <Separator className="my-2" />
             </div>

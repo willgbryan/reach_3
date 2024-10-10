@@ -14,9 +14,10 @@ interface NavProps {
     variant: 'default' | 'ghost'
     disabled?: boolean
   }[]
+  closeSidebar?: () => void
 }
 
-export function Nav({ links, isCollapsed }: NavProps) {
+export function Nav({ links, isCollapsed, closeSidebar }: NavProps) {
   return (
     <div
       data-collapsed={isCollapsed}
@@ -29,9 +30,6 @@ export function Nav({ links, isCollapsed }: NavProps) {
               <TooltipTrigger
                 asChild
                 className={cn(
-                  // 'relative w-full before:pointer-events-none before:absolute before:-inset-1 before:rounded-[9991px] before:border before:border-neutral-100/20 before:opacity-0 before:ring-2 before:ring-neutral-100/40 before:transition dark:before:border-brand-400/40 dark:before:ring-2 dark:before:ring-brand-900/40',
-                  // 'button-shadow-glow after:pointer-events-none after:absolute after:inset-px after:rounded-[9987px] after:shadow-white/5 after:transition',
-                  // 'focus-within:before:opacity-100 focus-within:after:shadow-brand-100/20 dark:after:shadow-white/5 dark:focus-within:after:shadow-brand-500/30',
                   link.disabled && 'opacity-50 cursor-not-allowed'
                 )}
               >
@@ -41,14 +39,17 @@ export function Nav({ links, isCollapsed }: NavProps) {
                     'w-full text-lg font-semibold',
                     'focus:outline-none focus:ring-2 focus:ring-inset focus:ring-stone-100 ',
                     'disabled:cursor-not-allowed disabled:opacity-50 sm:leading-6 ',
-                    // 'dark:border dark:border-black/40 ',
-                    // 'button-shadow rounded-[9988px] !outline-none',
                     'relative p-3 shadow-black/5 focus:bg-white ',
-                    ' text-zinc-800 dark:text-primary-foreground dark:shadow-black/10 ',
-                    // 'dark:focus:bg-neutral-900',
+                    'text-zinc-800 dark:text-primary-foreground dark:shadow-black/10 ',
                     link.disabled && 'pointer-events-none'
                   )}
-                  onClick={(e) => link.disabled && e.preventDefault()}
+                  onClick={(e) => {
+                    if (link.disabled) {
+                      e.preventDefault();
+                    } else if (closeSidebar) {
+                      closeSidebar();
+                    }
+                  }}
                 >
                   <link.icon className={cn("h-5 w-5 dark:stroke-neutral-500 dark:hover:stroke-neutral-300", link.disabled && "dark:stroke-neutral-600")} />
                   <span className="sr-only ">{link.title}</span>
@@ -70,7 +71,13 @@ export function Nav({ links, isCollapsed }: NavProps) {
                 'justify-start text-lg tracking-tight text-muted-foreground',
                 link.disabled && 'opacity-50 cursor-not-allowed pointer-events-none'
               )}
-              onClick={(e) => link.disabled && e.preventDefault()}
+              onClick={(e) => {
+                if (link.disabled) {
+                  e.preventDefault();
+                } else if (closeSidebar) {
+                  closeSidebar();
+                }
+              }}
             >
               <link.icon className={cn("mr-2 h-5 w-5", link.disabled && "text-neutral-600")} />
               {link.title}
