@@ -79,7 +79,7 @@ const PricingCard = ({ tier, session, emphasized, index, totalCards }) => {
       emphasized ? "z-10 scale-y-[1.03] -mt-1.5 -mb-1.5" : ""
     )}>
       <Card className={cn(
-        "h-full flex flex-col dark:bg-zinc-800 dark:border-white",
+        "h-full flex flex-col dark:bg-zinc-800 dark:border-transparent",
         emphasized ? "shadow-lg" : "shadow-sm",
         isFirst ? "rounded-r-none" : isLast ? "rounded-l-none" : "rounded-none",
         emphasized && "rounded-lg",
@@ -148,17 +148,18 @@ const PricingCard = ({ tier, session, emphasized, index, totalCards }) => {
 
 export function PricingPage({ session }) {
   return (
-    <div className="py-18 sm:py-36">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <div className="mx-auto max-w-2xl sm:text-center">
+    <div className="py-8 sm:py-12 lg:py-18">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-2xl sm:text-center mt-8 md:mt-0">
           <Heading weight="base" variant="default" size="xl">
             Choose Your Plan
           </Heading>
-          <p className="mt-6 text-lg leading-8 text-stone-900 dark:text-stone-100">
+          <p className="mt-4 sm:mt-6 text-md sm:text-lg leading-6 sm:leading-8 text-stone-900 dark:text-stone-100">
             Select the perfect plan for your needs. Upgrade or downgrade at any time.
           </p>
         </div>
-        <div className="mx-auto mt-16 grid max-w-lg grid-cols-1 sm:mt-20 lg:max-w-none lg:grid-cols-4">
+
+        <div className="mx-auto mt-10 grid grid-cols-1 gap-6 sm:mt-16 lg:max-w-none lg:grid-cols-4">
           {pricingTiers.map((tier, index) => (
             <PricingCard 
               key={index} 
