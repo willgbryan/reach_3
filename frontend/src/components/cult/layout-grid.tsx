@@ -1,8 +1,9 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Meteors } from './meteors';
 import { motion } from "framer-motion";
+import { X } from 'lucide-react';
 
 type Card = {
   id: number;
@@ -15,6 +16,20 @@ type Card = {
 
 export const LayoutGrid = ({ cards }: { cards: Card[] }) => {
   const [selected, setSelected] = useState<Card | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    checkIsMobile();
+    window.addEventListener('resize', checkIsMobile);
+
+    return () => {
+      window.removeEventListener('resize', checkIsMobile);
+    };
+  }, []);
 
   const handleClick = (card: Card) => {
     if (!card.disabled) {
@@ -23,6 +38,12 @@ export const LayoutGrid = ({ cards }: { cards: Card[] }) => {
   };
 
   const handleOutsideClick = () => {
+    if (!isMobile) {
+      setSelected(null);
+    }
+  };
+
+  const handleClose = () => {
     setSelected(null);
   };
 
@@ -35,7 +56,7 @@ export const LayoutGrid = ({ cards }: { cards: Card[] }) => {
               className="cursor-pointer absolute inset-0 w-full md:w-3/4 lg:w-2/3 xl:w-1/2 m-auto z-50 flex justify-center items-center"
               onClick={handleOutsideClick}
             >
-              <SelectedCard selected={selected} />
+              <SelectedCard selected={selected} onClose={handleClose} isMobile={isMobile} />
             </div>
           ) : (
             <motion.button
@@ -53,7 +74,7 @@ export const LayoutGrid = ({ cards }: { cards: Card[] }) => {
           )}
         </div>
       ))}
-      {selected && (
+      {selected && !isMobile && (
         <div
           onClick={handleOutsideClick}
           className="fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity duration-300 ease-in-out"
@@ -74,11 +95,9 @@ const GridCard = ({ card }: { card: Card }) => {
       </div>
 
       <div className="relative z-40 p-8 h-full w-full flex flex-col justify-center items-center">
-
         <p className="text-neutral-600 dark:text-neutral-400 group-hover/feature:text-neutral-300 text-sm md:text-base font-medium font-sans text-center mb-2 transition-colors duration-300">
           {card.category}
         </p>
-
         <p className="text-neutral-800 dark:text-neutral-100 group-hover/feature:text-white text-xl md:text-3xl font-normal max-w-xs text-center [text-wrap:balance] font-sans transition duration-300">
           {card.title}
         </p>
@@ -91,9 +110,17 @@ const GridCard = ({ card }: { card: Card }) => {
   );
 };
 
-const SelectedCard = ({ selected }: { selected: Card | null }) => {
+const SelectedCard = ({ selected, onClose, isMobile }: { selected: Card | null; onClose: () => void; isMobile: boolean }) => {
   return (
-    <div className="bg-white dark:bg-zinc-800 h-full w-full flex flex-col justify-start rounded-lg shadow-2xl relative z-[60] overflow-y-auto p-6 transition-opacity duration-300 ease-in-out opacity-0 animate-fade-in">
+    <div className="bg-white dark:bg-zinc-800 h-full w-full flex flex-col justify-start rounded-lg shadow-2xl relative z-60 overflow-y-auto p-6 transition-opacity duration-300 ease-in-out opacity-0 animate-fade-in">
+      {isMobile && (
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-gray-100"
+        >
+          <X className="h-6 w-6" />
+        </button>
+      )}
       <div className="flex-grow">
         {selected?.content}
       </div>

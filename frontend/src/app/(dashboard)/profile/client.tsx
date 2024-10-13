@@ -30,7 +30,7 @@ export default function ConfigGrid({ isProUser }: ConfigGridProps) {
 
   return (
     <div className="min-h-screen w-full bg-gray-100 dark:bg-zinc-950 relative">
-      <div className="absolute top-4 right-4 flex items-center space-x-2">
+      <div className="absolute top-4 right-4 flex items-center space-x-2 z-20">
         <ModeToggle />
         <UserProvider id="profile" />
       </div>
