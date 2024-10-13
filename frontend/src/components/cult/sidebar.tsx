@@ -117,7 +117,7 @@ export const MobileSidebar = ({
   return (
     <>
       {/* Button to toggle sidebar */}
-      <div className="fixed top-4 left-4 md:hidden z-50">
+      <div className="fixed top-4 left-4 md:hidden z-20">
         <button
           onClick={toggleSidebar}
           className="p-2 text-neutral-800 dark:text-neutral-200 focus:outline-none rounded-md"

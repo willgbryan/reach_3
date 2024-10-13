@@ -580,7 +580,7 @@ export const Card: React.FC<CardProps> = ({
                 >
                   <IconFileText className="h-5 w-5 mr-2" />
                   <span className="md:inline hidden md:block">Download as Word Document</span>
-                  <span className="md:hidden">Word Document</span>
+                  <span className="md:hidden">Word</span>
                 </button>
 
                 {card.type !== 'sources' && onCreatePowerPoint && (
