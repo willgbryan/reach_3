@@ -408,7 +408,7 @@ export default function PdfUploadAndRenderPage() {
 
   const memoizedPDFViewer = useMemo(() => {
     return filesToProcess.length > 0 ? (
-      <div className="h-full w-full">
+      <div>
         {selectedFiles.length > 0 && (
         <div className="h-full w-full">
           <PDFViewer files={selectedFiles} />
@@ -524,7 +524,7 @@ export default function PdfUploadAndRenderPage() {
       <div className="flex flex-col lg:flex-row w-full relative" style={{ height: containerHeight }} ref={containerRef}>
         <div className="w-full lg:w-1/2 overflow-hidden border-b lg:border-b-0 lg:border-r relative flex flex-col">
           {!isNewUpload && previousAnalyses.length > 0 && (
-            <div className="mt-12 md:mt-6">
+            <div className="mt-12 md:mt-6 h-full overflow-y-auto">
               <AnalysisItems 
                 analyses={previousAnalyses} 
                 onAnalysisSelect={handleLoadPreviousAnalysis}
