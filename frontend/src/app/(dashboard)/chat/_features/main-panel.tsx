@@ -588,19 +588,21 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
 
 const TopSection = ({ docSetName, documentSets, onTriggerTutorial }) => {
   return (
-    <div className="flex justify-between items-center px-4">
-      <div className="flex items-center space-x-4">
-        <div className="hidden md:block">
-          <FreeSearchCounter />
+    <>
+      <div className="flex justify-between items-center px-4 py-4">
+        <div className="flex items-center space-x-4">
+          <div className="hidden md:block">
+            <FreeSearchCounter />
+          </div>
+          {/* <SelectScrollable prevDocSets={documentSets} /> */}
         </div>
-        {/* <SelectScrollable prevDocSets={documentSets} /> */}
       </div>
-      <div id="profile" className="flex items-center space-x-2 pt-4">
+      <div className="fixed top-4 right-4 z-50 flex items-center space-x-2">
         <InfoButton onTriggerTutorial={onTriggerTutorial} />
         <ModeToggle />
         <UserProvider id="profile" />
       </div>
-    </div>
+    </>
   );
 };
 
