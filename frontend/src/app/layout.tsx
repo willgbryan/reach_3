@@ -62,10 +62,6 @@ export default async function RootLayout({ children }: RootLayoutProps) {
   const {
     data: { session },
   } = await supabase.auth.getSession()
-
-  // Server-side mobile detection
-  const userAgent = headers().get('user-agent') || ''
-  const isMobile = /Mobile|Android|iP(hone|od)|IEMobile|BlackBerry|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/.test(userAgent)
   
   return (
     <html lang="en">
@@ -86,11 +82,9 @@ export default async function RootLayout({ children }: RootLayoutProps) {
           <SupabaseProvider session={session}>
             <TooltipProvider delayDuration={0}>
               <DynamicBlobProvider initialSize={'default'}>
-                {isMobile ? (
-                  <MobileMessage />
-                ) : (
+               
                   <main>{children}</main>
-                )}
+                
               </DynamicBlobProvider>
             </TooltipProvider>
           </SupabaseProvider>
@@ -99,16 +93,5 @@ export default async function RootLayout({ children }: RootLayoutProps) {
         <Analytics />
       </body>
     </html>
-  )
-}
-
-function MobileMessage() {
-  return (
-    <div className="flex flex-col h-screen items-center justify-center p-4 text-center">
-      <Logo />
-      <p className="text-lg font-semibold mt-4">
-        Mobile support coming soon. Visit Heighliner on a computer for the best experience.
-      </p>
-    </div>
   )
 }
