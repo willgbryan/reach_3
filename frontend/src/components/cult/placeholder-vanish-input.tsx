@@ -296,7 +296,6 @@ export function PlaceholdersAndVanishInput({
               disabled && "cursor-not-allowed"
             )}
           >
-            {/* Submit Icon */}
             <motion.svg
               xmlns="http://www.w3.org/2000/svg"
               width="24"
@@ -331,8 +330,7 @@ export function PlaceholdersAndVanishInput({
         )}
       </div>
 
-      {/* Placeholder Text */}
-      <div className="absolute inset-0 flex items-start pointer-events-none">
+      <div className="absolute inset-0 flex items-start pointer-events-none max-w-md md:max-w-4xl">
         <AnimatePresence mode="wait">
           {(!value || disabled) && (
             <motion.p

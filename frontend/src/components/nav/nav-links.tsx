@@ -2,7 +2,7 @@
 import { BookCopy, DollarSign, Home, Newspaper, Settings, Globe, LibraryBig } from 'lucide-react'
 import { Nav } from './nav'
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://themagi.systems';
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://heighliner.tech';
 
 export function NavLinks({ isCollapsed }) {
   return (

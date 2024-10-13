@@ -588,19 +588,24 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
 
 const TopSection = ({ docSetName, documentSets, onTriggerTutorial }) => {
   return (
-    <div className="flex justify-between items-center px-4">
-      <div className="flex items-center space-x-4">
-        <FreeSearchCounter />
-        {/* <SelectScrollable prevDocSets={documentSets} /> */}
+    <>
+      <div className="flex justify-between items-center px-4 py-4">
+        <div className="flex items-center space-x-4">
+          <div className="hidden md:block">
+            <FreeSearchCounter />
+          </div>
+          {/* <SelectScrollable prevDocSets={documentSets} /> */}
+        </div>
       </div>
-      <div id="profile" className="flex items-center space-x-2 pt-4">
+      <div className="fixed top-4 right-4 z-50 flex items-center space-x-2">
         <InfoButton onTriggerTutorial={onTriggerTutorial} />
         <ModeToggle />
         <UserProvider id="profile" />
       </div>
-    </div>
+    </>
   );
 };
+
 
 const ChatSection = ({ 
   messages, 
@@ -974,7 +979,7 @@ const ChatSection = ({
       {updatedMessages.length > 2 ? (
         <div className="pb-[100px] md:pb-40 w-full">
           <div className="mt-8">
-            <h2 className="text-4xl pl-12 font-normal">{updatedMessages[0].content}</h2>
+            <h2 className="text-left text-xl md:text-4xl pl-12 font-normal">{updatedMessages[0].content}</h2>
             <GridLayout items={allCards} />
           </div>
           <ChatScrollAnchor trackVisibility={isLoading} />

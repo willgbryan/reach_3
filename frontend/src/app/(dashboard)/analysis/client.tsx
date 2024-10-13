@@ -408,7 +408,7 @@ export default function PdfUploadAndRenderPage() {
 
   const memoizedPDFViewer = useMemo(() => {
     return filesToProcess.length > 0 ? (
-      <div className="h-full w-full">
+      <div>
         {selectedFiles.length > 0 && (
         <div className="h-full w-full">
           <PDFViewer files={selectedFiles} />
@@ -486,13 +486,14 @@ export default function PdfUploadAndRenderPage() {
 
   return (
     <>
-      <div className="absolute top-4 left-4 z-50">
+      <div className="absolute top-4 left-4 z-50 hidden md:block">
         <FreeSearchCounter isPro={isPro} freeSearches={freeSearches} />
       </div>
       <div className="absolute top-4 right-4 z-50 flex items-center space-x-2">
         <ModeToggle />
         <UserProvider id="profile" />
       </div>
+
       <AnimatePresence>
         {isTutorialActive && (
           <TutorialOverlay isFirstOrLastStep={currentTutorialStep === 0 || currentTutorialStep === tutorialSteps.length - 1}>
@@ -519,10 +520,11 @@ export default function PdfUploadAndRenderPage() {
           <UpgradeAlert onClose={() => setShowUpgradeAlert(false)} />
         )}
       </AnimatePresence>
-      <div className="flex w-full relative" style={{ height: containerHeight }} ref={containerRef}>
-        <div className="w-1/2 overflow-hidden border-r relative flex flex-col">
+
+      <div className="flex flex-col lg:flex-row w-full relative" style={{ height: containerHeight }} ref={containerRef}>
+        <div className="w-full lg:w-1/2 overflow-hidden border-b lg:border-b-0 lg:border-r relative flex flex-col">
           {!isNewUpload && previousAnalyses.length > 0 && (
-            <div className="mt-6">
+            <div className="mt-12 md:mt-6 h-full overflow-y-auto">
               <AnalysisItems 
                 analyses={previousAnalyses} 
                 onAnalysisSelect={handleLoadPreviousAnalysis}
@@ -560,7 +562,8 @@ export default function PdfUploadAndRenderPage() {
             </>
           )}
         </div>
-        <div className="w-1/2 flex flex-col">
+
+        <div className="w-full lg:w-1/2 flex flex-col">
           <div className="flex-grow p-4 overflow-y-auto">
             {isProcessing || streamingAnalysis || sections.length > 0 ? (
               <AnalysisDisplay 
@@ -572,7 +575,7 @@ export default function PdfUploadAndRenderPage() {
                 isInitialAnalysis={isInitialAnalysis}
                 onCreateDoc={handleCreateDoc}
                 onCreatePowerPoint={handleCreatePowerPoint}
-            />
+              />
             ) : (
               <div className="flex items-center justify-center h-full text-gray-500">
                 {selectedFiles.length > 0 
@@ -581,22 +584,11 @@ export default function PdfUploadAndRenderPage() {
               </div>
             )}
           </div>
-          {/* {filesToProcess.length > 0 && !isProcessing && (
-            <div className="p-4 border-t">
-              <Button
-                onClick={handleClearAndUpload}
-                className="w-full"
-              >
-                Clear and Upload New Files
-              </Button>
-            </div>
-          )} */}
         </div>
       </div>
     </>
   );
 }
-
 
 function FreeSearchCounter({ isPro, freeSearches }: { isPro: boolean, freeSearches: number | null }) {
   if (isPro) {

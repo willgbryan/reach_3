@@ -11,8 +11,8 @@ import {
 
 export default function TermsAndPrivacy() {
   return (
-    <div className="flex justify-center mt-12">
-    <Tabs defaultValue="terms" className="w-[800px]">
+    <div className="flex justify-center mt-14 w-full h-full">
+    <Tabs defaultValue="terms">
       <TabsList className="grid w-full grid-cols-2 dark:bg-zinc-800 bg-white">
         <TabsTrigger value="terms">Terms of Use</TabsTrigger>
         <TabsTrigger value="privacy">Privacy Policy</TabsTrigger>
@@ -27,8 +27,8 @@ export default function TermsAndPrivacy() {
           </CardHeader> */}
           <CardContent className="space-y-2">
           <div className="max-w-4xl mx-auto p-4 mt-16">
-            <h1 className="relative z-10 text-lg md:text-7xl bg-clip-text text-transparent bg-gradient-to-b from-neutral-200 to-neutral-600 text-center font-normal">
-                Terms of Use
+            <h1 className="relative z-10 text-3xl md:text-7xl bg-clip-text text-transparent bg-gradient-to-b from-neutral-200 to-neutral-600 text-center font-normal">
+              Terms of Use
             </h1>
             <h2 className="text-neutral-500 text-md md:text-6xl text-center font-normal my-4">
                 Version 1.1
