@@ -36,7 +36,7 @@ uvicorn==0.23.2
 openai
 pypdf2
 Pillow
-pytesseract
+apple_ocr
 docx2txt
 python-pptx==0.6.21
 pydantic==2.4.2

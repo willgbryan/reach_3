@@ -3,7 +3,7 @@ import requests
 import time
 import aiofiles
 from PyPDF2 import PdfReader
-import pytesseract
+from apple_ocr.ocr import OCR
 from PIL import Image
 import docx2txt
 from urllib.parse import urlparse, unquote
@@ -189,7 +189,11 @@ class Reach:
                         file_text += page.extract_text()
                 elif file_extension in ['.png', '.jpg', '.jpeg', '.gif', '.bmp']:
                     image = Image.open(io.BytesIO(file_content))
-                    file_text = pytesseract.image_to_string(image)
+                    # file_text = pytesseract.image_to_string(image)
+                    # image = Image.open("/Users/willgbryan/Desktop/reach_3/Share-Book-Excerpts-Text-feature.jpeg")
+                    ocr_instance = OCR(image=image)
+                    dataframe = ocr_instance.recognize()
+                    file_text = ' '.join(dataframe.get("Content"))
                 elif file_extension in ['.doc', '.docx']:
                     file_text = docx2txt.process(io.BytesIO(file_content))
                 elif file_extension == '.txt':
