@@ -277,7 +277,7 @@ export default function PdfUploadAndRenderPage() {
       });
   
       const taskToUse = customTask.trim() || DEFAULT_TASK;
-      formData.append('task', `${taskToUse} Bluebook citations are key. NEVER cite the supabase URL.`);
+      formData.append('task', `${taskToUse} Bluebook citations are key.`);
       formData.append('analysisId', currentAnalysisId);
   
       const response = await fetch('/api/analyze-document', {
@@ -376,7 +376,7 @@ export default function PdfUploadAndRenderPage() {
         };
         
         const sectionTitle = 
-          userMessage.content === "The following are legal documents that I would like analyzed. I need to understand the key important pieces with the relevant cited language as well as any language that can be loosely interpreted. Bluebook citations are key. NEVER cite the supabase URL." ||
+          userMessage.content === "The following are legal documents that I would like analyzed. I need to understand the key important pieces with the relevant cited language as well as any language that can be loosely interpreted. Bluebook citations are key." ||
           userMessage.content.includes("Bluebook citations are key. NEVER cite the supabase URL.")
             ? 'Initial Analysis'
             : extractUserQuestion(userMessage.content);
