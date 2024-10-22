@@ -39,7 +39,7 @@ export async function NavHistoryList({ mobile, user }: SidebarListProps) {
           </div>
         ) : (
           <div className="p-4 text-center">
-            <p className="text-sm text-muted-foreground">No history yet</p>
+            {/* <p className="text-sm text-muted-foreground">No history yet</p> */}
           </div>
         )}
       </div>
