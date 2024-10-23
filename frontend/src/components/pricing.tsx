@@ -59,7 +59,7 @@ const pricingTiers = [
     description: "Integrated observability and tailored optimization",
     features: [
       "Custom user limit",
-      "Organization wide observability dashboard",
+      // "Organization wide observability dashboard",
       { text: "Unlimited queries", subtext: "Priority uptime and no rate limits"},
       "24/7 support"
     ]

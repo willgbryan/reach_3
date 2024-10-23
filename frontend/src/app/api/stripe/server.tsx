@@ -88,8 +88,8 @@ export async function StripeCheckout({
             price_data: {
               currency: 'usd',
               product_data: {
-                name: 'Subscription',
-                description: tierDescription,
+                name: 'Heighliner Pro',
+                description: `${tierDescription}`,
               },
               unit_amount: price,
               recurring: paymentType === 'subscription' ? { interval: 'month' } : undefined,
@@ -101,6 +101,7 @@ export async function StripeCheckout({
         mode: paymentType === 'subscription' ? 'subscription' : 'payment',
         success_url: `${headersList.get('origin')}/chat`,
         cancel_url: `${headersList.get('origin')}/`,
+        
       })
 
       return JSON.parse(JSON.stringify(stripeSession)) as Stripe.Response<Stripe.Checkout.Session>

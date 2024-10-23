@@ -114,6 +114,10 @@ export const MobileSidebar = ({
     setOpen(!open);
   };
 
+  const closeSidebar = () => {
+    setOpen(false);
+  };
+
   return (
     <>
       {/* Button to toggle sidebar */}
@@ -148,7 +152,9 @@ export const MobileSidebar = ({
             >
               <IconX />
             </div>
-            {children as React.ReactNode} {/* Explicit type casting */}
+            {React.Children.map(children, (child: any) =>
+              React.cloneElement(child as React.ReactElement, { onClick: closeSidebar })
+            )}
           </motion.div>
         )}
       </AnimatePresence>
@@ -165,7 +171,14 @@ export const SidebarLink = ({
   className?: string;
   props?: LinkProps;
 }) => {
-  const { open, animate } = useSidebar();
+  const { open, animate, setOpen } = useSidebar();
+  
+  const handleClick = () => {
+    if (setOpen) {
+      setOpen(false);
+    }
+  };
+
   return (
     <Link
       href={link.href}
@@ -173,6 +186,7 @@ export const SidebarLink = ({
         "flex items-center justify-start gap-2  group/sidebar py-2",
         className
       )}
+      onClick={handleClick}
       {...props}
     >
       {link.icon}
