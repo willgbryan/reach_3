@@ -33,6 +33,8 @@ import { IconLoader2, IconPresentation } from '@tabler/icons-react'
 import { LoaderIcon } from 'lucide-react'
 import { UpgradeAlert } from '@/components/upgrade-alert'
 import { FreeSearchCounter } from '@/components/free-search-counter'
+import { ResearchStatus } from '@/components/research-status'
+import { Button } from '@/components/ui/button'
 
 interface MainVectorPanelProps {
   id?: string | undefined
@@ -62,6 +64,8 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
   const [originalUserMessage, setOriginalUserMessage] = useState<Message | null>(null);
   const [currentIteration, setCurrentIteration] = useState(0);
   const [currentStep, setCurrentStep] = useState('initial');
+  const [showInput, setShowInput] = useState(true);
+
   const [placeholders, setPlaceholders] = useState([
     "Brief Roberts v. State of Louisiana 396 So.2d 566 (La. Ct. App. 1981)",
     "Which cases decided the enforceability of clickwrap licenses under contract law?",
@@ -96,7 +100,7 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
   const tutorialSteps = [
   {
     title: "Welcome to Heighliner",
-    description: "Heighliner is purpose-built for professional work with a strong focus on legal research.",
+    description: "Heighliner is purpose-built for professional work with a strong focus on secondary source legal research.",
     highlightId: ""
   },
   {
@@ -207,39 +211,37 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
   };
 
   const handleApiCall = async (payload, iterationCount = 0) => {
-    setIsLoading(true);
     let accumulatedOutput = '';
     let accumulatedSources: any[] = [];
     const actualChatId = currentChatId || nanoid();
-
+  
     if (!currentChatId) {
       setCurrentChatId(actualChatId);
     }
-
+  
     try {
       if (!socketRef.current || socketRef.current.readyState !== WebSocket.OPEN) {
         socketRef.current = getWebSocket();
       }
-
-      // Wait for the WebSocket to be open
+  
       if (socketRef.current.readyState !== WebSocket.OPEN) {
         await new Promise<void>((resolve, reject) => {
           const timeout = setTimeout(() => {
             reject(new Error('WebSocket connection timed out'));
           }, 20000);
-
+  
           socketRef.current!.onopen = () => {
             clearTimeout(timeout);
             resolve();
           };
-
+  
           socketRef.current!.onerror = () => {
             clearTimeout(timeout);
             reject(new Error('WebSocket connection failed'));
           };
         });
       }
-
+  
       const requestData = {
         task: payload.originalMessage ? payload.originalMessage.content : payload.messages[payload.messages.length - 1].content,
         report_type: "research_report",
@@ -251,8 +253,6 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
       console.log('Sending data to WebSocket:', requestData);
       socketRef.current.send(JSON.stringify(requestData));
   
-
-      // promise that resolves when the WebSocket communication is complete
       const wsComplete = new Promise<string>((resolve, reject) => {
         const messageHandler = (event: MessageEvent) => {
           const data = JSON.parse(event.data);
@@ -269,7 +269,7 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
             accumulatedSources = [...accumulatedSources, ...parsedData];
             setWebSources(accumulatedSources);
           }
-
+  
           if (data.type === 'logs') {
             console.log(data);
           }
@@ -279,21 +279,21 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
             resolve(accumulatedOutput);
           }
         };
-
+  
         socketRef.current!.addEventListener('message', messageHandler);
-
+  
         socketRef.current!.onerror = (error) => {
           socketRef.current!.removeEventListener('message', messageHandler);
           reject(error);
         };
       });
-
+  
       await wsComplete;
-
+  
       setIterationCount(iterationCount + 1);
       setCurrentIteration(iterationCount + 1);
       setAccumulatedReports(prev => ({...prev, [iterationCount + 1]: accumulatedOutput}));
-
+  
       setAllIterations(prev => [
         ...prev,
         {
@@ -314,61 +314,57 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
         description: "The previous response will not be saved. Try again shortly.",
       });
       throw error;
-    } finally {
-      setIsLoading(false);
     }
   };
-
+  
   const handleMultipleIterations = async (payload, maxIterations = 6) => {
+    setIsLoading(true);
     let currentIteration = 0;
     let currentPayload = { ...payload };
     let iterations: Array<{ content: string; sources: any[]; type?: string }> = [];
     let finalChatId: string | undefined;
   
-    while (currentIteration < maxIterations) {
-      setCurrentStep(`dive-${currentIteration + 1}`);
-      setPlaceholders([`Navigating Dive ${currentIteration + 1}`]);
-      const result = await handleApiCall(currentPayload, currentIteration);
-      console.log(`ITERATION ${currentIteration}`);
-      
-      iterations.push({
-        content: result.output,
-        sources: result.sources,
-        type: 'iteration'
-      });
-  
-      currentIteration++;
-      finalChatId = result.chatId;
-  
-      if (currentIteration > 2) {
-        // Evaluate stopping condition
-        const oldSources = await getOldSources(result.chatId);
-        const oldSourceUrls = new Set(oldSources.map(source => source.source_url));
-        const newSourceUrls = new Set(result.sources.map(source => source.Source));
-  
-        const uniqueNewSources = [...newSourceUrls].filter(url => !oldSourceUrls.has(url));
+    try {
+      while (currentIteration < maxIterations) {
+        setCurrentStep(`dive-${currentIteration + 1}`);
+        setPlaceholders([`Navigating Dive ${currentIteration + 1}`]);
+        const result = await handleApiCall(currentPayload, currentIteration);
+        console.log(`ITERATION ${currentIteration}`);
         
-        const ratio = uniqueNewSources.length / oldSourceUrls.size;
+        iterations.push({
+          content: result.output,
+          sources: result.sources,
+          type: 'iteration'
+        });
   
-        if (ratio <= 0.1) {
-          console.log('Stopping condition met. Ending iterations.');
-          setIsCollectionComplete(true);
-          break;
-        } else {
-          console.log('Continuing to next iteration.');
+        currentIteration++;
+        finalChatId = result.chatId;
+  
+        if (currentIteration > 2) {
+          const oldSources = await getOldSources(result.chatId);
+          const oldSourceUrls = new Set(oldSources.map(source => source.source_url));
+          const newSourceUrls = new Set(result.sources.map(source => source.Source));
+  
+          const uniqueNewSources = [...newSourceUrls].filter(url => !oldSourceUrls.has(url));
+          
+          const ratio = uniqueNewSources.length / oldSourceUrls.size;
+  
+          if (ratio <= 0.1) {
+            console.log('Stopping condition met. Ending iterations.');
+            setIsCollectionComplete(true);
+            break;
+          }
         }
+  
+        await handleSaveSourcesAndContent(result.sources);
+  
+        currentPayload = {
+          ...currentPayload,
+          messages: [...currentPayload.messages, { content: result.output, role: 'assistant' }],
+          id: result.chatId,
+        };
       }
   
-      await handleSaveSourcesAndContent(result.sources);
-  
-      currentPayload = {
-        ...currentPayload,
-        messages: [...currentPayload.messages, { content: result.output, role: 'assistant' }],
-        id: result.chatId,
-      };
-    }
-  
-    try {
       if (finalChatId) {
         const fetchedSources = await getOldSources(finalChatId);
         setAllSources(fetchedSources);
@@ -379,8 +375,10 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
         });
       }
   
+      console.log('Starting condensing step');
       setCurrentStep('condensing');
       setPlaceholders(['Condensing dive content']);
+      
       const response = await fetch('/api/condense-reports', {
         method: 'POST',
         headers: {
@@ -391,16 +389,16 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
           accumulatedOutput: iterations.filter(iter => iter.type === 'iteration').map(iter => iter.content).join('\n\n')
         }),
       });
-
+  
       if (!response.ok) {
         throw new Error('Failed to condense findings');
       }
   
       const { condensed_report } = await response.json();
       console.log('Condensed Report:', condensed_report);
-
+  
       setCondensedFindings(condensed_report);
-
+  
       iterations.push({
         content: condensed_report,
         sources: [],
@@ -429,14 +427,18 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
         throw new Error('Failed to save chat history');
       }
   
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
     } catch (error) {
       console.error('Error in condensing findings or saving chat:', error);
       toast.error("Error processing research", {
         description: "Failed to generate condensed report or save chat. Please try again.",
       });
+    } finally {
+      setCurrentStep('initial');
+      setPlaceholders(['Research complete.']);
+      setIsLoading(false);
     }
-    setCurrentStep('initial');
-    setPlaceholders(['Research complete.']);
   };
 
   useEffect(() => {
@@ -469,6 +471,7 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
         }
       }
 
+      setShowInput(false);
       setInitialValue(value);
       const newMessage: Message = {
         id: nanoid(),
@@ -477,7 +480,9 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
         createdAt: new Date()
       };
       setOriginalUserMessage(newMessage);
+      
       setMessages(prevMessages => [...prevMessages, newMessage]);
+      setReportContent('');
       
       await handleMultipleIterations({
         messages: [...messages, newMessage],
@@ -522,6 +527,7 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
   };
 
   const handleStartOver = useCallback(() => {
+    setShowInput(true); // Show input when starting over
     if (typeof window !== 'undefined') {
       const currentPath = window.location.pathname;
       if (currentPath.endsWith('/chat')) {
@@ -540,29 +546,38 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
         documentSets={documentSets}
       />
       <div className="w-full px-4">
-        <ChatSection 
-          messages={updatedMessages}
-          isLoading={isLoading}
-          reportContent={reportContent}
-          allIterations={allIterations}
-          currentIteration={currentIteration}
-          chatId={currentChatId}
-          allSources={allSources}
-        />
-      </div>
-      {showBottomSection && (
-        <div className="w-full px-4 z-40">
-          <SimpleInputForm
-            id="input-section"
-            onSubmit={handleInputClick}
-            onStartOver={handleStartOver}
-            inputDisabled={inputDisabled}
-            placeholders={placeholders}
+        {messages.length === 0 ? (
+          <div className="flex flex-col items-center justify-center min-h-[calc(100vh-120px)]">
+            <div className="flex flex-col items-center space-y-8">
+              <Heading size="xl" weight="base">Legal Research Starts Here</Heading>
+              {showInput && (
+                <div className="w-full max-w-3xl px-4">
+                  <SimpleInputForm
+                    id="input-section"
+                    onSubmit={handleInputClick}
+                    onStartOver={handleStartOver}
+                    inputDisabled={inputDisabled}
+                    placeholders={placeholders}
+                    currentStep={currentStep}
+                    hasContent={messages.length > 0}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <ChatSection 
+            messages={messages}
+            isLoading={isLoading}
+            reportContent={reportContent}
+            allIterations={allIterations}
+            currentIteration={currentIteration}
+            chatId={currentChatId}
+            allSources={allSources}
             currentStep={currentStep}
-            hasContent={updatedMessages.length > 1}
           />
-        </div>
-      )}
+        )}
+      </div>
       <AnimatePresence>
         {showUpgradeAlert && (
           <UpgradeAlert onClose={() => setShowUpgradeAlert(false)} />
@@ -588,21 +603,22 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
 
 const TopSection = ({ docSetName, documentSets, onTriggerTutorial }) => {
   return (
-    <>
-      <div className="flex justify-between items-center px-4 py-4">
+    <div className="px-4 py-4">
+      <div className="flex justify-between items-center">
         <div className="flex items-center space-x-4">
           <div className="hidden md:block">
             <FreeSearchCounter />
           </div>
           {/* <SelectScrollable prevDocSets={documentSets} /> */}
         </div>
+        
+        <div className="flex items-center space-x-2">
+          <InfoButton onTriggerTutorial={onTriggerTutorial} />
+          <ModeToggle />
+          <UserProvider id="profile" />
+        </div>
       </div>
-      <div className="fixed top-4 pt-4 right-4 pr-4 z-50 flex items-center space-x-2">
-        <InfoButton onTriggerTutorial={onTriggerTutorial} />
-        <ModeToggle />
-        <UserProvider id="profile" />
-      </div>
-    </>
+    </div>
   );
 };
 
@@ -614,7 +630,8 @@ const ChatSection = ({
   allIterations,
   currentIteration,
   chatId,
-  allSources
+  allSources,
+  currentStep
 }) => {
   const [localSources, setLocalSources] = useState<Source[]>([]);
   const updatedMessages = [...messages, { content: reportContent, role: 'assistant', type: 'report' }];
@@ -976,21 +993,48 @@ const ChatSection = ({
 
   return (
     <div className="flex flex-col items-center w-full">
-      {updatedMessages.length > 2 ? (
+      {updatedMessages.length > 1 ? (
         <div className="pb-[100px] md:pb-40 w-full">
           <div className="mt-8">
-            <h2 className="text-left text-xl md:text-4xl pl-12 font-normal">{updatedMessages[0].content}</h2>
-            <GridLayout items={allCards} />
+            <h2 className="text-left md:text-center text-xl md:text-4xl pl-12 pt-4 md:pt-2 font-normal">
+              {updatedMessages[0].content}
+            </h2>
+            <div className="pt-2 md:pt-8">
+              <GridLayout items={allCards} />
+            </div>
+            {isLoading && (
+              <ResearchStatus
+                currentStep={currentStep}
+                query={updatedMessages[0].content}
+                className="pt-8"
+              />
+            )}
+            <div className="flex justify-center mt-8">
+              <Button 
+                className="text-base text-md" 
+                variant="outline" 
+                onClick={() => {
+                  const path = window.location.pathname;
+                  if (path === '/chat') {
+                    window.location.reload();
+                  } else {
+                    window.location.href = '/chat';
+                  }
+                }}
+              >
+                Start Over
+              </Button>
+            </div>
           </div>
           <ChatScrollAnchor trackVisibility={isLoading} />
         </div>
       ) : (
         <div className="pt-16">
-          <Heading size="xxl" weight="base">Heighliner</Heading>
+          <Heading size="xl" weight="base">Legal Research Starts Here</Heading>
         </div>
       )}
     </div>
-  )
-}
+  );
+};
 
 export default MainVectorPanel;

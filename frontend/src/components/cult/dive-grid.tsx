@@ -571,7 +571,7 @@ export const Card: React.FC<CardProps> = ({
                   </TutorialOverlay>
                 )}
               </AnimatePresence>
-              <div className="sticky top-0 right-0 left-0 z-20 bg-transparent py-4 md:px-0 flex flex-row items-center justify-end space-x-2">
+              <div className="sticky top-0 right-0 left-0 z-20 bg-transparent backdrop-blur-sm py-4 md:px-0 flex flex-row items-center justify-end space-x-2">
 
                 <button
                   className="max-w-full flex items-center justify-center px-3 py-2 hover:text-stone-900 bg-stone-900 dark:bg-stone-100 rounded-full text-sm font-medium text-stone-100 dark:hover:text-stone-100 dark:text-stone-900 hover:bg-stone-300 dark:hover:bg-stone-600 transition-colors"

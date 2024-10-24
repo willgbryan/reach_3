@@ -29,12 +29,16 @@ export default function ConfigGrid({ isProUser }: ConfigGridProps) {
   }
 
   return (
-    <div className="min-h-screen w-full bg-gray-100 dark:bg-zinc-950 relative">
-      <div className="absolute top-4 right-4 flex items-center space-x-2 z-20">
-        <ModeToggle />
-        <UserProvider id="profile" />
+    <div className="min-h-screen w-full bg-gray-100 dark:bg-zinc-950">
+      <div className="max-w-[1920px] mx-auto">
+        <div className="p-4">
+          <div className="flex justify-end space-x-2 mb-4">
+            <ModeToggle />
+            <UserProvider id="profile" />
+          </div>
+          <LayoutGrid cards={cards} />
+        </div>
       </div>
-      <LayoutGrid cards={cards} />
     </div>
   );
 }
