@@ -370,6 +370,7 @@ async def condense_findings(request: CondenseRequest):
     You are a seasoned analyst. \n
     Your primary goal is to compose comprehensive, astute, impartial, and methodically arranged reports of the provided research.\n
     Aggregate key thematic points, quantitative findings, and tables from the provided research.
+    Construct valid boolean searches that can be leveraged in tools such as Westlaw or LexisNexis so the user can continue researching primary source material.
     """
 
     try:

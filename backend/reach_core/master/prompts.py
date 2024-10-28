@@ -153,6 +153,7 @@ def generate_report_prompt(question, context, report_format="apa", total_words=4
            f" in depth and comprehensive, with facts and numbers if available and a minimum of {total_words} words.\n" \
            "You should strive to write the report as long as you can using all relevant and necessary information provided.\n"\
            "You must write the report with markdown syntax. Use headings, bulleted lists, tables, block quotes, and other markdown formatted features.\n " \
+           "You MUST construct valid boolean searches for the user that can be leveraged in legal database tools such as Westlaw or LexisNexis that allow them to continue their research. This is critical.\n " \
            f"Use an unbiased and journalistic tone. \n" \
            "You MUST determine your own concrete and valid opinion based on the given information. Do NOT deter to general and meaningless conclusions.\n" \
            f"You MUST write all used source urls at the end of the report as references and include in-line citation. Make sure to not add duplicated sources, but only one reference for each.\n" \
@@ -165,7 +166,7 @@ def generate_report_prompt(question, context, report_format="apa", total_words=4
                 
                 This is a sample text. ([url website](url))
             """\
-            f"You MUST write the report in Bluebook format for legal questions, and APA format otherwise.\n " \
+            f"You MUST write the report in Bluebook format for legal questions, and APA format otherwise. Do not include a note\n " \
             f"'You MUST include all relevant source urls unless it is a Supabase URL. NEVER include or cite URL's from supabase'\
              'Every url should be hyperlinked: [url website](url), and all legal content must be appropriately cited by the provided jurisdictions standard or Bluebook.'\n"\
             f"Please do your best, this is very important to my career." \

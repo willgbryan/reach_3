@@ -104,7 +104,7 @@ export const ResearchStatus = ({
       if (!isAnimating) {
         const timer = setTimeout(() => {
           startAnimation();
-        }, 3000);
+        }, 10000);
         return () => clearTimeout(timer);
       }
     }, [isAnimating, startAnimation]);
