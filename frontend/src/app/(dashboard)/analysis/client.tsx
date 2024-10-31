@@ -407,16 +407,14 @@ export default function PdfUploadAndRenderPage() {
   };
 
   const memoizedPDFViewer = useMemo(() => {
-    return filesToProcess.length > 0 ? (
-      <div>
-        {selectedFiles.length > 0 && (
-        <div className="h-full w-full">
-          <PDFViewer files={selectedFiles} />
-        </div>
-      )}
+    if (selectedFiles.length === 0) return null;
+
+    return (
+      <div className="w-full h-full flex-grow overflow-hidden">
+        <PDFViewer files={selectedFiles} />
       </div>
-    ) : null;
-  }, [filesToProcess]);
+    );
+  }, [selectedFiles]);
 
   const handleCreateDoc = (content: string) => {
     createEditableDocument(content, reportConfig);
@@ -531,13 +529,12 @@ export default function PdfUploadAndRenderPage() {
               />
             </div>
           )}
+          
           {filesToProcess.length === 0 ? (
             <Card className="border-none shadow-none dark:bg-transparent h-full">
               <CardContent className="flex flex-col items-center justify-center h-full">
                 <div className="w-full max-w-md mb-4">
-                  <FileUpload
-                    onChange={handleFileChange}
-                  />
+                  <FileUpload onChange={handleFileChange} />
                 </div>
                 <div className="w-full max-w-md mb-4 flex items-end">
                   <Textarea
@@ -557,9 +554,9 @@ export default function PdfUploadAndRenderPage() {
               </CardContent>
             </Card>
           ) : (
-            <>
+            <div className="flex-grow overflow-hidden">
               {memoizedPDFViewer}
-            </>
+            </div>
           )}
         </div>
 

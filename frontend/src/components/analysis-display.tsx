@@ -369,7 +369,7 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
         {sections.map((section) => (
           <AccordionItem key={section.id} value={section.id}>
             <AccordionTrigger>{section.title}</AccordionTrigger>
-            <AccordionContent>
+            <AccordionContent className="overflow-hidden">
               <Card className="pt-10 bg-transparent relative">
                 {section.content && (
                   <div className="absolute top-2 right-2 flex space-x-2 ">

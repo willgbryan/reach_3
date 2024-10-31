@@ -7,6 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ChevronLeft, ChevronRight, LoaderIcon } from 'lucide-react';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 pdfjs.GlobalWorkerOptions.workerSrc = `/pdf.worker.min.mjs`;
 
@@ -26,6 +32,19 @@ const FileViewer: React.FC<FileViewerProps> = ({ files }) => {
   const [documents, setDocuments] = useState<Record<string, FileState>>({});
   const [loading, setLoading] = useState<boolean>(true);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const [openAccordion, setOpenAccordion] = useState<string | undefined>('documents');
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
 
   useEffect(() => {
     const initialDocuments: Record<string, FileState> = {};
@@ -42,22 +61,38 @@ const FileViewer: React.FC<FileViewerProps> = ({ files }) => {
   }, [files]);
 
   useEffect(() => {
+    if (!containerRef.current) return;
+    
     const updateDimensions = () => {
+      const container = containerRef.current;
+      if (!container) return;
+      
+      const { clientWidth, clientHeight } = container;
+      // Adjust scale calculation for better mobile viewing
+      const newScale = Math.min(
+        (clientWidth - 32) / 500, // Reduced padding for mobile
+        (clientHeight - 140) / 700 // Increased space for navigation
+      );
+      
+      setDocuments(prev => ({
+        ...prev,
+        [activeTab]: {
+          ...prev[activeTab],
+          scale: Math.max(0.6, newScale), // Increased minimum scale for readability
+        },
+      }));
+    };
+
+    const resizeObserver = new ResizeObserver(updateDimensions);
+    resizeObserver.observe(containerRef.current);
+    
+    updateDimensions();
+    
+    return () => {
       if (containerRef.current) {
-        const { clientWidth, clientHeight } = containerRef.current;
-        const newScale = Math.min(clientWidth / 600, clientHeight / 800);
-        setDocuments(prev => ({
-          ...prev,
-          [activeTab]: {
-            ...prev[activeTab],
-            scale: newScale,
-          },
-        }));
+        resizeObserver.unobserve(containerRef.current);
       }
     };
-    window.addEventListener('resize', updateDimensions);
-    updateDimensions();
-    return () => window.removeEventListener('resize', updateDimensions);
   }, [activeTab]);
 
   function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
@@ -97,82 +132,97 @@ const FileViewer: React.FC<FileViewerProps> = ({ files }) => {
     }
   };
 
-  const renderFileContent = (file: File) => {
-    if (file.type === 'application/pdf') {
+
+  const renderContent = () => {
+    if (isMobile) {
       return (
-        <Document
-          file={file}
-          onLoadSuccess={onDocumentLoadSuccess}
-          onLoadError={(error) => {
-            console.error('Error while loading document:', error);
-            toast.error(`Failed to load PDF document: ${file.name}`);
-          }}
+        <Accordion 
+          type="single" 
+          collapsible 
+          className="w-full"
+          value={openAccordion}
+          onValueChange={setOpenAccordion}
         >
-          <Page
-            pageNumber={documents[file.name]?.currentPage || 1}
-            renderTextLayer={true}
-            renderAnnotationLayer={true}
-            scale={documents[file.name]?.scale || 1}
-          />
-        </Document>
-      );
-    } else if (file.type.startsWith('image/')) {
-      return (
-        <img
-          src={URL.createObjectURL(file)}
-          alt={file.name}
-          style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
-        />
-      );
-    } else {
-      // For text files or other types
-      if (!documents[file.name]?.content) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          setDocuments(prev => ({
-            ...prev,
-            [file.name]: {
-              ...prev[file.name],
-              content: e.target?.result as string,
-            },
-          }));
-        };
-        reader.readAsText(file);
-      }
-      return (
-        <pre className="whitespace-pre-wrap">
-          {documents[file.name]?.content || 'Loading content...'}
-        </pre>
+          <AccordionItem value="documents">
+            <AccordionTrigger className="px-4 pt-20">Documents</AccordionTrigger>
+            <AccordionContent className="overflow-hidden">
+            <div className="file-viewer w-full flex flex-col" ref={containerRef}>
+                <Tabs 
+                  value={activeTab} 
+                  onValueChange={setActiveTab} 
+                  className="w-full flex flex-col"
+                >
+                  <TabsList className="w-full overflow-x-auto bg-transparent justify-start mb-2">
+                    {files.map(file => (
+                      <TabsTrigger 
+                        key={file.name} 
+                        value={file.name}
+                        className="px-4 py-2 whitespace-nowrap"
+                      >
+                        {file.name}
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
+                  {renderMainContent()}
+                </Tabs>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
       );
     }
+
+    return (
+      <div className="file-viewer w-full h-full flex flex-col" ref={containerRef}>
+        <Tabs 
+          value={activeTab} 
+          onValueChange={setActiveTab} 
+          className="w-full h-full flex flex-col pt-4 px-2 md:px-4"
+        >
+          <TabsList className="w-full overflow-x-auto bg-transparent justify-start mb-2">
+            {files.map(file => (
+              <TabsTrigger 
+                key={file.name} 
+                value={file.name}
+                className="px-4 py-2 whitespace-nowrap"
+              >
+                {file.name}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+          {renderMainContent()}
+        </Tabs>
+      </div>
+    );
   };
 
-  return (
-    <div className="file-viewer relative w-full h-full flex flex-col" ref={containerRef}>
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full h-full flex flex-col mt-4">
-        <TabsList className="w-full overflow-x-auto bg-transparent">
-          {files.map(file => (
-            <TabsTrigger key={file.name} value={file.name} className="">
-              {file.name}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-        <div className="flex-grow relative overflow-hidden">
+  const renderMainContent = () => {
+    return (
+      <>
+        <div className={`relative overflow-auto ${isMobile ? 'h-[70vh]' : 'flex-grow'}`}>
           {loading && (
-            <div className="absolute inset-0 flex justify-center items-center bg-white dark:bg-transparent bg-opacity-75 dark:bg-opacity-75 z-10">
-              <LoaderIcon className="animate-spin h-10 w-10 text-gray-500" />
+            <div className="absolute inset-0 flex justify-center items-center bg-background/50 z-10">
+              <LoaderIcon className="animate-spin h-10 w-10" />
             </div>
           )}
+          
           {files.map(file => (
-            <TabsContent key={file.name} value={file.name} className="absolute inset-0 overflow-auto">
-              {renderFileContent(file)}
+            <TabsContent
+              key={file.name}
+              value={file.name}
+              className="absolute inset-0 flex justify-center items-center overflow-auto px-2 md:px-4"
+            >
+              <div className="w-full h-full flex justify-center items-center">
+                {renderFileContent(file)}
+              </div>
             </TabsContent>
           ))}
         </div>
+
         {files.find(file => file.name === activeTab)?.type === 'application/pdf' && (
           <div className="flex justify-between items-center p-4 bg-white dark:bg-transparent border-t">
             <Button
-              onClick={previousPage}
+              onClick={() => changePage(-1)}
               disabled={documents[activeTab]?.currentPage <= 1}
               variant="outline"
               size="sm"
@@ -191,7 +241,7 @@ const FileViewer: React.FC<FileViewerProps> = ({ files }) => {
               <span className="text-sm ml-2">of {documents[activeTab]?.numPages || '--'}</span>
             </div>
             <Button
-              onClick={nextPage}
+              onClick={() => changePage(1)}
               disabled={documents[activeTab]?.currentPage >= (documents[activeTab]?.numPages || 0)}
               variant="outline"
               size="sm"
@@ -201,9 +251,62 @@ const FileViewer: React.FC<FileViewerProps> = ({ files }) => {
             </Button>
           </div>
         )}
-      </Tabs>
-    </div>
-  );
+      </>
+    );
+  };
+
+  const renderFileContent = (file: File) => {
+    if (file.type === 'application/pdf') {
+      return (
+        <Document
+          file={file}
+          onLoadSuccess={onDocumentLoadSuccess}
+          onLoadError={(error) => {
+            console.error('Error while loading document:', error);
+            toast.error(`Failed to load PDF document: ${file.name}`);
+          }}
+          className="flex justify-center"
+        >
+          <Page
+            pageNumber={documents[file.name]?.currentPage || 1}
+            renderTextLayer={true}
+            renderAnnotationLayer={true}
+            scale={documents[file.name]?.scale || 1}
+            className="max-w-full"
+          />
+        </Document>
+      );
+    } else if (file.type.startsWith('image/')) {
+      return (
+        <img
+          src={URL.createObjectURL(file)}
+          alt={file.name}
+          className="max-w-full max-h-full object-contain"
+        />
+      );
+    } else {
+      if (!documents[file.name]?.content) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setDocuments(prev => ({
+            ...prev,
+            [file.name]: {
+              ...prev[file.name],
+              content: e.target?.result as string,
+            },
+          }));
+        };
+        reader.readAsText(file);
+      }
+      return (
+        <pre className="whitespace-pre-wrap p-4">
+          {documents[file.name]?.content || 'Loading content...'}
+        </pre>
+      );
+    }
+  };
+
+  return renderContent();
 };
 
 export default FileViewer;
