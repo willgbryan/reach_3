@@ -44,3 +44,5 @@ supabase
 git+https://github.com/willgbryan/langchain-reach-edition.git#subdirectory=libs/community
 pipdeptree
 markdown2
+py-zerox
+img2pdf

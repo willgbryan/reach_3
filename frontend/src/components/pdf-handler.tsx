@@ -177,7 +177,7 @@ const FileViewer: React.FC<FileViewerProps> = ({ files }) => {
         <Tabs 
           value={activeTab} 
           onValueChange={setActiveTab} 
-          className="w-full h-full flex flex-col pt-4 px-2 md:px-4"
+          className="w-full h-full flex flex-col pt-4 px-2 md:px-4 mt-6"
         >
           <TabsList className="w-full overflow-x-auto bg-transparent justify-start mb-2">
             {files.map(file => (

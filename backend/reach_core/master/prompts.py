@@ -262,7 +262,6 @@ def generate_resource_report_prompt(question, context, report_format="apa", tota
 def generate_custom_report_prompt(query_prompt, context, report_format="apa", total_words=2000):
     return f'"{context}"\n\n{query_prompt}'
 
-
 def generate_outline_report_prompt(question, context, report_format="apa", total_words=2000):
     """ Generates the outline report prompt for the given question and research summary.
     Args: question (str): The question to generate the outline report prompt for
