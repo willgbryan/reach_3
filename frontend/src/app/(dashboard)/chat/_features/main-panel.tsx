@@ -549,7 +549,7 @@ const MainVectorPanel = ({ id, initialMessages, initialSources }: MainVectorPane
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center min-h-[calc(100vh-120px)]">
             <div className="flex flex-col items-center space-y-8">
-              <Heading size="xl" weight="base">Legal Research Starts Here</Heading>
+              <Heading size="lg" weight="base" className="text-center">Legal Research Starts Here</Heading>
               {showInput && (
                 <div className="w-full max-w-3xl px-4">
                   <SimpleInputForm
