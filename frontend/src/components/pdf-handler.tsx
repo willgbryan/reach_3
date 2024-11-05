@@ -78,7 +78,7 @@ const FileViewer: React.FC<FileViewerProps> = ({ files }) => {
         ...prev,
         [activeTab]: {
           ...prev[activeTab],
-          scale: Math.max(0.6, newScale), // Increased minimum scale for readability
+          scale: Math.max(0.6, newScale),
         },
       }));
     };
