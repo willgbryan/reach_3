@@ -375,3 +375,11 @@ input:-webkit-autofill:active {
 .no-visible-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
+.custom-node {
+  background: #fff;
+  border: 1px solid #ddd;
+  padding: 10px;
+  border-radius: 5px;
+  min-width: 200px;
+}

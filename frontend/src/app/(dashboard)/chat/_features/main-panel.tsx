@@ -35,6 +35,7 @@ import { UpgradeAlert } from '@/components/upgrade-alert'
 import { FreeSearchCounter } from '@/components/free-search-counter'
 import { ResearchStatus } from '@/components/research-status'
 import { Button } from '@/components/ui/button'
+import ReactFlowChart from '@/components/reactflow/react-flow-chart'
 
 interface MainVectorPanelProps {
   id?: string | undefined
@@ -991,17 +992,30 @@ const ChatSection = ({
     )
   ].filter(Boolean);
 
+  const question = updatedMessages[0]?.content || 'Your Question';
+
   return (
     <div className="flex flex-col items-center w-full">
       {updatedMessages.length > 1 ? (
         <div className="pb-[100px] md:pb-40 w-full">
           <div className="mt-8">
             <h2 className="text-left md:text-center text-xl md:text-4xl pl-12 pt-4 md:pt-2 font-normal">
-              {updatedMessages[0].content}
+              {question}
             </h2>
-            <div className="pt-2 md:pt-8">
-              <GridLayout items={allCards} />
+            <div className="pt-2 md:pt-8" style={{ width: '100%', height: '600px' }}>
+            <ReactFlowChart
+              question={question}
+              cards={allCards}
+              onCreateDoc={(content: string) => createEditableDocument(content, reportConfig)}
+              onCreatePowerPoint={handleCreateStructuredPowerPoint}
+              onCreateChart={(tableId: string) => {
+            console.log(`Create chart for table ${tableId}`);
+          }}
+            />
             </div>
+            {/* <div className="pt-2 md:pt-8">
+              <GridLayout items={allCards} />
+            </div> */}
             {isLoading && (
               <ResearchStatus
                 currentStep={currentStep}

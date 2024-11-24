@@ -136,8 +136,13 @@ export const Card: React.FC<CardProps> = ({
 
   useOutsideClick(containerRef, () => handleClose());
 
-  const handleOpen = () => setOpen(true);
-  const handleClose = () => {
+  const handleOpen = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setOpen(true);
+  };
+
+  const handleClose = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
     console.log('Closing card', index);
     setOpen(false);
     onCardClose(index);
@@ -530,8 +535,9 @@ export const Card: React.FC<CardProps> = ({
 
   return (
     <>
-      <AnimatePresence>
-        {open && (
+      {open &&
+        ReactDOM.createPortal(
+          <AnimatePresence>
           <div className="fixed inset-0 h-screen z-[100] overflow-auto">
             <motion.div
               initial={{ opacity: 0 }}
@@ -630,8 +636,9 @@ export const Card: React.FC<CardProps> = ({
               </div>
             </motion.div>
           </div>
+       </AnimatePresence>,
+          document.body
         )}
-      </AnimatePresence>
       <motion.button
         onClick={handleOpen}
         className={cn(
