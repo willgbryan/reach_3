@@ -6,7 +6,6 @@ import { toast } from 'sonner';
 import { FileUpload } from '@/components/cult/file-upload';
 import dynamic from 'next/dynamic';
 import { LoaderIcon } from 'lucide-react';
-import AnalysisDisplay from '@/components/analysis-display';
 import { TutorialOverlay } from '@/components/tutorial/tutorial-overlay';
 import { TutorialStep } from '@/components/tutorial/tutorial-step';
 import Cookies from 'js-cookie';
@@ -23,6 +22,7 @@ import { Message } from 'ai';
 import createEditableDocument from '@/components/word-doc-functions';
 import { generatePowerPoint } from '@/components/structured-ppt-gen';
 import { IconPresentation } from '@tabler/icons-react';
+import ContractDisplay from '@/components/contract-comparison';
 
 interface DocumentAnalysis {
   id: string;
@@ -50,6 +50,7 @@ interface AnalysisSection {
   id: string;
   title: string;
   content: string;
+  originalContent?: string;
 }
 
 function sanitizeFileName(fileName: string): string {
@@ -64,8 +65,6 @@ const PDFViewer = dynamic(() => import('@/components/pdf-handler'), {
     </div>
   ),
 });
-
-const DEFAULT_TASK = "The following are legal documents that I would like analyzed. I need to understand the key important pieces with the relevant cited language as well as any language that can be loosely interpreted.";
 
 export default function PdfUploadAndRenderPage() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -88,6 +87,8 @@ export default function PdfUploadAndRenderPage() {
   const [isNewUpload, setIsNewUpload] = useState(false);
   const [sections, setSections] = useState<AnalysisSection[]>([]);
   const [isInitialAnalysis, setIsInitialAnalysis] = useState(false);
+  const [originalContract, setOriginalContract] = useState('');
+  const [modifiedContract, setModifiedContract] = useState('');
 
   const tutorialSteps = [
     {
@@ -208,7 +209,7 @@ export default function PdfUploadAndRenderPage() {
 
   const uploadToSupabase = async (files: File[]) => {
     const formData = new FormData();
-    files.forEach((file, index) => {
+    files.forEach((file) => {
       formData.append('files', file);
     });
 
@@ -268,19 +269,21 @@ export default function PdfUploadAndRenderPage() {
     setIsAnalysisComplete(false);
     setIsInitialAnalysis(true);
     setSections([{ id: 'initial-analysis', title: 'Initial Analysis', content: '' }]);
+  
     try {
       await uploadToSupabase(files);
   
       const formData = new FormData();
-      files.forEach((file, index) => {
+      files.forEach((file) => {
         formData.append('files', file, sanitizeFileName(file.name));
       });
   
-      const taskToUse = customTask.trim() || DEFAULT_TASK;
-      formData.append('task', `${taskToUse} Bluebook citations are key.`);
+      const taskToUse = customTask.trim();
+      formData.append('task', taskToUse);
+      formData.append('report_type', 'redline');
       formData.append('analysisId', currentAnalysisId);
   
-      const response = await fetch('/api/analyze-document', {
+      const response = await fetch('/api/redline-contract', {
         method: 'POST',
         body: formData,
       });
@@ -293,25 +296,41 @@ export default function PdfUploadAndRenderPage() {
       const reader = response.body!.getReader();
       const decoder = new TextDecoder();
   
+      let accumulatedModifiedContract = '';
+      let originalContractText = '';
+  
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
         const chunk = decoder.decode(value);
         const events = chunk.split('\n\n').filter(Boolean);
+  
         for (const event of events) {
           try {
             const data = JSON.parse(event);
+  
             if (data.type === 'report') {
-              setStreamingAnalysis(prevAnalysis => prevAnalysis + (data.output || ''));
-              setSections((prevSections: AnalysisSection[]) => {
-                const lastSection = prevSections[prevSections.length - 1];
-                return [
-                  ...prevSections.slice(0, -1),
-                  { ...lastSection, content: lastSection.content + data.output }
-                ];
-              });
+              accumulatedModifiedContract += data.output;
+            } else if (data.type === 'original_contract') {
+              originalContractText += data.originalContract;
             } else if (data.type === 'complete') {
+              setOriginalContract(originalContractText);
+              setModifiedContract(accumulatedModifiedContract);
               setIsAnalysisComplete(true);
+  
+              setSections((prevSections) =>
+                prevSections.map((section) =>
+                  section.id === 'initial-analysis'
+                    ? {
+                        ...section,
+                        content: accumulatedModifiedContract,
+                        originalContent: originalContractText,
+                      }
+                    : section
+                )
+              );
+  
+              break;
             }
           } catch (error) {
             console.error('Error parsing JSON:', error);
@@ -330,15 +349,15 @@ export default function PdfUploadAndRenderPage() {
     } finally {
       setIsProcessing(false);
     }
-  };
+  };  
 
   const handleUploadAndProcess = useCallback(() => {
     if (selectedFiles.length === 0) {
       toast.error('Please select PDF files before uploading.');
       return;
     }
-    if (!isPro && freeSearches === 0) {
-      setShowUpgradeAlert(true);
+    if (customTask.trim() === '') {
+      toast.error('Please enter your concerns, policy requirements, etc., in the custom task field.');
       return;
     }
     setFilesToProcess(selectedFiles);
@@ -346,7 +365,7 @@ export default function PdfUploadAndRenderPage() {
     setAnalysisId(newAnalysisId);
     setSections([]);
     processFiles(selectedFiles, newAnalysisId);
-  }, [selectedFiles, isPro, freeSearches, customTask]);
+  }, [selectedFiles, customTask]);
 
   const handleLoadPreviousAnalysis = (analysis: DocumentAnalysis) => {
     setAnalysisId(analysis.analysisId);
@@ -403,6 +422,8 @@ export default function PdfUploadAndRenderPage() {
     setAnalysisId(null);
     setIsAnalysisComplete(false);
     setIsNewUpload(false);
+    setOriginalContract('');
+    setModifiedContract('');
   };
 
   const memoizedPDFViewer = useMemo(() => {
@@ -537,14 +558,14 @@ export default function PdfUploadAndRenderPage() {
                 </div>
                 <div className="w-full max-w-md mb-4 flex items-end">
                   <Textarea
-                    placeholder="Enter custom task (optional)"
+                    placeholder="Enter your concerns, policy requirements, etc."
                     value={customTask}
                     onChange={(e) => setCustomTask(e.target.value)}
                     className="flex-grow mr-2"
                   />
                   <Button
                     onClick={handleUploadAndProcess}
-                    disabled={selectedFiles.length === 0 || isProcessing}
+                    disabled={selectedFiles.length === 0 || isProcessing || customTask.trim() === ''}
                     className="whitespace-nowrap h-full"
                   >
                     Analyze
@@ -561,8 +582,10 @@ export default function PdfUploadAndRenderPage() {
 
         <div className="w-full lg:w-1/2 flex flex-col">
           <div className="flex-grow p-4 overflow-y-auto">
-            {isProcessing || streamingAnalysis || sections.length > 0 ? (
-              <AnalysisDisplay 
+            {isProcessing || streamingAnalysis || isAnalysisComplete ? (
+              <ContractDisplay
+                originalContract={originalContract}
+                modifiedContract={modifiedContract}
                 analysis={streamingAnalysis} 
                 analysisId={analysisId}
                 isStreaming={isProcessing && !isAnalysisComplete}

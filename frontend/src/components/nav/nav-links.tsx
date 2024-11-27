@@ -1,5 +1,5 @@
 'use client'
-import { BookCopy, DollarSign, Home, Newspaper, Settings, Globe, LibraryBig } from 'lucide-react'
+import { BookCopy, DollarSign, Home, Newspaper, Settings, Globe, LibraryBig, FileDiff } from 'lucide-react'
 import { Nav } from './nav'
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://heighliner.tech';
@@ -24,6 +24,14 @@ export function NavLinks({ isCollapsed }) {
             icon: LibraryBig, 
             variant: 'ghost', 
             href: `/analysis`, 
+            disabled: false, 
+            label: 'Pro'
+          },
+          {
+            title: 'Contract Review', 
+            icon: FileDiff, 
+            variant: 'ghost', 
+            href: `/contract_review`, 
             disabled: false, 
             label: 'Pro'
           },

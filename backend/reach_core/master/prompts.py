@@ -172,6 +172,14 @@ def generate_report_prompt(question, context, report_format="apa", total_words=4
             f"Please do your best, this is very important to my career." \
             f"Assume that the current date is {datetime.now().strftime('%B %d, %Y')}"
 
+def generate_contract_review_prompt(question, context, report_format="apa", total_words=4000, retained_text="", deleted_text="", cadence=""):
+    
+    return f'Information: """{context}""".\n' \
+           f'Using ONLY the above information, return the entire provided contract with updates and redlines.' \
+           "Its imperative that the entire updated contract is returned.\n"\
+           "You must write the contract with markdown syntax. Use headings, bulleted lists, tables, block quotes, and other markdown formatted features.\n " \
+           "You MUST determine your own concrete and valid opinion based on the given information. Do NOT deter to general and meaningless conclusions.\n" \
+
 def generate_newsletter_report_prompt(question, context, report_format="apa", total_words=2000, retained_text="", deleted_text="", cadence=""):
     """ Generates the report prompt for the given question and research summary.
     Args: question (str): The question to generate the report prompt for
@@ -303,6 +311,7 @@ def generate_document_analysis_prompt(question, context, report_format="Bluebook
 
 def get_report_by_type(report_type, retained_text="", deleted_text="", cadence=""):
     report_type_mapping = {
+        ReportType.ContractReview.value: generate_contract_review_prompt,
         ReportType.DocumentAnalysis.value: generate_document_analysis_prompt,
         ReportType.LongNewsletterReport.value: generate_long_newsletter_report_prompt,
         ReportType.NewsletterReport.value: generate_newsletter_report_prompt,

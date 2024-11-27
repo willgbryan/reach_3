@@ -252,6 +252,8 @@ class Reach:
                             "raw_content": file_text
                         })
                         first_1000_chars_list.append(str(file_text)[:1000])
+
+                        await stream_output("original_contract", file_text, self.websocket)
                     else:
                         await stream_output("logs", f"Warning: No content extracted from {file_name}", self.websocket)
                     
