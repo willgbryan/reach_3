@@ -191,6 +191,24 @@ def generate_contract_review_prompt(question, context, report_format="apa", tota
            f"Consider all necessary revisions carefully.\n" \
            f"Assume that the current date is {datetime.now().strftime('%B %d, %Y')}"
 
+def generate_follow_prompt(question, context, report_format="apa", total_words=4000, retained_text="", deleted_text="", cadence=""):
+    """ Generates the report prompt for the given question and research summary.
+    Args: question (str): The question to generate the report prompt for
+            research_summary (str): The research summary to generate the report prompt for
+    Returns: str: The report prompt for the given question and research summary
+    """
+
+    return f'Researched context: """{context}""".\n' \
+           f'You are a legal expert specializing in contract review.' \
+           f'Given the above context, provide a fully updated and redlined version of the following text based on the user\'s' \
+           f' request, policy concerns, or other requirements: "{question}".\n' \
+           "Utilize markdown syntax for structuring, including headings, bulleted lists, and tables.\n" \
+           "All revisions must be made in line. DO NOT write the original language and suggest changes, just make the changes and highlight them.\n" \
+           f"Return ONLY the updated text.\n" \
+           f"Please ensure accuracy and thoroughness, as this is crucial for my career.\n" \
+           f"Consider all necessary revisions carefully.\n" \
+           f"Assume that the current date is {datetime.now().strftime('%B %d, %Y')}"
+
 def generate_newsletter_report_prompt(question, context, report_format="apa", total_words=2000, retained_text="", deleted_text="", cadence=""):
     """ Generates the report prompt for the given question and research summary.
     Args: question (str): The question to generate the report prompt for
@@ -322,6 +340,7 @@ def generate_document_analysis_prompt(question, context, report_format="Bluebook
 
 def get_report_by_type(report_type, retained_text="", deleted_text="", cadence=""):
     report_type_mapping = {
+        ReportType.FollowUp.value: generate_follow_prompt,
         ReportType.ContractReview.value: generate_contract_review_prompt,
         ReportType.DocumentAnalysis.value: generate_document_analysis_prompt,
         ReportType.LongNewsletterReport.value: generate_long_newsletter_report_prompt,
