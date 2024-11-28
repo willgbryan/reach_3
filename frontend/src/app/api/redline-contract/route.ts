@@ -110,10 +110,10 @@ export async function POST(req: NextRequest) {
   const chatId = nanoid()
 
   // PROD
-  // const ws_uri = `wss://heighliner.tech/ws`;
+  const ws_uri = `wss://heighliner.tech/ws`;
 
   // //DEV
-  const ws_uri = `ws://backend:8000/ws`
+//   const ws_uri = `ws://backend:8000/ws`
 
   let accumulatedOutput = ''
 
