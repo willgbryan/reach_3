@@ -173,13 +173,22 @@ def generate_report_prompt(question, context, report_format="apa", total_words=4
             f"Assume that the current date is {datetime.now().strftime('%B %d, %Y')}"
 
 def generate_contract_review_prompt(question, context, report_format="apa", total_words=4000, retained_text="", deleted_text="", cadence=""):
-    
-    return f'Information: """{context}""".\n' \
-           f'Using ONLY the above information, return the entire provided contract with updates per the users request: {question}.' \
-           "Its imperative that the entire updated contract is returned.\n"\
-           "You must write the contract with markdown syntax. Use headings, bulleted lists, tables, block quotes, and other markdown formatted features.\n " \
-            "Changes to contract language must be made clear and obvious via the use of bolded and italic text.\n " \
-           "You are returning a modified contract, highlighting where you have changed the contract language.\n" \
+    """ Generates the report prompt for the given question and research summary.
+    Args: question (str): The question to generate the report prompt for
+            research_summary (str): The research summary to generate the report prompt for
+    Returns: str: The report prompt for the given question and research summary
+    """
+
+    return f'Contract: """{context}""".\n' \
+           f'Using ONLY the above contract, return the entire updated contract per the users' \
+           f' request, policy concerns, or other requirements: "{question}"--' \
+           "You must write the contract with markdown syntax. Use headings, bulleted lists, tables, and other markdown formatted features.\n " \
+            "Changes to the contract must be made obvious via markdown highlight. Ex: ==this is highlighted text==\n " \
+            f"You MUST write the contract in Bluebook format for legal questions, and APA format otherwise. Do not include a note\n " \
+            f"'You MUST include all relevant source urls unless it is a Supabase URL. NEVER include or cite URL's from supabase'\
+             'Every url should be hyperlinked: [url website](url), and all legal content must be appropriately cited by the provided jurisdictions standard or Bluebook.'\n"\
+            f"Please do your best, this is very important to my career." \
+            f"Assume that the current date is {datetime.now().strftime('%B %d, %Y')}"
 
 def generate_newsletter_report_prompt(question, context, report_format="apa", total_words=2000, retained_text="", deleted_text="", cadence=""):
     """ Generates the report prompt for the given question and research summary.

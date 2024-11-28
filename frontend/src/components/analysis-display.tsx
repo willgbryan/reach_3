@@ -103,6 +103,29 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
   }, [handleSelection]);
 
   const formatContentToHTML = (content: string): string => {
+    const highlightExtension = {
+      name: 'highlight',
+      level: 'inline',
+      start(src) { return src.match(/==/)?.index; },
+      tokenizer(src, tokens) {
+        const rule = /^==([\s\S]+?)==/;
+        const match = rule.exec(src);
+        if (match) {
+          return {
+            type: 'highlight',
+            raw: match[0],
+            text: match[1],
+            tokens: this.lexer.inlineTokens(match[1]),
+          };
+        }
+      },
+      renderer(token) {
+        return `<mark>${this.parser.parseInline(token.tokens)}</mark>`;
+      },
+    };
+  
+    marked.use({ extensions: [highlightExtension] });
+  
     const rawHtml = marked.parse(content, { async: false }) as string;
     const sanitizedHtml = DOMPurify.sanitize(rawHtml);
     const parser = new DOMParser();
@@ -213,6 +236,17 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
         }
         a:hover {
           color: #93c5fd; /* blue-300 */
+        }
+        mark {
+          background-color: #ff0;
+          color: inherit;
+        }
+
+        @media (prefers-color-scheme: dark) {
+          mark {
+            background-color: #555;
+            color: inherit;
+          }
         }
       }
     `;
@@ -367,14 +401,12 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
         onValueChange={setOpenAccordion}
       >
         {sections.map((section) => (
-          <AccordionItem key={section.id} value={section.id} className="w-full">
-            <AccordionTrigger className="w-full">
-              {section.title}
-            </AccordionTrigger>
-            <AccordionContent className="w-full overflow-hidden">
-              <Card className="w-full pt-10 bg-transparent relative">
+          <AccordionItem key={section.id} value={section.id}>
+            <AccordionTrigger>{section.title}</AccordionTrigger>
+            <AccordionContent className="overflow-hidden">
+              <Card className="pt-10 bg-transparent relative">
                 {section.content && (
-                  <div className="absolute top-2 right-2 flex space-x-2">
+                  <div className="absolute top-2 right-2 flex space-x-2 ">
                     <Button
                       onClick={() => onCreateDoc(section.content)}
                       className="rounded-full flex items-center px-3 py-1 text-xs"
@@ -395,11 +427,11 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
                     )}
                   </div>
                 )}
-                <CardContent className="w-full max-w-full overflow-hidden">
+                <CardContent>
                   {section.content ? (
                     <div
                       dangerouslySetInnerHTML={{ __html: formatContentToHTML(section.content) }}
-                      className="prose dark:prose-invert max-w-full w-full overflow-hidden break-words"
+                      className="prose dark:prose-invert max-w-none"
                     />
                   ) : (
                     <div className="flex items-center space-x-2">
