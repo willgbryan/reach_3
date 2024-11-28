@@ -598,6 +598,7 @@ export default function PdfUploadAndRenderPage() {
                 isInitialAnalysis={isInitialAnalysis}
                 onCreateDoc={handleCreateDoc}
                 onCreatePowerPoint={handleCreatePowerPoint}
+                isContractReview={selectedTab === 'review-contract'}
               />
             ) : (
               <div className="flex items-center justify-center h-full text-gray-500">

@@ -14,10 +14,11 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
-import { LoaderIcon, FileText, Presentation } from 'lucide-react';
+import { LoaderIcon, FileText, Presentation, Pencil } from 'lucide-react';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { MultiJurisdictionSelector } from './jurisdictions-combobox';
+import { debounce } from 'lodash';
 
 interface AnalysisSection {
   id: string;
@@ -34,6 +35,7 @@ interface AnalysisDisplayProps {
   isInitialAnalysis: boolean;
   onCreateDoc: (content: string) => void;
   onCreatePowerPoint?: (content: string) => void;
+  isContractReview?: boolean;
 }
 
 const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ 
@@ -44,7 +46,8 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
   onUpdateSections,
   isInitialAnalysis,
   onCreateDoc,
-  onCreatePowerPoint
+  onCreatePowerPoint,
+  isContractReview = false
 }) => {
   const [selectedText, setSelectedText] = useState('');
   const [prompt, setPrompt] = useState('');
@@ -54,19 +57,29 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
   const popoverRef = useRef<HTMLDivElement>(null);
   const [openAccordion, setOpenAccordion] = useState<string | undefined>('initial-analysis');
   const [jurisdictions, setJurisdictions] = useState<string[]>([]);
+  const [editMode, setEditMode] = useState<{ [key: string]: boolean }>({});
+  const [editContent, setEditContent] = useState<{ [key: string]: string }>({});
+
+  const debouncedUpdate = useCallback(
+    debounce((sectionId: string, content: string) => {
+      onUpdateSections((prevSections: AnalysisSection[]) => 
+        prevSections.map(section => 
+          section.id === sectionId
+            ? { ...section, content }
+            : section
+        )
+      );
+    }, 100),
+    []
+  );
 
   const handleJurisdictionSelect = (selectedJurisdictions: string[]) => {
     setJurisdictions(selectedJurisdictions);
   };
 
-  useEffect(() => {
-    if (isInitialAnalysis && sections.length === 0) {
-      onUpdateSections([{ id: 'initial-analysis', title: 'Initial Analysis', content: '' }]);
-    }
-  }, [isInitialAnalysis, sections, onUpdateSections]);
-
-
   const handleSelection = useCallback(() => {
+    if (isContractReview) return;
+    
     const selection = window.getSelection();
     if (selection && !selection.isCollapsed) {
       const newSelectedText = selection.toString().trim();
@@ -95,7 +108,42 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
         setIsPopoverOpen(true);
       }
     }
-  }, []);
+  }, [isContractReview]);
+
+  const toggleEditMode = (sectionId: string) => {
+    setEditMode(prev => {
+      const newMode = { ...prev, [sectionId]: !prev[sectionId] };
+      if (newMode[sectionId]) {
+        const section = sections.find(s => s.id === sectionId);
+        if (section) {
+          setEditContent(prev => ({ ...prev, [sectionId]: section.content }));
+        }
+      }
+      return newMode;
+    });
+  };
+
+  const handleEditChange = (sectionId: string, newContent: string) => {
+    setEditContent(prev => ({ ...prev, [sectionId]: newContent }));
+  };
+
+  const saveEdit = (sectionId: string) => {
+    const newContent = editContent[sectionId];
+    onUpdateSections(prevSections => 
+      prevSections.map(section => 
+        section.id === sectionId
+          ? { ...section, content: newContent }
+          : section
+      )
+    );
+    toggleEditMode(sectionId);
+  };
+
+  useEffect(() => {
+    if (isInitialAnalysis && sections.length === 0) {
+      onUpdateSections([{ id: 'initial-analysis', title: 'Initial Analysis', content: '' }]);
+    }
+  }, [isInitialAnalysis, sections, onUpdateSections]);
 
   useEffect(() => {
     document.addEventListener('mouseup', handleSelection);
@@ -103,30 +151,49 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
   }, [handleSelection]);
 
   const formatContentToHTML = (content: string): string => {
-    const highlightExtension = {
-      name: 'highlight',
-      level: 'inline',
-      start(src) { return src.match(/==/)?.index; },
-      tokenizer(src, tokens) {
-        const rule = /^==([\s\S]+?)==/;
-        const match = rule.exec(src);
-        if (match) {
-          return {
-            type: 'highlight',
-            raw: match[0],
-            text: match[1],
-            tokens: this.lexer.inlineTokens(match[1]),
-          };
-        }
-      },
-      renderer(token) {
-        return `<mark>${this.parser.parseInline(token.tokens)}</mark>`;
-      },
-    };
+    if (!content || typeof content !== 'string') {
+      return '';
+    }
   
-    marked.use({ extensions: [highlightExtension] });
+    try {
+      const cleanContent = content
+        .replace(/```/g, '')
+        .trim();
   
-    const rawHtml = marked.parse(content, { async: false }) as string;
+      const highlightExtension = {
+        name: 'highlight',
+        level: 'inline',
+        start(src) { return src.match(/==/)?.index; },
+        tokenizer(src, tokens) {
+          const rule = /^==([\s\S]+?)==/;
+          const match = rule.exec(src);
+          if (match) {
+            return {
+              type: 'highlight',
+              raw: match[0],
+              text: match[1],
+              tokens: this.lexer.inlineTokens(match[1]),
+            };
+          }
+        },
+        renderer(token) {
+          return `<mark>${this.parser.parseInline(token.tokens)}</mark>`;
+        },
+      };
+  
+      marked.use({ 
+        extensions: [highlightExtension],
+        breaks: true,
+        gfm: true,
+      });
+  
+      let rawHtml;
+      try {
+        rawHtml = marked.parse(cleanContent, { async: false }) as string;
+      } catch (error) {
+        console.error('Markdown parsing error:', error);
+        return `<p>${cleanContent}</p>`;
+      }
     const sanitizedHtml = DOMPurify.sanitize(rawHtml);
     const parser = new DOMParser();
     const doc = parser.parseFromString(sanitizedHtml, 'text/html');
@@ -258,7 +325,11 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
   
     const finalHtml = DOMPurify.sanitize(doc.body.innerHTML, purifyConfig);
     return finalHtml;
-  };
+  } catch (error) {
+    console.error('HTML formatting error:', error);
+    return `<p>${content}</p>`;
+  }
+};
 
   const handlePromptChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPrompt(e.target.value);
@@ -296,6 +367,7 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
   
       const reader = response.body!.getReader();
       const decoder = new TextDecoder();
+      let accumulatedContent = '';
   
       while (true) {
         const { done, value } = await reader.read();
@@ -307,10 +379,13 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
             const data = JSON.parse(event);
   
             if (data.type === 'report') {
+              accumulatedContent += data.output || '';
+              debouncedUpdate(newSectionId, accumulatedContent);
+              
               onUpdateSections((prevSections: AnalysisSection[]) => 
                 prevSections.map(section => 
                   section.id === newSectionId
-                    ? { ...section, content: section.content + data.output }
+                    ? { ...section, content: accumulatedContent }
                     : section
                 )
               );
@@ -354,7 +429,8 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
 
   return (
     <div className="space-y-6">
-      <Popover open={isPopoverOpen} onOpenChange={handlePopoverOpenChange}>
+      {!isContractReview && (
+        <Popover open={isPopoverOpen} onOpenChange={handlePopoverOpenChange}>
         <PopoverTrigger asChild>
           <div style={{ position: 'absolute', top: popoverPosition.top, left: popoverPosition.left }}>
             <Button className="hidden">Open Popover</Button>
@@ -392,7 +468,8 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
             </Button>
           </div>
         </PopoverContent>
-      </Popover>
+        </Popover>
+      )}
       <Accordion 
         type="single" 
         collapsible 
@@ -406,7 +483,7 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
             <AccordionContent className="overflow-hidden">
               <Card className="pt-10 bg-transparent relative">
                 {section.content && (
-                  <div className="absolute top-2 right-2 flex space-x-2 ">
+                  <div className="absolute top-2 right-2 flex space-x-2">
                     <Button
                       onClick={() => onCreateDoc(section.content)}
                       className="rounded-full flex items-center px-3 py-1 text-xs"
@@ -415,24 +492,60 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
                       <FileText className="h-3 w-3 mr-1" />
                       Create Word Document
                     </Button>
-                    {onCreatePowerPoint && (
+                    {isContractReview ? (
                       <Button
-                        onClick={() => onCreatePowerPoint(section.content)}
+                        onClick={() => toggleEditMode(section.id)}
                         className="rounded-full flex items-center px-3 py-1 text-xs"
                         variant="outline"
                       >
-                        <Presentation className="h-3 w-3 mr-1" />
-                        Create PowerPoint
+                        <Pencil className="h-3 w-3 mr-1" />
+                        {editMode[section.id] ? 'Save' : 'Edit'}
                       </Button>
+                    ) : (
+                      onCreatePowerPoint && (
+                        <Button
+                          onClick={() => onCreatePowerPoint(section.content)}
+                          className="rounded-full flex items-center px-3 py-1 text-xs"
+                          variant="outline"
+                        >
+                          <Presentation className="h-3 w-3 mr-1" />
+                          Create PowerPoint
+                        </Button>
+                      )
                     )}
                   </div>
                 )}
                 <CardContent>
                   {section.content ? (
-                    <div
-                      dangerouslySetInnerHTML={{ __html: formatContentToHTML(section.content) }}
-                      className="prose dark:prose-invert max-w-none"
-                    />
+                    editMode[section.id] ? (
+                      <div className="space-y-4">
+                        <Textarea
+                          value={editContent[section.id]}
+                          onChange={(e) => handleEditChange(section.id, e.target.value)}
+                          className="min-h-[200px] w-full"
+                        />
+                        <div className="flex justify-end space-x-2">
+                          <Button
+                            onClick={() => toggleEditMode(section.id)}
+                            variant="outline"
+                            size="sm"
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            onClick={() => saveEdit(section.id)}
+                            size="sm"
+                          >
+                            Save
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div
+                        dangerouslySetInnerHTML={{ __html: formatContentToHTML(section.content) }}
+                        className="prose dark:prose-invert max-w-none"
+                      />
+                    )
                   ) : (
                     <div className="flex items-center space-x-2">
                       <LoaderIcon className="animate-spin h-5 w-5" />

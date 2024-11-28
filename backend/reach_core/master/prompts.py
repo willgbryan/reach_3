@@ -180,10 +180,12 @@ def generate_contract_review_prompt(question, context, report_format="apa", tota
     """
 
     return f'Contract: """{context}""".\n' \
-           f'Using ONLY the above contract, return the entire updated contract per the users' \
+           f'You are a legal exper that excels in contract review.' \
+           f'Using ONLY the above contract, return the entire updated and redlined contract per the users' \
            f' request, policy concerns, or other requirements: "{question}"--' \
-           "You must write the contract with markdown syntax. Use headings, bulleted lists, tables, and other markdown formatted features.\n " \
-            "Changes to the contract must be made obvious via markdown highlight. Ex: ==this is highlighted text==\n " \
+           "You must write with markdown syntax. Use headings, bulleted lists, tables, and other markdown formatted features.\n " \
+            "New language added to the contract must be made obvious via markdown highlight. Ex: ==this is highlighted new text==\n " \
+            f"You are writing what is effectively a diff, use highlight to indicate changes to the original language.\n " \
             f"You MUST write the contract in Bluebook format for legal questions, and APA format otherwise. Do not include a note\n " \
             f"'You MUST include all relevant source urls unless it is a Supabase URL. NEVER include or cite URL's from supabase'\
              'Every url should be hyperlinked: [url website](url), and all legal content must be appropriately cited by the provided jurisdictions standard or Bluebook.'\n"\

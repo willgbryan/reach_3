@@ -28,22 +28,6 @@ export function NavLinks({ isCollapsed }) {
             label: 'Pro'
           },
           {
-            title: 'Contract Review', 
-            icon: FileDiff, 
-            variant: 'ghost', 
-            href: `/contract_review`, 
-            disabled: false, 
-            label: 'Pro'
-          },
-          // { 
-          //   title: 'Newsletter', 
-          //   icon: Newspaper, 
-          //   variant: 'ghost', 
-          //   href: `/newsletter`, 
-          //   disabled: true, 
-          //   label: 'Coming soon'
-          // },
-          {
             title: 'Configure', 
             icon: Settings, 
             variant: 'ghost', 
@@ -51,14 +35,6 @@ export function NavLinks({ isCollapsed }) {
             disabled: false, 
             label: 'Pro'
           },
-          // { 
-          //   title: 'Library', 
-          //   icon: BookCopy, 
-          //   variant: 'ghost', 
-          //   href: `/library`, 
-          //   disabled: true, 
-          //   label: 'Coming soon'
-          // },
           // { 
           //   title: 'Pricing', 
           //   icon: DollarSign, 
