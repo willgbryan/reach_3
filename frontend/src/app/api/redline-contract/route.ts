@@ -159,17 +159,17 @@ export async function POST(req: NextRequest) {
 
       socket.onclose = async () => {
         console.log("WebSocket connection closed")
-        if (accumulatedOutput) {
-          await saveChatHistory({
-            chatId,
-            completion: accumulatedOutput,
-            messages: messages.length > 0 ? messages : [{ content: task, role: "user" }],
-            userId,
-            db,
-            filePaths,
-            analysisId,
-          })
-        }
+        // if (accumulatedOutput) {
+        //   await saveChatHistory({
+        //     chatId,
+        //     completion: accumulatedOutput,
+        //     messages: messages.length > 0 ? messages : [{ content: task, role: "user" }],
+        //     userId,
+        //     db,
+        //     filePaths,
+        //     analysisId,
+        //   })
+        // }
         controller.close()
       }
 
