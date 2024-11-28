@@ -179,18 +179,17 @@ def generate_contract_review_prompt(question, context, report_format="apa", tota
     Returns: str: The report prompt for the given question and research summary
     """
 
-    return f'Contract: """{context}""".\n' \
-           f'You are a legal exper that excels in contract review.' \
-           f'Using ONLY the above contract, return the entire updated and redlined contract per the users' \
-           f' request, policy concerns, or other requirements: "{question}"--' \
-           "You must write with markdown syntax. Use headings, bulleted lists, tables, and other markdown formatted features.\n " \
-            "New language added to the contract must be made obvious via markdown highlight. Ex: ==this is highlighted new text==\n " \
-            f"You are writing what is effectively a diff, use highlight to indicate changes to the original language.\n " \
-            f"You MUST write the contract in Bluebook format for legal questions, and APA format otherwise. Do not include a note\n " \
-            f"'You MUST include all relevant source urls unless it is a Supabase URL. NEVER include or cite URL's from supabase'\
-             'Every url should be hyperlinked: [url website](url), and all legal content must be appropriately cited by the provided jurisdictions standard or Bluebook.'\n"\
-            f"Please do your best, this is very important to my career." \
-            f"Assume that the current date is {datetime.now().strftime('%B %d, %Y')}"
+    return f'Original Contract: """{context}""".\n' \
+           f'You are a legal expert specializing in contract review.' \
+           f'Given the above original contract, provide a fully updated and redlined version based on the user\'s' \
+           f' request, policy concerns, or other requirements: "{question}".\n' \
+           "Use markdown highlight for all text that is different from the original contract. For example, ==these are highlighted changes==.\n" \
+           "Utilize markdown syntax for structuring, including headings, bulleted lists, and tables.\n" \
+           "All revisions must be made in line. DO NOT write the original language and suggest changes, just make the changes and highlight them.\n" \
+           f"Return ONLY the updated contract with highlight to indicate changes.\n" \
+           f"Please ensure accuracy and thoroughness, as this is crucial for my career.\n" \
+           f"Consider all necessary revisions carefully.\n" \
+           f"Assume that the current date is {datetime.now().strftime('%B %d, %Y')}"
 
 def generate_newsletter_report_prompt(question, context, report_format="apa", total_words=2000, retained_text="", deleted_text="", cadence=""):
     """ Generates the report prompt for the given question and research summary.

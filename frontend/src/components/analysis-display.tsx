@@ -129,14 +129,16 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
 
   const saveEdit = (sectionId: string) => {
     const newContent = editContent[sectionId];
-    onUpdateSections(prevSections => 
-      prevSections.map(section => 
-        section.id === sectionId
-          ? { ...section, content: newContent }
-          : section
-      )
-    );
-    toggleEditMode(sectionId);
+    if (newContent !== undefined) {
+      onUpdateSections(prevSections => 
+        prevSections.map(section => 
+          section.id === sectionId
+            ? { ...section, content: newContent }
+            : section
+        )
+      );
+      setEditMode(prev => ({ ...prev, [sectionId]: false }));
+    }
   };
 
   useEffect(() => {
@@ -494,7 +496,7 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
                     </Button>
                     {isContractReview ? (
                       <Button
-                        onClick={() => toggleEditMode(section.id)}
+                        onClick={() => editMode[section.id] ? saveEdit(section.id) : toggleEditMode(section.id)}
                         className="rounded-full flex items-center px-3 py-1 text-xs"
                         variant="outline"
                       >
@@ -520,9 +522,9 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
                     editMode[section.id] ? (
                       <div className="space-y-4">
                         <Textarea
-                          value={editContent[section.id]}
+                          value={editContent[section.id] || ''}
                           onChange={(e) => handleEditChange(section.id, e.target.value)}
-                          className="min-h-[200px] w-full"
+                          className="min-h-[200px] w-full border-0 focus:border-0 focus:outline-none outline-none focus-visible:ring-0 focus-visible:ring-ring"
                         />
                         <div className="flex justify-end space-x-2">
                           <Button
