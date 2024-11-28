@@ -28,6 +28,8 @@ function isFileData(value: unknown): value is FileData {
   );
 }
 
+const DEFAULT_TASK = "The following are legal documents that I would like analyzed. I need to understand the key important pieces with the relevant cited language as well as any language that can be loosely interpreted. Bluebook citations are key.";
+
 export async function POST(req: NextRequest) {
   const db = createClient(cookies())
   const {
@@ -47,7 +49,6 @@ export async function POST(req: NextRequest) {
   let filePaths: string[] = [];
   let signedUrls: string[] = [];
   let messages: any[] = [];
-  let reportType = 'redline';
 
   if (contentType.includes('multipart/form-data')) {
     const formData = await req.formData();
@@ -58,8 +59,6 @@ export async function POST(req: NextRequest) {
         task = value;
       } else if (key === 'analysisId' && typeof value === 'string') {
         analysisId = value;
-      } else if (key === 'report_type' && typeof value === 'string') {
-        reportType = value;
       } else if (isFileData(value)) {
         files.push({
           name: value.name,
@@ -96,15 +95,12 @@ export async function POST(req: NextRequest) {
     analysisId = jsonData.analysisId;
     sources = ["WEB"];
     messages = jsonData.messages;
-    if (jsonData.report_type) {
-      reportType = jsonData.report_type;
-    }
   } else {
     return NextResponse.json({ error: 'Unsupported content type' }, { status: 400 });
   }
 
   if (!task) {
-    return NextResponse.json({ error: 'Task is required' }, { status: 400 });
+    task = DEFAULT_TASK;
   }
 
   if (!analysisId) {
@@ -116,7 +112,7 @@ export async function POST(req: NextRequest) {
   // PROD
   // const ws_uri = `wss://heighliner.tech/ws`;
 
-  // DEV
+  // //DEV
   const ws_uri = `ws://backend:8000/ws`
 
   let accumulatedOutput = ''
@@ -129,7 +125,7 @@ export async function POST(req: NextRequest) {
         console.log('WebSocket connection opened');
         const requestData = {
           task: task,
-          report_type: reportType,
+          report_type: "redline",
           sources: sources,
           file_urls: signedUrls,
           file_paths: filePaths,
@@ -141,8 +137,16 @@ export async function POST(req: NextRequest) {
       socket.onmessage = async (event) => {
         const data = JSON.parse(event.data)
         console.log(`Received WebSocket data: ${JSON.stringify(data)}`);
-        if (data.type === 'report' || data.type === 'logs' || data.type === 'redline') {
-          controller.enqueue(new TextEncoder().encode(JSON.stringify(data) + '\n\n'))
+        if (data.type === 'report' || data.type === 'logs') {
+          if (data.type === 'report') {
+            accumulatedOutput += data.output
+            controller.enqueue(new TextEncoder().encode(JSON.stringify({
+              type: data.type,
+              output: data.output
+            }) + '\n\n'))
+          } else {
+            controller.enqueue(new TextEncoder().encode(JSON.stringify(data) + '\n\n'))
+          }
         } else if (data.type === 'complete') {
           socket.close()
         }

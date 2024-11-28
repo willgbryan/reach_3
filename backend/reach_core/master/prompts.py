@@ -152,7 +152,7 @@ def generate_report_prompt(question, context, report_format="apa", total_words=4
            " The report should focus on the answer to the query, should be well structured, informative," \
            f" in depth and comprehensive, with facts and numbers if available and a minimum of {total_words} words.\n" \
            "You should strive to write the report as long as you can using all relevant and necessary information provided.\n"\
-           "You must write the report with markdown syntax. Use headings, bulleted lists, tables, block quotes, and other markdown formatted features.\n " \
+           "You must write the report with markdown syntax. Use headings, bulleted lists, tables, and other markdown formatted features.\n " \
            "You MUST construct valid boolean searches for the user that can be leveraged in legal database tools such as Westlaw or LexisNexis that allow them to continue their research. This is critical.\n " \
            f"Use an unbiased and journalistic tone. \n" \
            "You MUST determine your own concrete and valid opinion based on the given information. Do NOT deter to general and meaningless conclusions.\n" \
@@ -175,10 +175,11 @@ def generate_report_prompt(question, context, report_format="apa", total_words=4
 def generate_contract_review_prompt(question, context, report_format="apa", total_words=4000, retained_text="", deleted_text="", cadence=""):
     
     return f'Information: """{context}""".\n' \
-           f'Using ONLY the above information, return the entire provided contract with updates and redlines.' \
+           f'Using ONLY the above information, return the entire provided contract with updates per the users request: {question}.' \
            "Its imperative that the entire updated contract is returned.\n"\
            "You must write the contract with markdown syntax. Use headings, bulleted lists, tables, block quotes, and other markdown formatted features.\n " \
-           "You MUST determine your own concrete and valid opinion based on the given information. Do NOT deter to general and meaningless conclusions.\n" \
+            "Changes to contract language must be made clear and obvious via the use of bolded and italic text.\n " \
+           "You are returning a modified contract, highlighting where you have changed the contract language.\n" \
 
 def generate_newsletter_report_prompt(question, context, report_format="apa", total_words=2000, retained_text="", deleted_text="", cadence=""):
     """ Generates the report prompt for the given question and research summary.

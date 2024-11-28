@@ -221,7 +221,7 @@ class Reach:
                             await stream_output("logs", f"Processing converted PDF with zerox", self.websocket)
                             markdown_output = await zerox(
                                 file_path=temp_pdf_path,
-                                model="gpt-4o-mini",
+                                model="gpt-4o",
                                 custom_system_prompt=None,
                                 output_dir=temp_dir
                             )
@@ -253,7 +253,7 @@ class Reach:
                         })
                         first_1000_chars_list.append(str(file_text)[:1000])
 
-                        await stream_output("original_contract", file_text, self.websocket)
+                        await stream_output("logs", f"original_content:{file_text}", self.websocket)
                     else:
                         await stream_output("logs", f"Warning: No content extracted from {file_name}", self.websocket)
                     

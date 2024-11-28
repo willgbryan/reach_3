@@ -367,12 +367,14 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
         onValueChange={setOpenAccordion}
       >
         {sections.map((section) => (
-          <AccordionItem key={section.id} value={section.id}>
-            <AccordionTrigger>{section.title}</AccordionTrigger>
-            <AccordionContent className="overflow-hidden">
-              <Card className="pt-10 bg-transparent relative">
+          <AccordionItem key={section.id} value={section.id} className="w-full">
+            <AccordionTrigger className="w-full">
+              {section.title}
+            </AccordionTrigger>
+            <AccordionContent className="w-full overflow-hidden">
+              <Card className="w-full pt-10 bg-transparent relative">
                 {section.content && (
-                  <div className="absolute top-2 right-2 flex space-x-2 ">
+                  <div className="absolute top-2 right-2 flex space-x-2">
                     <Button
                       onClick={() => onCreateDoc(section.content)}
                       className="rounded-full flex items-center px-3 py-1 text-xs"
@@ -393,11 +395,11 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
                     )}
                   </div>
                 )}
-                <CardContent>
+                <CardContent className="w-full max-w-full overflow-hidden">
                   {section.content ? (
                     <div
                       dangerouslySetInnerHTML={{ __html: formatContentToHTML(section.content) }}
-                      className="prose dark:prose-invert max-w-none"
+                      className="prose dark:prose-invert max-w-full w-full overflow-hidden break-words"
                     />
                   ) : (
                     <div className="flex items-center space-x-2">
