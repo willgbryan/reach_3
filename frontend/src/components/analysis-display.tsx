@@ -207,6 +207,7 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
   
     try {
       const cleanContent = content
+        .replace(/```markdown\n/g, '')
         .replace(/```/g, '')
         .trim();
   
@@ -433,10 +434,10 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
             if (data.type === 'report') {
               accumulatedContent += data.output || '';
   
-              const cleanedResponse = accumulatedContent
+              const cleanedResponse = `${accumulatedContent
                 .replace(/```markdown\n/g, '')
                 .replace(/```\n/g, '')
-                .replace(/\*\*/g, '');
+                .replace(/\*\*/g, '')}`;
   
               const newContent =
                 originalContent.slice(0, startIndex) +
@@ -556,7 +557,8 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
   };
 
   const handleCreateDoc = (sectionContent: string) => {
-    const formattedContent = formatContentToHTML(sectionContent);
+    const cleanedContent = sectionContent.replace(/==/g, '');
+    const formattedContent = formatContentToHTML(cleanedContent);
     onCreateDoc(formattedContent);
   };  
 
