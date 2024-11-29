@@ -14,10 +14,12 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
-import { LoaderIcon, FileText, Presentation } from 'lucide-react';
+import { LoaderIcon, FileText, Presentation, Pencil } from 'lucide-react';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { MultiJurisdictionSelector } from './jurisdictions-combobox';
+import { debounce } from 'lodash';
+import './component.css'
 
 interface AnalysisSection {
   id: string;
@@ -34,6 +36,7 @@ interface AnalysisDisplayProps {
   isInitialAnalysis: boolean;
   onCreateDoc: (content: string) => void;
   onCreatePowerPoint?: (content: string) => void;
+  isContractReview?: boolean;
 }
 
 const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ 
@@ -44,7 +47,8 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
   onUpdateSections,
   isInitialAnalysis,
   onCreateDoc,
-  onCreatePowerPoint
+  onCreatePowerPoint,
+  isContractReview = false
 }) => {
   const [selectedText, setSelectedText] = useState('');
   const [prompt, setPrompt] = useState('');
@@ -54,9 +58,136 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
   const popoverRef = useRef<HTMLDivElement>(null);
   const [openAccordion, setOpenAccordion] = useState<string | undefined>('initial-analysis');
   const [jurisdictions, setJurisdictions] = useState<string[]>([]);
+  const [editMode, setEditMode] = useState<{ [key: string]: boolean }>({});
+  const [editContent, setEditContent] = useState<{ [key: string]: string }>({});
+  const [selectedReviewText, setSelectedReviewText] = useState('');
+  const [reviewPopoverPosition, setReviewPopoverPosition] = useState({ top: 0, left: 0 });
+  const [isReviewPopoverOpen, setIsReviewPopoverOpen] = useState(false);
+  const reviewPopoverRef = useRef<HTMLDivElement>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentSuggestion, setCurrentSuggestion] = useState<{
+    sectionId: string;
+    oldText: string;
+    newText: string;
+  } | null>(null);  
+
+  const debouncedUpdate = useCallback(
+    debounce((sectionId: string, content: string) => {
+      onUpdateSections((prevSections: AnalysisSection[]) => 
+        prevSections.map(section => 
+          section.id === sectionId
+            ? { ...section, content }
+            : section
+        )
+      );
+    }, 100),
+    []
+  );
 
   const handleJurisdictionSelect = (selectedJurisdictions: string[]) => {
     setJurisdictions(selectedJurisdictions);
+  };
+
+const handleTextareaSelect = (e: React.SyntheticEvent<HTMLTextAreaElement>, sectionId: string) => {
+  if (!isContractReview || !editMode[sectionId]) return;
+
+  const textarea = e.target as HTMLTextAreaElement;
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+  const selectedText = textarea.value.substring(start, end).trim();
+  
+  if (!selectedText) return;
+
+  const textareaRect = textarea.getBoundingClientRect();
+  
+  const textBeforeSelection = textarea.value.substring(0, start);
+  const lines = textBeforeSelection.split('\n');
+  const lineHeight = parseInt(window.getComputedStyle(textarea).lineHeight) || 20;
+  
+  const currentLineNumber = lines.length;
+  const relativeTop = currentLineNumber * lineHeight;
+
+  const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+  const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+  
+  const top = window.innerHeight / 2.5 + scrollTop - (reviewPopoverRef.current?.offsetHeight || 0) / 2;
+  const left = textareaRect.left + scrollLeft - (reviewPopoverRef.current?.offsetWidth || 0) - 10;
+
+  setSelectedReviewText(selectedText);
+  setPrompt('');
+  setReviewPopoverPosition({ top, left });
+  setIsReviewPopoverOpen(true);
+
+  console.log('Textarea select event:', {
+    selectedText,
+    position: { top, left },
+    textareaRect,
+    relativeTop,
+    currentLineNumber
+  });
+};
+
+  const handleSelection = useCallback(() => {
+    if (isContractReview) return;
+  
+    const selection = window.getSelection();
+    if (!selection || selection.isCollapsed) return;
+    
+    const newSelectedText = selection.toString().trim();
+    if (!newSelectedText) return;
+  
+    const range = selection.getRangeAt(0);
+    const rect = range.getBoundingClientRect();
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+  
+    let top = rect.bottom + scrollTop;
+    let left = rect.left + scrollLeft;
+  
+    if (popoverRef.current) {
+      const popoverRect = popoverRef.current.getBoundingClientRect();
+      if (left + popoverRect.width > window.innerWidth) {
+        left = window.innerWidth - popoverRect.width - 10;
+      }
+      if (top + popoverRect.height > window.innerHeight) {
+        top = rect.top + scrollTop - popoverRect.height;
+      }
+    }
+  
+    setSelectedText(newSelectedText);
+    setPopoverPosition({ top, left });
+    setIsPopoverOpen(true);
+  }, [isContractReview]);
+
+  const toggleEditMode = (sectionId: string) => {
+    setEditMode(prev => {
+      const newMode = { ...prev, [sectionId]: !prev[sectionId] };
+      if (newMode[sectionId]) {
+        const section = sections.find(s => s.id === sectionId);
+        if (section) {
+          setEditContent(prev => ({ ...prev, [sectionId]: section.content }));
+        }
+      }
+      return newMode;
+    });
+  };
+
+  const handleEditChange = (sectionId: string, newContent: string) => {
+    setEditContent(prev => ({ ...prev, [sectionId]: newContent }));
+  };
+
+  const saveEdit = (sectionId: string) => {
+    const newContent = editContent[sectionId];
+    if (newContent !== undefined) {
+      onUpdateSections(prevSections => 
+        prevSections.map(section => 
+          section.id === sectionId
+            ? { ...section, content: newContent }
+            : section
+        )
+      );
+      setEditMode(prev => ({ ...prev, [sectionId]: false }));
+    }
   };
 
   useEffect(() => {
@@ -65,45 +196,56 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
     }
   }, [isInitialAnalysis, sections, onUpdateSections]);
 
-
-  const handleSelection = useCallback(() => {
-    const selection = window.getSelection();
-    if (selection && !selection.isCollapsed) {
-      const newSelectedText = selection.toString().trim();
-      if (newSelectedText) {
-        setSelectedText(newSelectedText);
-        const range = selection.getRangeAt(0);
-        const rect = range.getBoundingClientRect();
-        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-        const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
-
-        let top = rect.bottom + scrollTop;
-        let left = rect.left + scrollLeft;
-
-        // Adjust position if it would go off screen
-        if (popoverRef.current) {
-          const popoverRect = popoverRef.current.getBoundingClientRect();
-          if (left + popoverRect.width > window.innerWidth) {
-            left = window.innerWidth - popoverRect.width - 10;
-          }
-          if (top + popoverRect.height > window.innerHeight) {
-            top = rect.top + scrollTop - popoverRect.height;
-          }
-        }
-
-        setPopoverPosition({ top, left });
-        setIsPopoverOpen(true);
-      }
-    }
-  }, []);
-
   useEffect(() => {
     document.addEventListener('mouseup', handleSelection);
     return () => document.removeEventListener('mouseup', handleSelection);
   }, [handleSelection]);
 
   const formatContentToHTML = (content: string): string => {
-    const rawHtml = marked.parse(content, { async: false }) as string;
+    if (!content || typeof content !== 'string') {
+      return '';
+    }
+  
+    try {
+      const cleanContent = content
+        .replace(/```markdown\n/g, '')
+        .replace(/```/g, '')
+        .trim();
+  
+      const highlightExtension = {
+        name: 'highlight',
+        level: 'inline',
+        start(src) { return src.match(/==/)?.index; },
+        tokenizer(src, tokens) {
+          const rule = /^==([\s\S]+?)==/;
+          const match = rule.exec(src);
+          if (match) {
+            return {
+              type: 'highlight',
+              raw: match[0],
+              text: match[1],
+              tokens: this.lexer.inlineTokens(match[1]),
+            };
+          }
+        },
+        renderer(token) {
+          return `<mark>${this.parser.parseInline(token.tokens)}</mark>`;
+        },
+      };
+  
+      marked.use({ 
+        extensions: [highlightExtension],
+        breaks: true,
+        gfm: true,
+      });
+  
+      let rawHtml;
+      try {
+        rawHtml = marked.parse(cleanContent, { async: false }) as string;
+      } catch (error) {
+        console.error('Markdown parsing error:', error);
+        return `<p>${cleanContent}</p>`;
+      }
     const sanitizedHtml = DOMPurify.sanitize(rawHtml);
     const parser = new DOMParser();
     const doc = parser.parseFromString(sanitizedHtml, 'text/html');
@@ -214,6 +356,17 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
         a:hover {
           color: #93c5fd; /* blue-300 */
         }
+        mark {
+          background-color: #ff0;
+          color: inherit;
+        }
+
+        @media (prefers-color-scheme: dark) {
+          mark {
+            background-color: #555;
+            color: inherit;
+          }
+        }
       }
     `;
     doc.head.appendChild(style);
@@ -224,10 +377,102 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
   
     const finalHtml = DOMPurify.sanitize(doc.body.innerHTML, purifyConfig);
     return finalHtml;
-  };
+  } catch (error) {
+    console.error('HTML formatting error:', error);
+    return `<p>${content}</p>`;
+  }
+};
 
   const handlePromptChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPrompt(e.target.value);
+  };
+
+  const handleReviewSubmit = async () => {
+    setIsSubmitting(true);
+    try {
+      const response = await fetch('/api/contract-follow-up', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          selectedText: selectedReviewText,
+          prompt,
+          jurisdictions,
+          analysisId,
+        }),
+      });
+  
+      if (!response.ok) {
+        throw new Error('Failed to fetch');
+      }
+  
+      const reader = response.body!.getReader();
+      const decoder = new TextDecoder();
+      let accumulatedContent = '';
+  
+      const currentSectionId = openAccordion;
+      if (!currentSectionId) return;
+      const originalContent = editContent[currentSectionId] || '';
+      const startIndex = originalContent.indexOf(selectedReviewText);
+      if (startIndex === -1) {
+        console.error('Selected text not found in current content');
+        setIsSubmitting(false);
+        return;
+      }
+      const endIndex = startIndex + selectedReviewText.length;
+  
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value);
+        const events = chunk.split('\n\n').filter(Boolean);
+  
+        for (const event of events) {
+          try {
+            const data = JSON.parse(event);
+  
+            if (data.type === 'report') {
+              accumulatedContent += data.output || '';
+  
+              const cleanedResponse = `${accumulatedContent
+                .replace(/```markdown\n/g, '')
+                .replace(/```\n/g, '')
+                .replace(/\*\*/g, '')}`;
+  
+              const newContent =
+                originalContent.slice(0, startIndex) +
+                cleanedResponse +
+                originalContent.slice(endIndex);
+  
+              setEditContent(prev => ({
+                ...prev,
+                [currentSectionId]: newContent
+              }));
+            } else if (data.type === 'complete') {
+              setIsSubmitting(false);
+              setIsReviewPopoverOpen(false);
+              return;
+            }
+          } catch (error) {
+            console.error('Error parsing JSON:', error);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error submitting review:', error);
+      setIsSubmitting(false);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleReviewPopoverOpenChange = (open: boolean) => {
+    setIsReviewPopoverOpen(open);
+    if (!open) {
+      setSelectedReviewText('');
+      setPrompt('');
+    }
   };
 
   const handleSubmit = async () => {
@@ -262,6 +507,7 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
   
       const reader = response.body!.getReader();
       const decoder = new TextDecoder();
+      let accumulatedContent = '';
   
       while (true) {
         const { done, value } = await reader.read();
@@ -273,10 +519,13 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
             const data = JSON.parse(event);
   
             if (data.type === 'report') {
+              accumulatedContent += data.output || '';
+              debouncedUpdate(newSectionId, accumulatedContent);
+              
               onUpdateSections((prevSections: AnalysisSection[]) => 
                 prevSections.map(section => 
                   section.id === newSectionId
-                    ? { ...section, content: section.content + data.output }
+                    ? { ...section, content: accumulatedContent }
                     : section
                 )
               );
@@ -309,8 +558,10 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
   };
 
   const handleCreateDoc = (sectionContent: string) => {
-    onCreateDoc(sectionContent);
-  };
+    const cleanedContent = sectionContent.replace(/==/g, '');
+    const formattedContent = formatContentToHTML(cleanedContent);
+    onCreateDoc(formattedContent);
+  };  
 
   const handleCreatePowerPoint = (sectionContent: string) => {
     if (onCreatePowerPoint) {
@@ -320,45 +571,112 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
 
   return (
     <div className="space-y-6">
-      <Popover open={isPopoverOpen} onOpenChange={handlePopoverOpenChange}>
-        <PopoverTrigger asChild>
-          <div style={{ position: 'absolute', top: popoverPosition.top, left: popoverPosition.left }}>
-            <Button className="hidden">Open Popover</Button>
-          </div>
-        </PopoverTrigger>
-        <PopoverContent ref={popoverRef} className="w-80">
-          <div className="grid gap-4">
-            <div className="space-y-2">
-              <h4 className="font-medium leading-none">Selected Text</h4>
-              <Textarea
-                placeholder="No text selected"
-                value={selectedText}
-                readOnly
-                className="h-24 max-h-48 overflow-y-auto"
-              />
+      {!isContractReview && (
+        <Popover open={isPopoverOpen} onOpenChange={handlePopoverOpenChange}>
+          <PopoverTrigger asChild>
+            <div 
+              style={{ 
+                position: 'fixed',
+                top: popoverPosition.top, 
+                left: popoverPosition.left,
+                zIndex: 50
+              }}
+            >
+              <div className="w-1 h-1" />
             </div>
-            <div className="space-y-2">
-              <h4 className="font-medium leading-none">Query</h4>
-              <Input
-                id="prompt"
-                placeholder="Enter your query"
-                value={prompt}
-                onChange={handlePromptChange}
-              />
+          </PopoverTrigger>
+          <PopoverContent ref={popoverRef} className="w-80">
+            <div className="grid gap-4">
+              <div className="space-y-2">
+                <h4 className="font-medium leading-none">Selected Text</h4>
+                <Textarea
+                  placeholder="No text selected"
+                  value={selectedText}
+                  readOnly
+                  className="h-24 max-h-48 overflow-y-auto"
+                />
+              </div>
+              <div className="space-y-2">
+                <h4 className="font-medium leading-none">Query</h4>
+                <Input
+                  id="prompt"
+                  placeholder="Enter your query"
+                  value={prompt}
+                  onChange={handlePromptChange}
+                />
+              </div>
+              <div className="space-y-2">
+                <h4 className="font-medium leading-none">Jurisdictions</h4>
+                <MultiJurisdictionSelector 
+                  onSelect={handleJurisdictionSelect} 
+                  initialSelections={jurisdictions}
+                />
+              </div>
+              <Button onClick={handleSubmit}>
+                Submit
+              </Button>
             </div>
-            <div className="space-y-2">
-              <h4 className="font-medium leading-none">Jurisdictions</h4>
-              <MultiJurisdictionSelector 
-                onSelect={handleJurisdictionSelect} 
-                initialSelections={jurisdictions}
-              />
+          </PopoverContent>
+        </Popover>
+      )}
+  
+      {isContractReview && (
+        <Popover open={isReviewPopoverOpen} onOpenChange={handleReviewPopoverOpenChange}>
+          <PopoverTrigger asChild>
+            <div 
+              style={{ 
+                position: 'fixed',
+                top: reviewPopoverPosition.top, 
+                left: reviewPopoverPosition.left,
+                zIndex: 50
+              }}
+            >
+              <div className="w-1 h-1" />
             </div>
-            <Button onClick={handleSubmit}>
-              Submit
-            </Button>
-          </div>
-        </PopoverContent>
-      </Popover>
+          </PopoverTrigger>
+          <PopoverContent ref={reviewPopoverRef} className="w-96">
+            <div className="grid gap-4">
+              <div className="space-y-2">
+                <h4 className="font-medium leading-none">Selected Contract Text</h4>
+                <Textarea
+                  placeholder="No text selected"
+                  value={selectedReviewText}
+                  readOnly
+                  className="h-24 max-h-48 overflow-y-auto"
+                />
+              </div>
+              <div className="space-y-2">
+                <h4 className="font-medium leading-none">Request Changes</h4>
+                <Input
+                  id="prompt"
+                  placeholder="What changes would you like to make?"
+                  value={prompt}
+                  onChange={handlePromptChange}
+                  disabled={isSubmitting}
+                />
+              </div>
+              <div className="space-y-2">
+                <h4 className="font-medium leading-none">Jurisdictions</h4>
+                <MultiJurisdictionSelector 
+                  onSelect={handleJurisdictionSelect} 
+                  initialSelections={jurisdictions}
+                  disabled={isSubmitting}
+                />
+              </div>
+              <Button 
+                onClick={handleReviewSubmit} 
+                disabled={isSubmitting}
+                className="relative"
+              >
+                {isSubmitting && (
+                  <LoaderIcon className="animate-spin h-4 w-4 mr-2" />
+                )}
+                {isSubmitting ? 'Processing...' : 'Suggest Changes'}
+              </Button>
+            </div>
+          </PopoverContent>
+        </Popover>
+      )}  
       <Accordion 
         type="single" 
         collapsible 
@@ -372,33 +690,70 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
             <AccordionContent className="overflow-hidden">
               <Card className="pt-10 bg-transparent relative">
                 {section.content && (
-                  <div className="absolute top-2 right-2 flex space-x-2 ">
+                  <div className="absolute top-2 right-2 flex space-x-2">
                     <Button
-                      onClick={() => onCreateDoc(section.content)}
+                      onClick={() => handleCreateDoc(section.content)}
                       className="rounded-full flex items-center px-3 py-1 text-xs"
                       variant="outline"
                     >
                       <FileText className="h-3 w-3 mr-1" />
                       Create Word Document
                     </Button>
-                    {onCreatePowerPoint && (
+                    {isContractReview ? (
                       <Button
-                        onClick={() => onCreatePowerPoint(section.content)}
+                        onClick={() => editMode[section.id] ? saveEdit(section.id) : toggleEditMode(section.id)}
                         className="rounded-full flex items-center px-3 py-1 text-xs"
                         variant="outline"
                       >
-                        <Presentation className="h-3 w-3 mr-1" />
-                        Create PowerPoint
+                        <Pencil className="h-3 w-3 mr-1" />
+                        {editMode[section.id] ? 'Save' : 'Edit'}
                       </Button>
+                    ) : (
+                      onCreatePowerPoint && (
+                        <Button
+                          onClick={() => handleCreatePowerPoint(section.content)}
+                          className="rounded-full flex items-center px-3 py-1 text-xs"
+                          variant="outline"
+                        >
+                          <Presentation className="h-3 w-3 mr-1" />
+                          Create PowerPoint
+                        </Button>
+                      )
                     )}
                   </div>
                 )}
                 <CardContent>
-                  {section.content ? (
-                    <div
-                      dangerouslySetInnerHTML={{ __html: formatContentToHTML(section.content) }}
-                      className="prose dark:prose-invert max-w-none"
-                    />
+                {section.content ? (
+                    editMode[section.id] ? (
+                      <div className="space-y-4">
+                        <Textarea
+                          value={editContent[section.id] || ''}
+                          onChange={(e) => handleEditChange(section.id, e.target.value)}
+                          onSelect={(e) => handleTextareaSelect(e, section.id)}
+                          className="min-h-[200px] w-full border-0 focus:border-0 focus:outline-none outline-none focus-visible:ring-0 focus-visible:ring-ring"
+                        />
+                        <div className="flex justify-end space-x-2">
+                          <Button
+                            onClick={() => toggleEditMode(section.id)}
+                            variant="outline"
+                            size="sm"
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            onClick={() => saveEdit(section.id)}
+                            size="sm"
+                          >
+                            Save
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div
+                        dangerouslySetInnerHTML={{ __html: formatContentToHTML(section.content) }}
+                        className="prose dark:prose-invert max-w-none"
+                      />
+                    )
                   ) : (
                     <div className="flex items-center space-x-2">
                       <LoaderIcon className="animate-spin h-5 w-5" />

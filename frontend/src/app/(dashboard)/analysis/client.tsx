@@ -24,6 +24,9 @@ import createEditableDocument from '@/components/word-doc-functions';
 import { generatePowerPoint } from '@/components/structured-ppt-gen';
 import { IconPresentation } from '@tabler/icons-react';
 
+// Import Tabs components
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 interface DocumentAnalysis {
   id: string;
   path: string;
@@ -88,6 +91,7 @@ export default function PdfUploadAndRenderPage() {
   const [isNewUpload, setIsNewUpload] = useState(false);
   const [sections, setSections] = useState<AnalysisSection[]>([]);
   const [isInitialAnalysis, setIsInitialAnalysis] = useState(false);
+  const [selectedTab, setSelectedTab] = useState('analyze-document');
 
   const tutorialSteps = [
     {
@@ -208,7 +212,7 @@ export default function PdfUploadAndRenderPage() {
 
   const uploadToSupabase = async (files: File[]) => {
     const formData = new FormData();
-    files.forEach((file, index) => {
+    files.forEach((file) => {
       formData.append('files', file);
     });
 
@@ -262,37 +266,48 @@ export default function PdfUploadAndRenderPage() {
     toast.success(`Successfully added ${validFiles.length} file(s) of type(s): ${acceptedFileTypes.join(', ')}`);
   }, []);
 
-  const processFiles = async (files: File[], currentAnalysisId: string) => {
+  const processFiles = async (files: File[], currentAnalysisId: string, selectedTab: string) => {
     setIsProcessing(true);
     setStreamingAnalysis('');
     setIsAnalysisComplete(false);
     setIsInitialAnalysis(true);
     setSections([{ id: 'initial-analysis', title: 'Initial Analysis', content: '' }]);
+
     try {
       await uploadToSupabase(files);
-  
+
       const formData = new FormData();
-      files.forEach((file, index) => {
+      files.forEach((file) => {
         formData.append('files', file, sanitizeFileName(file.name));
       });
-  
-      const taskToUse = customTask.trim() || DEFAULT_TASK;
-      formData.append('task', `${taskToUse} Bluebook citations are key.`);
-      formData.append('analysisId', currentAnalysisId);
-  
-      const response = await fetch('/api/analyze-document', {
+
+      let endpoint = '/api/analyze-document';
+
+      if (selectedTab === 'review-contract') {
+        const taskToUse = customTask.trim();
+        formData.append('task', taskToUse);
+        formData.append('report_type', 'redline');
+        formData.append('analysisId', currentAnalysisId);
+        endpoint = '/api/redline-contract';
+      } else {
+        const taskToUse = customTask.trim() || DEFAULT_TASK;
+        formData.append('task', `${taskToUse} Bluebook citations are key.`);
+        formData.append('analysisId', currentAnalysisId);
+      }
+
+      const response = await fetch(endpoint, {
         method: 'POST',
         body: formData,
       });
-  
+
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`Failed to process PDFs: ${errorText}`);
       }
-  
+
       const reader = response.body!.getReader();
       const decoder = new TextDecoder();
-  
+
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -318,11 +333,11 @@ export default function PdfUploadAndRenderPage() {
           }
         }
       }
-  
+
       if (!isPro) {
         await updateFreeSearches();
       }
-  
+
       toast.success('File processing completed');
     } catch (error) {
       console.error('Error processing files:', error);
@@ -337,6 +352,10 @@ export default function PdfUploadAndRenderPage() {
       toast.error('Please select PDF files before uploading.');
       return;
     }
+    if (selectedTab === 'review-contract' && customTask.trim() === '') {
+      toast.error('Please enter your concerns, policy requirements, etc., in the custom task field.');
+      return;
+    }
     if (!isPro && freeSearches === 0) {
       setShowUpgradeAlert(true);
       return;
@@ -345,8 +364,8 @@ export default function PdfUploadAndRenderPage() {
     const newAnalysisId = `analysis-${Date.now()}`;
     setAnalysisId(newAnalysisId);
     setSections([]);
-    processFiles(selectedFiles, newAnalysisId);
-  }, [selectedFiles, isPro, freeSearches, customTask]);
+    processFiles(selectedFiles, newAnalysisId, selectedTab);
+  }, [selectedFiles, isPro, freeSearches, customTask, selectedTab]);
 
   const handleLoadPreviousAnalysis = (analysis: DocumentAnalysis) => {
     setAnalysisId(analysis.analysisId);
@@ -372,7 +391,8 @@ export default function PdfUploadAndRenderPage() {
         }
         const extractUserQuestion = (content: string): string => {
           const userQuestionMatch = content.match(/User question: (.+)/);
-          return userQuestionMatch ? userQuestionMatch[1] : content;
+          let question = userQuestionMatch ? userQuestionMatch[1] : content;
+          return question.replace("Bluebook citations are key.", "").trim();
         };
         
         const sectionTitle = 
@@ -393,7 +413,6 @@ export default function PdfUploadAndRenderPage() {
     }
     setSections(sections);
   };
-  
 
   const handleClearAndUpload = () => {
     setFilesToProcess([]);
@@ -536,16 +555,23 @@ export default function PdfUploadAndRenderPage() {
                 <div className="w-full max-w-md mb-4">
                   <FileUpload onChange={handleFileChange} />
                 </div>
+                <Tabs defaultValue="analyze-document" onValueChange={setSelectedTab} className="w-full max-w-md mb-4 flex justify-center">
+                  <TabsList>
+                    <TabsTrigger value="analyze-document">Analyze Document</TabsTrigger>
+                    <TabsTrigger value="review-contract">Review Contract</TabsTrigger>
+                  </TabsList>
+                </Tabs>
                 <div className="w-full max-w-md mb-4 flex items-end">
                   <Textarea
-                    placeholder="Enter custom task (optional)"
+                    placeholder={selectedTab === 'review-contract' ? 'Enter your concerns, policy requirements, etc.' : 'Enter custom task (optional)'}
                     value={customTask}
                     onChange={(e) => setCustomTask(e.target.value)}
                     className="flex-grow mr-2"
+                    required={selectedTab === 'review-contract'}
                   />
                   <Button
                     onClick={handleUploadAndProcess}
-                    disabled={selectedFiles.length === 0 || isProcessing}
+                    disabled={selectedFiles.length === 0 || isProcessing || (selectedTab === 'review-contract' && customTask.trim() === '')}
                     className="whitespace-nowrap h-full"
                   >
                     Analyze
@@ -572,12 +598,13 @@ export default function PdfUploadAndRenderPage() {
                 isInitialAnalysis={isInitialAnalysis}
                 onCreateDoc={handleCreateDoc}
                 onCreatePowerPoint={handleCreatePowerPoint}
+                isContractReview={selectedTab === 'review-contract'}
               />
             ) : (
               <div className="flex items-center justify-center h-full text-gray-500">
                 {selectedFiles.length > 0 
                   ? "Click 'Analyze' to get started."
-                  : "Upload PDF's and click 'Analyze' to get started."}
+                  : "Upload PDFs and click 'Analyze' to get started."}
               </div>
             )}
           </div>

@@ -152,7 +152,7 @@ def generate_report_prompt(question, context, report_format="apa", total_words=4
            " The report should focus on the answer to the query, should be well structured, informative," \
            f" in depth and comprehensive, with facts and numbers if available and a minimum of {total_words} words.\n" \
            "You should strive to write the report as long as you can using all relevant and necessary information provided.\n"\
-           "You must write the report with markdown syntax. Use headings, bulleted lists, tables, block quotes, and other markdown formatted features.\n " \
+           "You must write the report with markdown syntax. Use headings, bulleted lists, tables, and other markdown formatted features.\n " \
            "You MUST construct valid boolean searches for the user that can be leveraged in legal database tools such as Westlaw or LexisNexis that allow them to continue their research. This is critical.\n " \
            f"Use an unbiased and journalistic tone. \n" \
            "You MUST determine your own concrete and valid opinion based on the given information. Do NOT deter to general and meaningless conclusions.\n" \
@@ -171,6 +171,43 @@ def generate_report_prompt(question, context, report_format="apa", total_words=4
              'Every url should be hyperlinked: [url website](url), and all legal content must be appropriately cited by the provided jurisdictions standard or Bluebook.'\n"\
             f"Please do your best, this is very important to my career." \
             f"Assume that the current date is {datetime.now().strftime('%B %d, %Y')}"
+
+def generate_contract_review_prompt(question, context, report_format="apa", total_words=4000, retained_text="", deleted_text="", cadence=""):
+    """ Generates the report prompt for the given question and research summary.
+    Args: question (str): The question to generate the report prompt for
+            research_summary (str): The research summary to generate the report prompt for
+    Returns: str: The report prompt for the given question and research summary
+    """
+
+    return f'Original Contract: """{context}""".\n' \
+           f'You are a legal expert specializing in contract review.' \
+           f'Given the above original contract, provide a fully updated and redlined version based on the user\'s' \
+           f' request, policy concerns, or other requirements: "{question}".\n' \
+           "Use markdown highlight for all text that is different from the original contract. For example, ==these are highlighted changes==.\n" \
+           "Utilize markdown syntax for structuring, including headings, bulleted lists, and tables.\n" \
+           "All revisions must be made in line. DO NOT write the original language and suggest changes, just make the changes and highlight them.\n" \
+           f"Return ONLY the updated contract with highlight to indicate changes.\n" \
+           f"Please ensure accuracy and thoroughness, as this is crucial for my career.\n" \
+           f"Consider all necessary revisions carefully.\n" \
+           f"Assume that the current date is {datetime.now().strftime('%B %d, %Y')}"
+
+def generate_follow_prompt(question, context, report_format="apa", total_words=4000, retained_text="", deleted_text="", cadence=""):
+    """ Generates the report prompt for the given question and research summary.
+    Args: question (str): The question to generate the report prompt for
+            research_summary (str): The research summary to generate the report prompt for
+    Returns: str: The report prompt for the given question and research summary
+    """
+
+    return f'Researched context: """{context}""".\n' \
+           f'You are a legal expert specializing in contract review.' \
+           f'Given the above context, provide a fully updated and redlined version of the following text based on the user\'s' \
+           f' request, policy concerns, or other requirements: "{question}".\n' \
+           "Utilize markdown syntax for structuring, including headings, bulleted lists, and tables.\n" \
+           "All revisions must be made in line. DO NOT write the original language and suggest changes, just make the changes and highlight them.\n" \
+           f"Return ONLY the updated text.\n" \
+           f"Please ensure accuracy and thoroughness, as this is crucial for my career.\n" \
+           f"Consider all necessary revisions carefully.\n" \
+           f"Assume that the current date is {datetime.now().strftime('%B %d, %Y')}"
 
 def generate_newsletter_report_prompt(question, context, report_format="apa", total_words=2000, retained_text="", deleted_text="", cadence=""):
     """ Generates the report prompt for the given question and research summary.
@@ -303,6 +340,8 @@ def generate_document_analysis_prompt(question, context, report_format="Bluebook
 
 def get_report_by_type(report_type, retained_text="", deleted_text="", cadence=""):
     report_type_mapping = {
+        ReportType.FollowUp.value: generate_follow_prompt,
+        ReportType.ContractReview.value: generate_contract_review_prompt,
         ReportType.DocumentAnalysis.value: generate_document_analysis_prompt,
         ReportType.LongNewsletterReport.value: generate_long_newsletter_report_prompt,
         ReportType.NewsletterReport.value: generate_newsletter_report_prompt,

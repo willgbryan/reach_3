@@ -88,80 +88,106 @@ const jurisdictions = [
 ]
 
 interface MultiJurisdictionSelectorProps {
-    onSelect: (values: string[]) => void
-    initialSelections?: string[]
-  }
-  
-  export function MultiJurisdictionSelector({ onSelect, initialSelections = [] }: MultiJurisdictionSelectorProps) {
-    const [open, setOpen] = useState(false)
-    const [selectedValues, setSelectedValues] = useState<string[]>(initialSelections)
-  
-    useEffect(() => {
-      setSelectedValues(initialSelections)
-    }, [initialSelections])
-  
-    const handleSelect = (currentValue: string) => {
-      const newSelectedValues = selectedValues.includes(currentValue)
-        ? selectedValues.filter((value) => value !== currentValue)
-        : [...selectedValues, currentValue]
-      setSelectedValues(newSelectedValues)
-      onSelect(newSelectedValues)
-    }
-  
-    const removeJurisdiction = (valueToRemove: string) => {
-      const newSelectedValues = selectedValues.filter((value) => value !== valueToRemove)
-      setSelectedValues(newSelectedValues)
-      onSelect(newSelectedValues)
-    }
-  
-    return (
-      <div className="flex flex-col items-start">
-        <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              role="combobox"
-              aria-expanded={open}
-              className="w-full justify-between"
+  onSelect: (values: string[]) => void;
+  initialSelections?: string[];
+  disabled?: boolean;
+}
+
+export function MultiJurisdictionSelector({ 
+  onSelect, 
+  initialSelections = [], 
+  disabled = false 
+}: MultiJurisdictionSelectorProps) {
+  const [open, setOpen] = useState(false);
+  const [selectedValues, setSelectedValues] = useState<string[]>(initialSelections);
+
+  useEffect(() => {
+    setSelectedValues(initialSelections);
+  }, [initialSelections]);
+
+  const handleSelect = (currentValue: string) => {
+    if (disabled) return;
+    const newSelectedValues = selectedValues.includes(currentValue)
+      ? selectedValues.filter((value) => value !== currentValue)
+      : [...selectedValues, currentValue];
+    setSelectedValues(newSelectedValues);
+    onSelect(newSelectedValues);
+  };
+
+  const removeJurisdiction = (valueToRemove: string) => {
+    if (disabled) return;
+    const newSelectedValues = selectedValues.filter((value) => value !== valueToRemove);
+    setSelectedValues(newSelectedValues);
+    onSelect(newSelectedValues);
+  };
+
+  return (
+    <div className="flex flex-col items-start">
+      <Popover 
+        open={disabled ? false : open} 
+        onOpenChange={disabled ? undefined : setOpen}
+      >
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className={cn(
+              "w-full justify-between",
+              disabled && "opacity-50 cursor-not-allowed"
+            )}
+            disabled={disabled}
+          >
+            {selectedValues.length > 0
+              ? `${selectedValues.length} selected`
+              : "Select jurisdictions..."}
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent side="right" align="start" className="w-[400px] p-0">
+          <Command>
+            <CommandInput placeholder="Search jurisdiction..." />
+            <CommandList>
+              <CommandEmpty>No jurisdiction found.</CommandEmpty>
+              <CommandGroup>
+                {jurisdictions.map((jurisdiction) => (
+                  <CommandItem
+                    key={jurisdiction.value}
+                    value={jurisdiction.value}
+                    onSelect={() => handleSelect(jurisdiction.value)}
+                    disabled={disabled}
+                    className={cn(
+                      disabled && "opacity-50 cursor-not-allowed"
+                    )}
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        selectedValues.includes(jurisdiction.value) ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    {jurisdiction.label}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+      <div className="flex flex-wrap gap-2 mt-2">
+        {selectedValues.map((value) => {
+          const jurisdiction = jurisdictions.find((j) => j.value === value);
+          return (
+            <Badge 
+              key={value} 
+              variant="secondary" 
+              className={cn(
+                "text-sm font-base",
+                disabled && "opacity-50"
+              )}
             >
-              {selectedValues.length > 0
-                ? `${selectedValues.length} selected`
-                : "Select jurisdictions..."}
-              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent side="right" align="start" className="w-[400px] p-0">
-            <Command>
-              <CommandInput placeholder="Search jurisdiction..." />
-              <CommandList>
-                <CommandEmpty>No jurisdiction found.</CommandEmpty>
-                <CommandGroup>
-                  {jurisdictions.map((jurisdiction) => (
-                    <CommandItem
-                      key={jurisdiction.value}
-                      value={jurisdiction.value}
-                      onSelect={() => handleSelect(jurisdiction.value)}
-                    >
-                      <Check
-                        className={cn(
-                          "mr-2 h-4 w-4",
-                          selectedValues.includes(jurisdiction.value) ? "opacity-100" : "opacity-0"
-                        )}
-                      />
-                      {jurisdiction.label}
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
-        <div className="flex flex-wrap gap-2 mt-2">
-          {selectedValues.map((value) => {
-            const jurisdiction = jurisdictions.find((j) => j.value === value)
-            return (
-              <Badge key={value} variant="secondary" className="text-sm font-base">
-                {jurisdiction?.label}
+              {jurisdiction?.label}
+              {!disabled && (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -170,10 +196,11 @@ interface MultiJurisdictionSelectorProps {
                 >
                   <X className="h-3 w-3" />
                 </Button>
-              </Badge>
-            )
-          })}
-        </div>
+              )}
+            </Badge>
+          );
+        })}
       </div>
-    )
-  }
+    </div>
+  );
+}

@@ -1,5 +1,5 @@
 'use client'
-import { BookCopy, DollarSign, Home, Newspaper, Settings, Globe, LibraryBig } from 'lucide-react'
+import { BookCopy, DollarSign, Home, Newspaper, Settings, Globe, LibraryBig, FileDiff } from 'lucide-react'
 import { Nav } from './nav'
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://heighliner.tech';
@@ -27,14 +27,6 @@ export function NavLinks({ isCollapsed }) {
             disabled: false, 
             label: 'Pro'
           },
-          // { 
-          //   title: 'Newsletter', 
-          //   icon: Newspaper, 
-          //   variant: 'ghost', 
-          //   href: `/newsletter`, 
-          //   disabled: true, 
-          //   label: 'Coming soon'
-          // },
           {
             title: 'Configure', 
             icon: Settings, 
@@ -43,14 +35,6 @@ export function NavLinks({ isCollapsed }) {
             disabled: false, 
             label: 'Pro'
           },
-          // { 
-          //   title: 'Library', 
-          //   icon: BookCopy, 
-          //   variant: 'ghost', 
-          //   href: `/library`, 
-          //   disabled: true, 
-          //   label: 'Coming soon'
-          // },
           // { 
           //   title: 'Pricing', 
           //   icon: DollarSign, 

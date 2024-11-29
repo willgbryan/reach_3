@@ -1,6 +1,8 @@
 from enum import Enum
 
 class ReportType(Enum):
+    FollowUp = 'follow_up'
+    ContractReview = 'redline'
     DocumentAnalysis = 'document_analysis'
     LongNewsletterReport = 'long_newsletter_report'
     NewsletterReport = 'newsletter_report'
