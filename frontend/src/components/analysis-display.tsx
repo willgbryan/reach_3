@@ -88,43 +88,44 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
     setJurisdictions(selectedJurisdictions);
   };
 
-  const handleTextareaSelect = (e: React.SyntheticEvent<HTMLTextAreaElement>, sectionId: string) => {
-    if (!isContractReview || !editMode[sectionId]) return;
+const handleTextareaSelect = (e: React.SyntheticEvent<HTMLTextAreaElement>, sectionId: string) => {
+  if (!isContractReview || !editMode[sectionId]) return;
+
+  const textarea = e.target as HTMLTextAreaElement;
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+  const selectedText = textarea.value.substring(start, end).trim();
   
-    const textarea = e.target as HTMLTextAreaElement;
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selectedText = textarea.value.substring(start, end).trim();
-    
-    if (!selectedText) return;
+  if (!selectedText) return;
+
+  const textareaRect = textarea.getBoundingClientRect();
   
-    const textareaRect = textarea.getBoundingClientRect();
-    
-    const textBeforeSelection = textarea.value.substring(0, start);
-    const lines = textBeforeSelection.split('\n');
-    const lineHeight = parseInt(window.getComputedStyle(textarea).lineHeight) || 20;
-    
-    const currentLineNumber = lines.length;
-    const relativeTop = currentLineNumber * lineHeight;
+  const textBeforeSelection = textarea.value.substring(0, start);
+  const lines = textBeforeSelection.split('\n');
+  const lineHeight = parseInt(window.getComputedStyle(textarea).lineHeight) || 20;
   
-    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-    
-    const top = textareaRect.top + scrollTop + relativeTop;
-    const left = textareaRect.left + 300;
+  const currentLineNumber = lines.length;
+  const relativeTop = currentLineNumber * lineHeight;
+
+  const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+  const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
   
-    setSelectedReviewText(selectedText);
-    setPrompt('');
-    setReviewPopoverPosition({ top, left });
-    setIsReviewPopoverOpen(true);
-  
-    console.log('Textarea select event:', {
-      selectedText,
-      position: { top, left },
-      textareaRect,
-      relativeTop,
-      currentLineNumber
-    });
-  };
+  const top = window.innerHeight / 2.5 + scrollTop - (reviewPopoverRef.current?.offsetHeight || 0) / 2;
+  const left = textareaRect.left + scrollLeft - (reviewPopoverRef.current?.offsetWidth || 0) - 10;
+
+  setSelectedReviewText(selectedText);
+  setPrompt('');
+  setReviewPopoverPosition({ top, left });
+  setIsReviewPopoverOpen(true);
+
+  console.log('Textarea select event:', {
+    selectedText,
+    position: { top, left },
+    textareaRect,
+    relativeTop,
+    currentLineNumber
+  });
+};
 
   const handleSelection = useCallback(() => {
     if (isContractReview) return;
